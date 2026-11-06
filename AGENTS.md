@@ -39,6 +39,7 @@ Submission must also include a short description (how to reach each feature, wha
 - This is *not* the Next.js in your training data — read `node_modules/next/dist/docs/` first (see block at the end). With `cacheComponents`, `dynamicParams` does not exist; use `generateStaticParams` + `notFound()`. `params`/`searchParams` are Promises. `useSearchParams` needs a `<Suspense>` boundary.
 - ESLint enforces React-compiler rules: no ref access during render (`react-hooks/refs`), no `setState` inside effects. Put ref reads in event handlers/effects.
 - Language of text: **app UI is English** today; the **docs site is Hungarian**; code, comments and this file are English. Interpreter error messages are English and carry the official error code.
+- Commit messages for **this repository only** must be in Hungarian: write subjects and bodies in concise, natural Hungarian with correct accents. Preserve code identifiers, file paths, command names, and Conventional Commit prefixes such as `feat:`, `fix:`, and `docs:` unchanged. This convention applies to agent-written and T3 Code-generated commit messages; it does not change other projects or the languages used elsewhere in this repository.
 - Keep the engine (`lib/`) free of React, DOM, DB and timers so it can run in the browser, in tests and on the server (leaderboard re-run) identically.
 - Accessibility is graded: keyboard-operable controls, visible focus, never color alone (icons/text too), `prefers-reduced-motion`, screen-reader status text.
 
