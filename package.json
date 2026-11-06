@@ -6,7 +6,21 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "bun test tests",
+    "test:syntax": "bun test tests/syntax",
+    "test:maps": "bun test tests/maps",
+    "test:interpreter": "bun test tests/interpreter",
+    "test:parser": "bun test tests/syntax tests/interpreter/control.test.ts",
+    "test:semantics": "bun test tests/interpreter/semantics.test.ts tests/interpreter/errors.test.ts",
+    "test:control": "bun test tests/interpreter/control.test.ts tests/interpreter/limits.test.ts",
+    "test:robot": "bun test tests/interpreter/robot.test.ts tests/interpreter/state.test.ts tests/scenarios",
+    "test:limits": "bun test tests/interpreter/limits.test.ts",
+    "test:state": "bun test tests/interpreter/state.test.ts",
+    "test:scenarios": "bun test tests/scenarios",
+    "test:docs": "bun test tests/docs",
+    "test:tooling": "bun test tests/tooling",
+    "test:related": "bun scripts/test-related.ts"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.4",
@@ -24,6 +38,7 @@
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
+    "@types/bun": "^1.4.4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

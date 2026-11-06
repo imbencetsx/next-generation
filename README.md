@@ -19,3 +19,17 @@ Open [localhost:3000](http://localhost:3000) in your browser.
 - `bun run build` — create a production build
 - `bun run start` — serve the production build
 - `bun run lint` — run ESLint
+
+## MineScript reference and tests
+
+- [Language contract](docs/minescript-language.md): grammar, exact semantics, robot API, errors, scoring, and provisional decisions.
+- [Testing guide](docs/testing.md): categorized tests, difficulty levels, and targeted commands.
+
+```sh
+bun run test:related -- lib/interpreter.ts  # affected engine/scenario/docs tests
+bun run test:robot                        # motion, sensors, state, challenge programs
+bun run test:docs                         # all documented programs
+bun test tests                           # full baseline only when appropriate
+```
+
+The tests use Bun's native runner and execute without a Next.js server or browser.

@@ -28,7 +28,8 @@ Submission must also include a short description (how to reach each feature, wha
 | Documentation site at `/docs/[slug]` (Hungarian, dark, runnable examples) | done | `app/docs/`, `components/docs/`, `lib/docs/` |
 | Map editor, map export | planned | — |
 | Auth, persistence (Drizzle ORM + SQLite), leaderboard with server re-run | planned | — |
-| Unit tests (Vitest) / e2e (Playwright) | planned | — |
+| Fast conformance tests (Bun native runner) | done | `tests/`, `scripts/test-related.ts`, `docs/testing.md` |
+| Browser / React playback integration tests | planned | — |
 
 **Interpreter work is paused.** Do not add features to or change semantics in `lib/interpreter.ts` unless the user asks. Docs and UI may *use* it.
 
@@ -59,6 +60,10 @@ components/use-simulation.ts map state, Machine instance, playback timer
 lib/minescript.ts            KEYWORDS, EXAMPLES, validateMineScript (syntax only)
 lib/interpreter.ts           parseProgram (statement tree), Machine (one line per step), error codes
 lib/robot-map.ts             GameMap, DIRECTIONS, parseMap, MAP_PRESETS
+tests/                       categorized PDF-backed conformance and simulation contracts
+scripts/test-related.ts      targeted dependency-aware test runner (explicit task paths)
+docs/minescript-language.md  standalone language reference for agent ingestion
+docs/testing.md              test groups, commands, source mapping, performance discipline
 ```
 
 ## 4. File formats (PDF §1)
@@ -317,7 +322,22 @@ print i
 - "Megnyitás a szerkesztőben" opens `/?code=…&map=…`; the workbench reads these via `useSearchParams` (that is why `app/page.tsx` wraps it in `<Suspense>`).
 - Keep `/docs/dontesek` and §6 of this file in sync.
 
-## 9. Pitfalls — don't do these
+## 9. Testing policy — targeted, fast, specification-driven
+
+- Start with `docs/minescript-language.md` for the full language contract and `docs/testing.md` for the test catalogue. Tests use **Bun's native runner**, not Vitest; no Next server, DOM, database, timers, or browser is required for engine tests.
+- **Run relevant tests, not every test by habit.** Use `bun run test:related -- <task-file> [task-file…]` to include transitive consumers. Pass files from the current task, not unrelated dirty files. Unknown dependencies must be mapped or tested explicitly; never silently skip them.
+- Focused groups: `test:syntax`, `test:maps`, `test:parser`, `test:semantics`, `test:control`, `test:robot`, `test:limits`, `test:state`, `test:scenarios`, `test:docs`, `test:tooling`. Prefix with `bun run`. Narrow a specific file with `bun test ./tests/interpreter/errors.test.ts -t 'pattern'` when iterating.
+- Validator changes affect syntax **and** interpreter/scenario/docs tests. Map model changes affect map tests **and** interpreter/scenario/docs consumers. Interpreter changes affect interpreter/scenario/docs tests. Docs fixtures affect `test:docs`. The selector encodes this dependency closure.
+- **Full suite:** `bun test tests` once for a new/changed shared harness, test-runner/dependency configuration, broad engine changes, or release verification. Once it passes, rerun only affected groups unless new failures or changes justify broader checks.
+- Add easy, boundary, and hard interacting cases for changed behavior. Assert exact output, error code and source line, processed-line count, robot position/direction, remaining/mined gold, and exploration where relevant. Include both successful and failing paths; do not pad counts with duplicate trivial tests.
+- Derive expectations independently from the PDF / explicit project decisions, not from current engine output. No `eval`, JavaScript truthiness, short-circuit assumptions, familiar-language precedence, or automatic mining. Label D3–D7 provisional behavior. Do not make integer overflow beyond the specified range a new contract.
+- Keep tests deterministic and bounded. Use the shared harness's 1002-call fuse so a broken 1000-line limit cannot hang the suite. No real sleeps, playback animation, network, or timing assertions. Final-state tests take one final snapshot; only trace tests copy intermediate states.
+- When docs examples change, `bun run test:docs` must pass. It directly asserts every `DOC_EXAMPLES` expectation and checks the matcher with wrong outcomes. Never merely change an expectation to match a bug.
+- Report the selected command, passing/failing count, and duration. Engine tests do **not** verify React rendering, playback timers, buttons, file inputs, responsive layout, accessibility, auth, persistence, or leaderboard writes. UI changes need the relevant UI verification too.
+- Interpreter work is still paused: test-only tasks must not modify `lib/interpreter.ts`. Preserve and report a failing conformance test with its minimal reproducer; ask for implementation work separately.
+- Lint, typecheck, and build requirements in §3 remain applicable to application/config changes. They are not part of the fast engine test loop.
+
+## 10. Pitfalls — don't do these
 
 - Don't compile MineScript to JavaScript or use `eval`/`new Function`.
 - Don't short-circuit `and`/`or`, and don't change the operand check order (§5.4) — tests and the leaderboard depend on exact error codes.
