@@ -48,7 +48,8 @@ describe('hard / nested blocks, empty bodies, and parser ownership', () => {
   test('parse tree preserves CRLF source lines and else line', () => {
     const parsed = parseProgram('if false\r\n  print 1\r\nelse\r\n  print 2\r\nprint 3\r\n');
     expect(parsed.ok).toBe(true);
-    if (parsed.ok) expect(parsed.program).toMatchObject([{ kind: 'if', line: 1, then: [{ line: 2 }], elseLine: 3, else: [{ line: 4 }] }, { kind: 'print', line: 5 }]);
+    // The compiled program is a flat instruction list; each instruction keeps its source line.
+    if (parsed.ok) expect(parsed.program.instructions.map(ins => [ins.kind, ins.span.line])).toEqual([['if', 1], ['print', 2], ['else', 3], ['print', 4], ['print', 5]]);
   });
   test('128 nested conditionals execute without losing source ownership', () => {
     const code = [...Array.from({ length: 128 }, (_, i) => ' '.repeat(i) + 'if true'), ' '.repeat(128) + 'print 7', 'print 8'].join('\n');

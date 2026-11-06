@@ -54,9 +54,13 @@ const theme = EditorView.theme({
   ".cm-run-line": { backgroundColor: "#fff1c9", boxShadow: "inset 3px 0 0 #d99a1d" },
   ".cm-error-line": { backgroundColor: "#fde8e8", boxShadow: "inset 3px 0 0 #c84848" },
   ".cm-lintRange-error": { backgroundImage: "none", textDecoration: "underline wavy #c84848", textUnderlineOffset: "4px" },
+  ".cm-error-span": { textDecoration: "underline wavy #c84848", textUnderlineOffset: "4px", backgroundColor: "#f9d0d0", borderRadius: "2px" },
+  ".cm-diagnostic": { whiteSpace: "pre-line", maxWidth: "420px" },
+  ".cm-diagnosticSource": { fontFamily: "var(--font-geist-mono), monospace", opacity: "0.7" },
 });
 
-export type ActiveLine = { line: number; tone: "run" | "error" } | null;
+/** A kiemelt sor; futásidejű hibánál az oszloptartomány a hibás részt is megjelöli. */
+export type ActiveLine = { line: number; tone: "run" | "error"; column?: number; endColumn?: number } | null;
 
 const setActiveLine = StateEffect.define<ActiveLine>();
 const activeLineField = StateField.define<DecorationSet>({
@@ -73,7 +77,13 @@ const activeLineField = StateField.define<DecorationSet>({
 
       const line = transaction.state.doc.line(target.line);
       const className = target.tone === "error" ? "cm-error-line" : "cm-run-line";
-      decorations = Decoration.set([Decoration.line({ class: className }).range(line.from)]);
+      const ranges = [Decoration.line({ class: className }).range(line.from)];
+      if (target.tone === "error" && target.column && target.endColumn) {
+        const from = Math.min(line.to, line.from + target.column - 1);
+        const to = Math.min(line.to, line.from + target.endColumn - 1);
+        if (to > from) ranges.push(Decoration.mark({ class: "cm-error-span" }).range(from, to));
+      }
+      decorations = Decoration.set(ranges);
     }
     return decorations;
   },
@@ -93,16 +103,21 @@ function completeKeywords(context: CompletionContext) {
 function lintMineScript(editor: EditorView): Diagnostic[] {
   return validateMineScript(editor.state.doc.toString()).map((issue) => {
     const line = editor.state.doc.line(issue.line);
+    const from = Math.min(line.to, line.from + issue.column - 1);
+    // Üres sornál nincs mit aláhúzni, ilyenkor a sor elejére tesszük a jelölést.
+    const to = Math.max(from, Math.min(line.to, line.from + issue.endColumn - 1));
+    const related = issue.related?.map((item) => `Line ${item.line}: ${item.message}`).join("\n");
     return {
-      from: Math.min(line.to, line.from + issue.column - 1),
-      to: line.to,
+      from,
+      to,
       severity: "error",
-      message: issue.message,
+      source: issue.code,
+      message: [issue.message, issue.hint, related].filter(Boolean).join("\n"),
     };
   });
 }
 
-export type EditorHandle = { focusLine: (line: number) => void; check: () => void };
+export type EditorHandle = { focusLine: (line: number, column?: number) => void; check: () => void };
 type Props = {
   value: string;
   onChange: (value: string) => void;
@@ -159,9 +174,10 @@ export default function CodeEditor({ value, onChange, onCursor, editorRef, wrap,
     });
     view.current = instance;
     editorRef.current = {
-      focusLine(number) {
-        const line = instance.state.doc.line(Math.min(number, instance.state.doc.lines));
-        instance.dispatch({ selection: { anchor: line.from }, scrollIntoView: true });
+      focusLine(number, column = 1) {
+        const line = instance.state.doc.line(Math.max(1, Math.min(number, instance.state.doc.lines)));
+        const anchor = Math.min(line.to, line.from + column - 1);
+        instance.dispatch({ selection: { anchor }, scrollIntoView: true });
         instance.focus();
       },
       check() {
@@ -195,13 +211,15 @@ export default function CodeEditor({ value, onChange, onCursor, editorRef, wrap,
 
   const highlightedLine = activeLine?.line ?? null;
   const highlightTone = activeLine?.tone;
+  const highlightColumn = activeLine?.column;
+  const highlightEnd = activeLine?.endColumn;
 
   useEffect(() => {
     const instance = view.current;
     if (!instance) return;
 
     const target = highlightedLine !== null && highlightTone
-      ? { line: highlightedLine, tone: highlightTone }
+      ? { line: highlightedLine, tone: highlightTone, column: highlightColumn, endColumn: highlightEnd }
       : null;
     const effects: StateEffect<unknown>[] = [setActiveLine.of(target)];
 
@@ -210,7 +228,7 @@ export default function CodeEditor({ value, onChange, onCursor, editorRef, wrap,
       effects.push(EditorView.scrollIntoView(line.from, { y: "nearest" }));
     }
     instance.dispatch({ effects });
-  }, [highlightedLine, highlightTone]);
+  }, [highlightedLine, highlightTone, highlightColumn, highlightEnd]);
 
   return <div className="code-editor" ref={container} />;
 }

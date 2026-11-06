@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "bun test tests",
+    "test:adversarial": "bun test tests/adversarial",
+    "test:diagnostics": "bun test tests/diagnostics",
     "test:syntax": "bun test tests/syntax",
     "test:maps": "bun test tests/maps",
     "test:interpreter": "bun test tests/interpreter",
