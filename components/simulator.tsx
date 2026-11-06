@@ -1,98 +1,120 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+// A robot aktuális állapota, a térkép és a futás vezérlői.
+
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { ArrowUp, BrickWall, Gem, Pause, Play, RotateCcw, SkipForward, Upload } from "lucide-react";
-import { SPEEDS, type useSimulation } from "@/components/use-simulation";
+import { SPEEDS, type Simulation } from "@/components/use-simulation";
 import { MAP_PRESETS, DIRECTIONS } from "@/lib/robot-map";
 
-type Simulation = ReturnType<typeof useSimulation>;
-const ROTATION = [0, -90, 180, 90]; // north, west, south, east
+const ROTATION = [0, -90, 180, 90]; // észak, nyugat, dél, kelet
 
-function statusLabel(sim: Simulation) {
-  const { status, steps } = sim.snapshot;
-  if (status === "running") return sim.playing ? "Running" : steps ? "Paused" : "Ready";
+function statusLabel(simulation: Simulation) {
+  const { status, steps } = simulation.snapshot;
+  if (status === "running") {
+    if (simulation.playing) return "Running";
+    return steps > 0 ? "Paused" : "Ready";
+  }
   return { idle: "Ready", done: "Finished", error: "Error" }[status];
 }
 
-type Props = { sim: Simulation; onJump: (line: number) => void; firstIssueLine: number | null };
+type Props = { simulation: Simulation; onJump: (line: number) => void; firstIssueLine: number | null };
 
-export default function Simulator({ sim, onJump, firstIssueLine }: Props) {
-  const { snapshot, map } = sim;
+export default function Simulator({ simulation, onJump, firstIssueLine }: Props) {
+  const { snapshot, map } = simulation;
   const [fog, setFog] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const consoleEnd = useRef<HTMLDivElement>(null);
   const finished = snapshot.status === "done" || snapshot.status === "error";
   const totalGold = map.gold.filter(Boolean).length;
   const direction = DIRECTIONS[snapshot.robot.dir].name;
+  const error = snapshot.error;
+  let runLabel = "Run";
+  if (finished) runLabel = "Run again";
+  else if (simulation.started) runLabel = "Resume";
 
-  // A run is refused while the program has syntax errors; take the user to the first one.
-  const start = (action: () => void) => () => {
+  function start(action: () => void) {
     if (firstIssueLine) onJump(firstIssueLine);
     action();
-  };
+  }
 
-  useEffect(() => { consoleEnd.current?.scrollIntoView({ block: "nearest" }); }, [snapshot.output.length]);
+  function runProgram() {
+    start(simulation.run);
+  }
+
+  function stepProgram() {
+    start(simulation.step);
+  }
+
+  function importMap(event: ChangeEvent<HTMLInputElement>) {
+    simulation.importMap(event.target.files?.[0]);
+    event.target.value = "";
+  }
+
+  useEffect(() => {
+    consoleEnd.current?.scrollIntoView({ block: "nearest" });
+  }, [snapshot.output.length]);
 
   return (
     <div className="flex flex-col gap-3">
       <section className="rounded-lg border border-[#dfe4ec] bg-white p-3" aria-label="Playback controls">
         <div className="flex flex-wrap items-center gap-2">
-          {sim.playing ? (
-            <button className="btn" onClick={sim.pause}><Pause size={16} aria-hidden /> Pause</button>
+          {simulation.playing ? (
+            <button className="btn" onClick={simulation.pause}><Pause size={16} aria-hidden /> Pause</button>
           ) : (
-            <button className="btn btn-primary" onClick={start(sim.run)}>
-              <Play size={16} aria-hidden /> {sim.started && !finished ? "Resume" : finished ? "Run again" : "Run"}
+            <button className="btn btn-primary" onClick={runProgram}>
+              <Play size={16} aria-hidden /> {runLabel}
             </button>
           )}
-          <button className="btn" onClick={start(sim.step)} disabled={sim.playing}><SkipForward size={16} aria-hidden /> Step</button>
-          <button className="btn" onClick={sim.reset} disabled={!sim.started}><RotateCcw size={16} aria-hidden /> Reset</button>
+          <button className="btn" onClick={stepProgram} disabled={simulation.playing}><SkipForward size={16} aria-hidden /> Step</button>
+          <button className="btn" onClick={simulation.reset} disabled={!simulation.started}><RotateCcw size={16} aria-hidden /> Reset</button>
           <label className="ml-auto flex items-center gap-2 text-xs text-[#65738a]">
             Speed
-            <select className="btn" value={sim.speed} onChange={(event) => sim.setSpeed(Number(event.target.value))}>
+            <select className="btn" value={simulation.speed} onChange={(event) => simulation.setSpeed(Number(event.target.value))}>
               {SPEEDS.map((speed, index) => <option key={speed.label} value={index}>{speed.label}</option>)}
             </select>
           </label>
         </div>
-        {sim.notice && <p role="alert" className="mt-2 text-sm text-[#c84848]">{sim.notice}</p>}
+        {simulation.notice && <p role="alert" className="mt-2 text-sm text-[#c84848]">{simulation.notice}</p>}
       </section>
 
       <section className="grid grid-cols-3 gap-2" aria-label="Run statistics">
         <Stat label="Gold mined" value={`${snapshot.mined} / ${totalGold}`} />
         <Stat label="Lines run" value={`${snapshot.steps} / 1000`} />
-        <Stat label="Status" value={statusLabel(sim)} tone={snapshot.status === "error" ? "error" : snapshot.status === "done" ? "ok" : undefined} />
+        <Stat label="Status" value={statusLabel(simulation)} tone={snapshot.status === "error" ? "error" : snapshot.status === "done" ? "ok" : undefined} />
       </section>
 
-      {snapshot.error && (
+      {error && (
         <div role="alert" className="rounded-lg border border-[#efc2c2] bg-[#fdf0f0] p-3 text-sm">
-          <p className="font-mono text-xs font-semibold text-[#c84848]">{snapshot.error.code}</p>
-          <p>{snapshot.error.message}</p>
-          <button className="mt-1 text-xs text-[#4666ce] underline" onClick={() => onJump(snapshot.error!.line)}>
-            Go to line {snapshot.error.line}
+          <p className="font-mono text-xs font-semibold text-[#c84848]">{error.code}</p>
+          <p>{error.message}</p>
+          <button className="mt-1 text-xs text-[#4666ce] underline" onClick={() => onJump(error.line)}>
+            Go to line {error.line}
           </button>
         </div>
       )}
 
       <section className="rounded-lg border border-[#dfe4ec] bg-white p-3" aria-label="Map">
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <h2 className="mr-auto text-sm font-semibold">Map <span className="font-normal text-[#65738a]">· {sim.mapName}</span></h2>
+          <h2 className="mr-auto text-sm font-semibold">Map <span className="font-normal text-[#65738a]">· {simulation.mapName}</span></h2>
           <label className="sr-only" htmlFor="map-select">Choose map</label>
           <select
-            id="map-select" className="btn" value="" disabled={sim.locked}
-            onChange={(event) => sim.selectMap(event.target.value)}
+            id="map-select" className="btn" value="" disabled={simulation.locked}
+            onChange={(event) => simulation.selectMap(event.target.value)}
           >
             <option value="" disabled>Load map…</option>
             {MAP_PRESETS.map((preset) => <option key={preset.name} value={preset.name}>{preset.name}</option>)}
           </select>
-          <button className="btn" disabled={sim.locked} onClick={() => fileInput.current?.click()}>
+          <button className="btn" disabled={simulation.locked} onClick={() => fileInput.current?.click()}>
             <Upload size={16} aria-hidden /> Import
           </button>
           <input
             ref={fileInput} type="file" accept=".txt,.map,text/plain" hidden
-            onChange={(event) => { sim.importMap(event.target.files?.[0]); event.target.value = ""; }}
+            onChange={importMap}
           />
           <button className="btn" aria-pressed={fog} onClick={() => setFog((value) => !value)}>Fog</button>
         </div>
-        {sim.mapError && <p role="alert" className="mb-2 text-sm text-[#c84848]">{sim.mapError}</p>}
+        {simulation.mapError && <p role="alert" className="mb-2 text-sm text-[#c84848]">{simulation.mapError}</p>}
 
         <div
           role="img"

@@ -1,3 +1,5 @@
+// A MineScript példaprogramjai és szintaktikai ellenőrzése.
+
 export const KEYWORDS = [
   "and", "by", "else", "false", "forward", "here", "if", "isThere",
   "mine", "not", "or", "print", "set", "step", "to", "true", "turn", "while",
@@ -55,14 +57,35 @@ print complete`,
 ];
 
 export type SyntaxIssue = { line: number; column: number; message: string };
-export const isIdentifier = (token: string) => /^[a-zA-Z][a-zA-Z0-9]*$/.test(token) && !reserved.has(token.toLowerCase());
-const isSimple = (token: string | undefined) => Boolean(token && (isIdentifier(token) || /^(true|false)$/.test(token) || (/^\d+$/.test(token) && Number(token) <= 100)));
+export function isIdentifier(token: string): boolean {
+  return /^[a-zA-Z][a-zA-Z0-9]*$/.test(token) && !reserved.has(token.toLowerCase());
+}
 
-/** Syntax only: types and uninitialized variables are runtime concerns. */
+function isSimpleValue(token: string | undefined): boolean {
+  if (!token) return false;
+  if (token === "true" || token === "false") return true;
+  if (/^\d+$/.test(token)) return Number(token) <= 100;
+  return isIdentifier(token);
+}
+
+function isExpression(tokens: string[]): boolean {
+  switch (tokens.length) {
+    case 1:
+      return isSimpleValue(tokens[0]);
+    case 2:
+      return ["not", "isThere"].includes(tokens[0]) && isSimpleValue(tokens[1]);
+    case 3:
+      return isSimpleValue(tokens[0]) && operators.has(tokens[1]) && isSimpleValue(tokens[2]);
+    default:
+      return false;
+  }
+}
+
+// Itt csak a nyelvtant ellenőrizzük; a típushibák és a hiányzó változók futáskor derülnek ki.
 export function validateMineScript(source: string): SyntaxIssue[] {
   if (!source) return [];
   const lines = source.replace(/\r\n?/g, "\n").split("\n");
-  // One terminal line ending is a file terminator, not an empty instruction.
+  // A fájl végi egyetlen sortörést nem tekintjük üres programsornak.
   if (lines.at(-1) === "") lines.pop();
   const issues: SyntaxIssue[] = [];
   const levels = [0];
@@ -73,31 +96,50 @@ export function validateMineScript(source: string): SyntaxIssue[] {
   lines.forEach((line, index) => {
     const indent = line.match(/^ */)![0].length;
     const text = line.slice(indent);
-    const report = (message: string) => issues.push({ line: index + 1, column: indent + 1, message });
-    if (!text) { report("Empty lines are not allowed inside a program."); return; }
-    if (line.includes("\t")) { report("Use spaces instead of tabs."); return; }
-    if (/  | $/.test(text)) { report("Separate tokens with exactly one space; remove trailing spaces."); return; }
+    function report(message: string) {
+      issues.push({ line: index + 1, column: indent + 1, message });
+    }
+    if (!text) {
+      report("Empty lines are not allowed inside a program.");
+      return;
+    }
+    if (line.includes("\t")) {
+      report("Use spaces instead of tabs.");
+      return;
+    }
+    if (/  | $/.test(text)) {
+      report("Separate tokens with exactly one space; remove trailing spaces.");
+      return;
+    }
 
     const tokens = text.split(" ");
     const command = tokens[0];
     if (indent > previousIndent) {
-      if (!["if", "while", "else"].includes(previousCommand)) report("Only if, else, and while can start an indented block.");
+      if (!["if", "while", "else"].includes(previousCommand)) {
+        report("Only if, else, and while can start an indented block.");
+      }
       levels.push(indent);
     } else {
-      while (levels.length > 1 && indent < levels.at(-1)!) levels.pop();
+      while (levels.length > 1 && indent < levels.at(-1)!) {
+        levels.pop();
+      }
       if (indent !== levels.at(-1)) report("Indentation must match an existing block level.");
     }
-    for (const level of previousAtLevel.keys()) if (level > indent) previousAtLevel.delete(level);
+    for (const level of previousAtLevel.keys()) {
+      if (level > indent) previousAtLevel.delete(level);
+    }
     if (index === 0 && indent !== 0) report("The first instruction must start without indentation.");
-    if (command === "else" && previousAtLevel.get(indent) !== "if") report("Align else with its matching if, directly after the if block.");
+    if (command === "else" && previousAtLevel.get(indent) !== "if") {
+      report("Align else with its matching if, directly after the if block.");
+    }
 
-    const simple = (at: number) => isSimple(tokens[at]);
+    const hasValueAt = (index: number) => isSimpleValue(tokens[index]);
     switch (command) {
       case "step":
-        if (tokens.length !== 3 || tokens[1] !== "forward" || !simple(2)) report("Expected: step forward <value>.");
+        if (tokens.length !== 3 || tokens[1] !== "forward" || !hasValueAt(2)) report("Expected: step forward <value>.");
         break;
       case "turn":
-        if (tokens.length !== 3 || tokens[1] !== "by" || !simple(2)) report("Expected: turn by <value>.");
+        if (tokens.length !== 3 || tokens[1] !== "by" || !hasValueAt(2)) report("Expected: turn by <value>.");
         break;
       case "mine":
         if (tokens.length !== 2 || tokens[1] !== "here") report("Expected: mine here.");
@@ -105,19 +147,23 @@ export function validateMineScript(source: string): SyntaxIssue[] {
       case "print":
       case "if":
       case "while":
-        if (tokens.length !== 2 || !simple(1)) report(`Expected: ${command} <value>. Use a variable, boolean, or integer from 0 to 100.`);
+        if (tokens.length !== 2 || !hasValueAt(1)) report(`Expected: ${command} <value>. Use a variable, boolean, or integer from 0 to 100.`);
         break;
       case "else":
         if (tokens.length !== 1) report("else does not take a value.");
         break;
       case "set": {
-        if (!tokens[1] || !isIdentifier(tokens[1])) { report("Use a variable name starting with a letter. Keywords are reserved in every letter case."); break; }
-        if (tokens[2] !== "to") { report("Expected: set <name> to <expression>."); break; }
-        const rhs = tokens.slice(3);
-        const valid = (rhs.length === 1 && isSimple(rhs[0])) ||
-          (rhs.length === 2 && ["not", "isThere"].includes(rhs[0]) && isSimple(rhs[1])) ||
-          (rhs.length === 3 && isSimple(rhs[0]) && operators.has(rhs[1]) && isSimple(rhs[2]));
-        if (!valid) report("Expected a value, isThere <value>, not <value>, or <value> <operator> <value>.");
+        if (!tokens[1] || !isIdentifier(tokens[1])) {
+          report("Use a variable name starting with a letter. Keywords are reserved in every letter case.");
+          break;
+        }
+        if (tokens[2] !== "to") {
+          report("Expected: set <name> to <expression>.");
+          break;
+        }
+        if (!isExpression(tokens.slice(3))) {
+          report("Expected a value, isThere <value>, not <value>, or <value> <operator> <value>.");
+        }
         break;
       }
       default:

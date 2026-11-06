@@ -21,7 +21,7 @@ function highlight(line: string): ReactNode[] {
   });
 }
 
-/** Read-only MineScript code with line numbers. Works in server and client components. */
+// Csak megjelenítjük a kódot; ez a nézet szerveren is használható.
 export function CodeView({ code, markLine }: { code: string; markLine?: number }) {
   const lines = code === "" ? [] : code.split("\n");
   return (
@@ -39,7 +39,6 @@ export function CodeView({ code, markLine }: { code: string; markLine?: number }
   );
 }
 
-/** Plain preformatted text such as grammar rules or map files. */
 export function Pre({ children, label }: { children: string; label?: string }) {
   return (
     <div className="my-4">

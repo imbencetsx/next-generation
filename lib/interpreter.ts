@@ -1,3 +1,5 @@
+// A MineScript feldolgozása és soronkénti végrehajtása.
+
 import { validateMineScript, type SyntaxIssue } from "./minescript";
 import { DIRECTIONS, type Direction, type GameMap } from "./robot-map";
 
@@ -15,7 +17,7 @@ export type ErrorCode =
   | "INSTRUCTION_COUNT_LIMIT_EXCEEDED";
 export type RunError = { code: ErrorCode; line: number; message: string };
 
-// ---------------------------------------------------------------- parsing
+// A forráskód feldolgozása
 
 type Operand = { kind: "int"; value: number } | { kind: "bool"; value: boolean } | { kind: "var"; name: string };
 type Expr =
@@ -43,7 +45,7 @@ function expression(tokens: string[]): Expr {
   return { kind: "binary", a: operand(tokens[0]), op: tokens[1], b: operand(tokens[2]) };
 }
 
-/** Validates the syntax, then builds a statement tree that remembers source line numbers. */
+// Megőrizzük a forrássorokat, hogy futás közben is a megfelelő sort lehessen kijelölni.
 export function parseProgram(source: string): ParseResult {
   const issues = validateMineScript(source);
   if (issues.length) return { ok: false, issues };
@@ -53,7 +55,7 @@ export function parseProgram(source: string): ParseResult {
 
   const program: Stmt[] = [];
   const blocks = [{ indent: 0, body: program }];
-  let nextBlock: Stmt[] | null = null; // body that a deeper-indented line would belong to
+  let nextBlock: Stmt[] | null = null; // Ide kerülhet a következő, mélyebbre behúzott sor.
 
   lines.forEach((text, index) => {
     const line = index + 1;
@@ -95,7 +97,7 @@ export function parseProgram(source: string): ParseResult {
   return { ok: true, program };
 }
 
-// -------------------------------------------------------------- execution
+// A program végrehajtása
 
 class RunFailure extends Error {
   constructor(readonly code: ErrorCode, message: string) { super(message); }
@@ -104,7 +106,7 @@ const typeName = (value: Value) => (typeof value === "number" ? "an integer" : "
 
 export type Snapshot = {
   status: "idle" | "running" | "done" | "error";
-  /** Source line processed by the most recent step. */
+  /** A legutóbb feldolgozott forrássor száma. */
   line: number | null;
   robot: GameMap["robot"];
   explored: boolean[];
@@ -140,7 +142,7 @@ export class Machine {
     this.settle();
   }
 
-  /** Executes exactly one program line (one unit of the leaderboard "step" count). */
+  // Egy hívás egy programsort dolgoz fel, nem egy mezőnyi mozgást.
   step() {
     if (this.status !== "running") return;
     const frame = this.frames.at(-1)!;
@@ -175,7 +177,7 @@ export class Machine {
     };
   }
 
-  /** Drops finished blocks. A finished loop body leaves its `while` line to be re-evaluated. */
+  // A ciklustörzs végén a while sorára térünk vissza, így az új feltételvizsgálat is beleszámít.
   private settle() {
     while (this.frames.length && this.frames.at(-1)!.i >= this.frames.at(-1)!.body.length) this.frames.pop();
     if (!this.frames.length) this.status = "done";
@@ -232,7 +234,7 @@ export class Machine {
         else if (stmt.else) this.frames.push({ body: [{ kind: "else", line: stmt.elseLine! }, ...stmt.else], i: 0 });
         break;
       }
-      case "else": frame.i++; break; // the else line counts only when its branch runs
+      case "else": frame.i++; break; // Az else sora csak akkor számít, ha ez az ág fut.
       case "while":
         if (this.condition(stmt.cond)) this.frames.push({ body: stmt.body, i: 0 });
         else frame.i++;
@@ -259,7 +261,7 @@ export class Machine {
     return value;
   }
 
-  /** Operands are read left to right and checked one by one; there is no short-circuiting. */
+  // A sorrend a hibakódot is meghatározza: balról jobbra ellenőrzünk, rövidzár nélkül.
   private evaluate(expr: Expr): Value {
     switch (expr.kind) {
       case "value": return this.read(expr.a);
@@ -303,7 +305,7 @@ export class Machine {
     }
   }
 
-  /** isThere: inspects the cell in front of the robot; beyond the map edge counts as a wall. */
+  // A térképen kívüli mező falnak számít, de nem kerül a felfedezett mezők közé.
   private look(kind: number): boolean {
     const { dx, dy } = DIRECTIONS[this.robot.dir];
     const x = this.robot.x + dx;
