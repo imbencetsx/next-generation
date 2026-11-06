@@ -28,8 +28,14 @@ export function passwordProblem(password: string): string | null {
   return password.length >= MIN_PASSWORD_LENGTH && password.length <= MAX_PASSWORD_LENGTH ? null : AUTH_MESSAGES.password;
 }
 
-/** A szerver hibájából a felhasználónak szóló üzenet (a Next.js proxy csak a nyers szöveget adja tovább). */
-export function authMessageFrom(error: unknown): string {
+export type AuthErrorKey = keyof typeof AUTH_MESSAGES | "generic";
+
+/**
+ * A szerver hibájának kulcsa (a Next.js proxy csak a nyers angol szöveget adja tovább);
+ * a felület ebből a választott nyelven írja ki az üzenetet.
+ */
+export function authErrorKey(error: unknown): AuthErrorKey {
   const text = error instanceof Error ? error.message : String(error);
-  return Object.values(AUTH_MESSAGES).find((message) => text.includes(message)) ?? "Could not sign in. Please try again.";
+  const match = (Object.keys(AUTH_MESSAGES) as (keyof typeof AUTH_MESSAGES)[]).find((key) => text.includes(AUTH_MESSAGES[key]));
+  return match ?? "generic";
 }

@@ -42,7 +42,7 @@ Submission must also include a short description (how to reach each feature, wha
 - Use **bun**: `bun dev`, `bun run build`, `bun run lint`, `bunx tsc --noEmit`. Run lint + typecheck + build before handing work back.
 - This is *not* the Next.js in your training data — read `node_modules/next/dist/docs/` first (see block at the end). With `cacheComponents`, `dynamicParams` does not exist; use `generateStaticParams` + `notFound()`. `params`/`searchParams` are Promises. `useSearchParams` needs a `<Suspense>` boundary.
 - ESLint enforces React-compiler rules: no ref access during render (`react-hooks/refs`), no `setState` inside effects. Put ref reads in event handlers/effects.
-- Language of text: **app UI is English** today; the **docs site is Hungarian**; code identifiers and this file are English. Application comments are Hungarian: keep them brief and natural, explain non-obvious decisions, and use short file or section headers where they help navigation. Avoid repetitive comments and narrating obvious code. Test comments may remain English. Interpreter error messages are English and carry the official error code.
+- Language of text: the **app UI is English and Hungarian** (switch EN | HU in the top bar, also on `/login`; choice stored in the `lang` cookie, default from `Accept-Language`). Every UI string lives in `i18n/messages.ts` (`en` is the source, `hu` must have the same keys, the type enforces it); read them with `useI18n().t`, never hardcode UI text in components. Engine diagnostics and map-parse errors from `lib/` stay English with their codes. The **docs site is Hungarian** (`lang="hu"` on its root); code identifiers and this file are English. Application comments are Hungarian: keep them brief and natural, explain non-obvious decisions, and use short file or section headers where they help navigation. Avoid repetitive comments and narrating obvious code. Test comments may remain English. Interpreter error messages are English and carry the official error code.
 - Commit messages for **this repository only** must be in Hungarian: write subjects and bodies in concise, natural Hungarian with correct accents. Preserve code identifiers, file paths, command names, and Conventional Commit prefixes such as `feat:`, `fix:`, and `docs:` unchanged. This convention applies to agent-written and T3 Code-generated commit messages; it does not change other projects or the languages used elsewhere in this repository.
 - Keep the engine (`lib/`) free of React, DOM, DB and timers so it can run in the browser, in tests and on the server (leaderboard re-run in a Convex function) identically.
 - **UI components:** shadcn with base-ui (`components.json`, style `base-nova`). Add more with `bunx --bun shadcn@latest add <name>`; the generator may write `from "cn"`, which must be `@/lib/utils`. `Button` sets `data-variant`, which the pixel frames key on.
@@ -54,6 +54,7 @@ Submission must also include a short description (how to reach each feature, wha
 
 ```
 app/page.tsx                 redirects / to /test
+app/icon.svg, app/favicon.ico, app/apple-icon.png  favicon: the MS logo on a #141414 square (regenerate all three from public/logo.svg if the logo changes)
 app/test/page.tsx            /test: editor + simulator workbench
 app/docs/                    docs site: layout (dark), /docs → /docs/attekintes, [slug] pages
 components/docs/pages/       one Hungarian content component per docs page
@@ -78,7 +79,8 @@ public/artwork/borders/      12×12 nine-slice pixel frames (palette colours) us
 proxy.ts                     Next 16 proxy: Convex Auth cookies + /api/auth route; redirects signed-out /test → /login?next=…
                              (also works around a @convex-dev/auth 0.0.96 bug that turned our redirects into 200s)
 app/test/layout.tsx, app/login/layout.tsx  wrap only these routes in AuthProviders (cookie session, Suspense); /docs stays static
-components/auth/             auth-providers (server), login-form, require-auth (client fallback), user-menu
+components/auth/             auth-providers (server; reads session + language cookies), login-form, login-scene (speech bubble), require-auth (client fallback), user-menu
+i18n/                        locale.ts (EN/HU, cookie), messages.ts (all UI strings), i18n-provider.tsx (useI18n); components/language-switch.tsx
 components/convex-client-provider.tsx  ConvexAuthNextjsProvider; tokens come from httpOnly cookies via /api/auth
 lib/syntax.ts                the only parser: line scan, tokens, block structure + recovery, compile to flat instructions
 lib/diagnostics.ts           Diagnostic / SyntaxCode / ErrorCode types and message helpers
@@ -92,9 +94,12 @@ docs/diagnostics.md          diagnostics contract: every error code, its span an
 docs/testing.md              test groups, commands, source mapping, performance discipline
 ```
 
-### Production
+### Beta (Vercel) and production (VPS)
 
-1. Create a production deploy key in the Convex dashboard and set `CONVEX_DEPLOY_KEY` on the build machine.
+- **Beta on Vercel uses the Convex *dev* deployment on purpose** (it is a test site). Vercel env: only `NEXT_PUBLIC_CONVEX_URL` = the dev `.convex.cloud` URL (public, not a secret); build command stays `bun run build`, never `build:prod`. Vercel only builds the frontend, so push `convex/` changes to dev with `bun run convex:dev` before testing the beta. Beta and local dev share one database.
+- **Production runs on a VPS** with its own Convex production deployment:
+
+1. Create a production deploy key in the Convex dashboard and set `CONVEX_DEPLOY_KEY` on the build machine (a real secret).
 2. Once per deployment: `bun run auth:setup -- --prod --site-url https://<your-domain>`.
 3. Each release: `bun run build:prod` (deploys `convex/` to production, then runs `next build` with the production `NEXT_PUBLIC_CONVEX_URL`), then `next start` on the Node server. Only the Next.js server is self-hosted; Convex is hosted by Convex.
 

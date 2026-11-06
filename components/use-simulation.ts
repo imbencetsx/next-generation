@@ -6,12 +6,8 @@ import { useEffect, useRef, useState } from "react";
 import { Machine, idleSnapshot, parseProgram, type Snapshot, type StepEvent } from "@/lib/interpreter";
 import { MAP_PRESETS, parseMap, presetMap } from "@/lib/robot-map";
 
-export const SPEEDS = [
-  { label: "Slow", delay: 600 },
-  { label: "Normal", delay: 250 },
-  { label: "Fast", delay: 80 },
-  { label: "Turbo", delay: 10 },
-] as const;
+// A sebességek nevei a szótárban vannak (sim.speeds, azonos sorrendben).
+export const SPEEDS = [{ delay: 600 }, { delay: 250 }, { delay: 80 }, { delay: 10 }] as const;
 
 /** A legutóbbi lépés mozgása: meddig csúszik a robot, és melyik mező mikor ásódik ki alatta. */
 export type Motion = { id: number; duration: number; cells: number; reveals: { index: number; at: number }[] };
@@ -47,7 +43,8 @@ export function useSimulation(code: string, initialMapText: string | null = null
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
-  const [notice, setNotice] = useState<string | null>(null);
+  // Ennyi szintaktikai hiba miatt nem indult el a futás (a szöveget a felület adja).
+  const [blockedBy, setBlockedBy] = useState<number | null>(null);
   const [motion, setMotion] = useState<Motion | null>(null);
   const motionId = useRef(0);
 
@@ -77,12 +74,11 @@ export function useSimulation(code: string, initialMapText: string | null = null
 
     const parsed = parseProgram(code);
     if (!parsed.ok) {
-      const count = parsed.issues.length;
-      setNotice(`Fix ${count} syntax error${count > 1 ? "s" : ""} before running.`);
+      setBlockedBy(parsed.issues.length);
       return null;
     }
 
-    setNotice(null);
+    setBlockedBy(null);
     machine.current = new Machine(parsed.program, map);
     setSnapshot(machine.current.snapshot());
     setMotion(null);
@@ -113,7 +109,7 @@ export function useSimulation(code: string, initialMapText: string | null = null
     machine.current = null;
     setSnapshot(null);
     setPlaying(false);
-    setNotice(null);
+    setBlockedBy(null);
     setMotion(null);
   }
 
@@ -147,7 +143,7 @@ export function useSimulation(code: string, initialMapText: string | null = null
     map,
     mapName,
     mapError,
-    notice,
+    blockedBy,
     playing,
     speed,
     setSpeed,

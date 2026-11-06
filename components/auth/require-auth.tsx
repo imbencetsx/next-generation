@@ -6,6 +6,7 @@
 import { useConvexAuth } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
+import LoadingStatus from "@/components/loading-status";
 
 export default function RequireAuth({ children }: { children: ReactNode }) {
   const { isLoading, isAuthenticated } = useConvexAuth();
@@ -18,11 +19,7 @@ export default function RequireAuth({ children }: { children: ReactNode }) {
   }, [isLoading, isAuthenticated, router]);
 
   if (!isAuthenticated) {
-    return (
-      <div role="status" className="app-ui flex h-dvh items-center justify-center text-sm text-muted-foreground">
-        {isLoading ? "Checking your session…" : "Redirecting to sign in…"}
-      </div>
-    );
+    return <LoadingStatus message={isLoading ? "checkingSession" : "redirectingToSignIn"} />;
   }
   return children;
 }

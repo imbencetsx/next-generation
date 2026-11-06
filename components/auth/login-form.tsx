@@ -12,11 +12,12 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import LoginScene from "@/components/auth/login-scene";
+import { useI18n } from "@/i18n/i18n-provider";
 import {
   AUTH_PROVIDER,
   MAX_PASSWORD_LENGTH,
-  MIN_PASSWORD_LENGTH,
-  authMessageFrom,
+  authErrorKey,
+  type AuthErrorKey,
   normalizeUsername,
   passwordProblem,
   usernameProblem,
@@ -35,7 +36,8 @@ export default function LoginForm() {
   const router = useRouter();
   const next = safeNext(useSearchParams().get("next"));
   const [flow, setFlow] = useState<Flow>("signIn");
-  const [error, setError] = useState<string | null>(null);
+  const { t } = useI18n();
+  const [error, setError] = useState<AuthErrorKey | null>(null);
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
@@ -49,8 +51,8 @@ export default function LoginForm() {
     const password = String(form.get("password") ?? "");
 
     if (flow === "signUp") {
-      const problem = usernameProblem(username) ?? passwordProblem(password);
-      if (problem) return setError(problem);
+      if (usernameProblem(username)) return setError("username");
+      if (passwordProblem(password)) return setError("password");
     }
 
     setPending(true);
@@ -61,7 +63,7 @@ export default function LoginForm() {
       router.replace(next);
       router.refresh();
     } catch (caught) {
-      setError(authMessageFrom(caught));
+      setError(authErrorKey(caught));
       setPending(false);
     }
   }
@@ -75,14 +77,14 @@ export default function LoginForm() {
 
   return (
     <>
-    <LoginScene message={signingUp ? "Create an account so the gold you dig counts on the leaderboard :)" : "Sign in to send me back into the mine :)"} />
+    <LoginScene message={signingUp ? t.auth.signUpPrompt : t.auth.signInPrompt} />
     <Card role="region" aria-labelledby="auth-title" className="w-full max-w-[400px] gap-0 p-7">
       {/* A buborék mondja ki, mit kell tenni; a cím a képernyőolvasóknak marad. */}
-      <h1 id="auth-title" className="sr-only">{signingUp ? "Create account" : "Sign in"}</h1>
+      <h1 id="auth-title" className="sr-only">{signingUp ? t.auth.createAccount : t.auth.signIn}</h1>
 
       <form className="flex flex-col gap-4" onSubmit={submit} aria-busy={pending}>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="username">Username</Label>
+          <Label htmlFor="username">{t.auth.username}</Label>
           <Input
             id="username"
             name="username"
@@ -94,10 +96,10 @@ export default function LoginForm() {
             aria-describedby={signingUp ? "username-rule" : undefined}
             className="h-10 text-base"
           />
-          {signingUp && <p id="username-rule" className="font-read text-sm text-muted-foreground">3 to 20 characters: letters, digits or underscores.</p>}
+          {signingUp && <p id="username-rule" className="font-read text-sm text-muted-foreground">{t.auth.usernameRule}</p>}
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t.auth.password}</Label>
           <Input
             id="password"
             name="password"
@@ -108,25 +110,25 @@ export default function LoginForm() {
             aria-describedby={signingUp ? "password-rule" : undefined}
             className="h-10 text-base"
           />
-          {signingUp && <p id="password-rule" className="font-read text-sm text-muted-foreground">{MIN_PASSWORD_LENGTH} to {MAX_PASSWORD_LENGTH} characters.</p>}
+          {signingUp && <p id="password-rule" className="font-read text-sm text-muted-foreground">{t.auth.passwordRule}</p>}
         </div>
 
         {error && (
           <p role="alert" className="pixel-frame flex items-start gap-2 bg-brick/15 px-3 py-2 font-read text-sm text-brick-text" data-tone="danger">
-            <AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden /> {error}
+            <AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden /> {t.auth.errors[error]}
           </p>
         )}
 
         <Button type="submit" size="lg" className="mt-2 h-10 w-full text-base" disabled={pending}>
           {signingUp ? <UserPlus aria-hidden /> : <LogIn aria-hidden />}
-          {pending ? (signingUp ? "Creating account…" : "Signing in…") : signingUp ? "Create account" : "Sign in"}
+          {pending ? (signingUp ? t.auth.creatingAccount : t.auth.signingIn) : signingUp ? t.auth.createAccount : t.auth.signIn}
         </Button>
       </form>
 
       <p className="mt-6 border-t border-border pt-5 text-sm text-muted-foreground">
-        {signingUp ? "Already have an account?" : "New here?"}{" "}
+        {signingUp ? t.auth.haveAccount : t.auth.newHere}{" "}
         <button type="button" className="text-foreground underline underline-offset-4 hover:no-underline" onClick={switchFlow}>
-          {signingUp ? "Sign in" : "Create an account"}
+          {signingUp ? t.auth.signIn : t.auth.createAnAccount}
         </button>
       </p>
     </Card>

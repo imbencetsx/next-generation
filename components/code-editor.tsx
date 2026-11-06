@@ -140,9 +140,11 @@ type Props = {
   wrap: boolean;
   readOnly?: boolean;
   activeLine?: ActiveLine;
+  /** A szerkesztőterület akadálymentes neve (a felület nyelvén). */
+  label: string;
 };
 
-export default function CodeEditor({ value, onChange, onCursor, editorRef, wrap, readOnly = false, activeLine = null }: Props) {
+export default function CodeEditor({ value, onChange, onCursor, editorRef, wrap, readOnly = false, activeLine = null, label }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const initialValue = useRef(value);
   const view = useRef<EditorView | null>(null);
@@ -174,7 +176,7 @@ export default function CodeEditor({ value, onChange, onCursor, editorRef, wrap,
           wrapCompartment.current.of([]),
           readOnlyCompartment.current.of(EditorState.readOnly.of(false)),
           activeLineField,
-          EditorView.contentAttributes.of({ "aria-label": "MineScript source code", spellcheck: "false" }),
+          EditorView.contentAttributes.of({ spellcheck: "false" }),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) callbacks.current.onChange(update.state.doc.toString());
             if (update.selectionSet || update.docChanged) {
@@ -222,6 +224,10 @@ export default function CodeEditor({ value, onChange, onCursor, editorRef, wrap,
       effects: readOnlyCompartment.current.reconfigure(EditorState.readOnly.of(readOnly)),
     });
   }, [readOnly]);
+
+  useEffect(() => {
+    view.current?.contentDOM.setAttribute("aria-label", label);
+  }, [label]);
 
   const highlightedLine = activeLine?.line ?? null;
   const highlightTone = activeLine?.tone;
