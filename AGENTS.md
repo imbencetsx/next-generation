@@ -21,8 +21,9 @@ Submission must also include a short description (how to reach each feature, wha
 | Area | Status | Where |
 |---|---|---|
 | Code editor (CodeMirror 6, highlighting, lint, autocomplete, import/export, examples) | done | `components/code-editor.tsx`, `components/workbench.tsx` |
-| Syntax validator | done | `lib/minescript.ts` (`validateMineScript`) |
-| Interpreter prototype (parser → statement tree → line-stepping machine) | prototype | `lib/interpreter.ts` |
+| Syntax analysis: one-pass lexer, parser with error recovery, compiler to flat instructions | done | `lib/syntax.ts` (`validateMineScript` in `lib/minescript.ts` is a thin entry point) |
+| Interpreter: program-counter machine, one source line per step, step events | done | `lib/interpreter.ts` |
+| Diagnostics: coded syntax/runtime errors with exact column spans, hints, related lines | done | `lib/diagnostics.ts`, contract in `docs/diagnostics.md` |
 | Map model + map file parser + built-in maps | done | `lib/robot-map.ts` |
 | Simulator panel (playback, map, console, variables, fog) | basic | `components/simulator.tsx`, `components/use-simulation.ts` |
 | Documentation site at `/docs/[slug]` (Hungarian, dark, runnable examples) | done | `app/docs/`, `components/docs/`, `lib/docs/` |
@@ -31,7 +32,7 @@ Submission must also include a short description (how to reach each feature, wha
 | Fast conformance tests (Bun native runner) | done | `tests/`, `scripts/test-related.ts`, `docs/testing.md` |
 | Browser / React playback integration tests | planned | — |
 
-**Interpreter work is paused.** Do not add features to or change semantics in `lib/interpreter.ts` unless the user asks. Docs and UI may *use* it.
+**Engine semantics are frozen to the PDF and §6.** Do not change what programs mean (validity, outputs, counts, error codes/lines) without the user's approval. Improving diagnostics, performance or structure is fine when behaviour stays identical and the conformance suite stays green.
 
 ## 3. Stack, commands, conventions
 
@@ -57,12 +58,15 @@ components/code-editor.tsx   CodeMirror wrapper: MineScript mode, lint, active/e
 components/workbench.tsx     page shell: header, editor, problems, reference, simulator
 components/simulator.tsx     map grid, controls, stats, console, variables
 components/use-simulation.ts map state, Machine instance, playback timer
-lib/minescript.ts            KEYWORDS, EXAMPLES, validateMineScript (syntax only)
-lib/interpreter.ts           parseProgram (statement tree), Machine (one line per step), error codes
+lib/syntax.ts                the only parser: line scan, tokens, block structure + recovery, compile to flat instructions
+lib/diagnostics.ts           Diagnostic / SyntaxCode / ErrorCode types and message helpers
+lib/minescript.ts            EXAMPLES, re-exports KEYWORDS/isIdentifier, validateMineScript (= syntax issues)
+lib/interpreter.ts           parseProgram, Machine (pc over flat instructions, one line per step), StepEvent, idleSnapshot
 lib/robot-map.ts             GameMap, DIRECTIONS, parseMap, MAP_PRESETS
 tests/                       categorized PDF-backed conformance and simulation contracts
 scripts/test-related.ts      targeted dependency-aware test runner (explicit task paths)
 docs/minescript-language.md  standalone language reference for agent ingestion
+docs/diagnostics.md          diagnostics contract: every error code, its span and required content
 docs/testing.md              test groups, commands, source mapping, performance discipline
 ```
 
@@ -334,7 +338,8 @@ print i
 - Keep tests deterministic and bounded. Use the shared harness's 1002-call fuse so a broken 1000-line limit cannot hang the suite. No real sleeps, playback animation, network, or timing assertions. Final-state tests take one final snapshot; only trace tests copy intermediate states.
 - When docs examples change, `bun run test:docs` must pass. It directly asserts every `DOC_EXAMPLES` expectation and checks the matcher with wrong outcomes. Never merely change an expectation to match a bug.
 - Report the selected command, passing/failing count, and duration. Engine tests do **not** verify React rendering, playback timers, buttons, file inputs, responsive layout, accessibility, auth, persistence, or leaderboard writes. UI changes need the relevant UI verification too.
-- Interpreter work is still paused: test-only tasks must not modify `lib/interpreter.ts`. Preserve and report a failing conformance test with its minimal reproducer; ask for implementation work separately.
+- Test-only tasks must not modify `lib/`. Preserve and report a failing conformance test with its minimal reproducer; ask for implementation work separately.
+- Diagnostics tests check codes, `line`/`column`/`endColumn`, `related` lines and the key contents listed in `docs/diagnostics.md` — never full message prose.
 - Lint, typecheck, and build requirements in §3 remain applicable to application/config changes. They are not part of the fast engine test loop.
 
 ## 10. Pitfalls — don't do these
@@ -344,6 +349,8 @@ print i
 - Don't reject type errors at parse time; types are run-time only.
 - Don't count animation frames or cells moved as steps; count lines in the engine, never in the UI.
 - Don't put game rules in React components; the UI only renders engine snapshots.
+- Don't write a second parser or validator. All source analysis goes through `analyzeSource` in `lib/syntax.ts`; the validator and the runnable program come from the same pass.
+- Don't report a problem as a bare string: use a coded `Diagnostic` with an exact span (and a hint when a fix is known), as defined in `docs/diagnostics.md`.
 - Don't trust client-sent gold/steps for the leaderboard (planned): the server re-runs the program with the same engine on the stored map version.
 - Don't overwrite a valid map or program with a failed import.
 - Don't remove the Next.js agent block below; `next dev` re-adds it.

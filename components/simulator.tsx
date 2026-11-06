@@ -18,9 +18,13 @@ function statusLabel(simulation: Simulation) {
   return { idle: "Ready", done: "Finished", error: "Error" }[status];
 }
 
-type Props = { simulation: Simulation; onJump: (line: number) => void; firstIssueLine: number | null };
+type Props = {
+  simulation: Simulation;
+  onJump: (line: number, column?: number) => void;
+  firstIssue: { line: number; column: number } | null;
+};
 
-export default function Simulator({ simulation, onJump, firstIssueLine }: Props) {
+export default function Simulator({ simulation, onJump, firstIssue }: Props) {
   const { snapshot, map } = simulation;
   const [fog, setFog] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -34,7 +38,7 @@ export default function Simulator({ simulation, onJump, firstIssueLine }: Props)
   else if (simulation.started) runLabel = "Resume";
 
   function start(action: () => void) {
-    if (firstIssueLine) onJump(firstIssueLine);
+    if (firstIssue) onJump(firstIssue.line, firstIssue.column);
     action();
   }
 
@@ -86,11 +90,21 @@ export default function Simulator({ simulation, onJump, firstIssueLine }: Props)
 
       {error && (
         <div role="alert" className="rounded-lg border border-[#efc2c2] bg-[#fdf0f0] p-3 text-sm">
-          <p className="font-mono text-xs font-semibold text-[#c84848]">{error.code}</p>
+          <p className="font-mono text-xs font-semibold text-[#c84848]">
+            {error.code} · line {error.line}, column {error.column}
+          </p>
           <p>{error.message}</p>
-          <button className="mt-1 text-xs text-[#4666ce] underline" onClick={() => onJump(error.line)}>
-            Go to line {error.line}
-          </button>
+          {error.hint && <p className="mt-1 whitespace-pre-line text-xs text-[#65738a]"><span className="font-semibold">Hint:</span> {error.hint}</p>}
+          <div className="mt-1 flex flex-wrap gap-x-3">
+            <button className="text-xs text-[#4666ce] underline" onClick={() => onJump(error.line, error.column)}>
+              Go to line {error.line}
+            </button>
+            {error.related?.map((item) => (
+              <button key={item.line + item.message} className="text-xs text-[#4666ce] underline" onClick={() => onJump(item.line)}>
+                Line {item.line}: {item.message}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

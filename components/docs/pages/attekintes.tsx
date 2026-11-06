@@ -58,7 +58,7 @@ export default function Attekintes() {
         <tbody>
           <tr><td>Kódszerkesztő, import/export, mintaprogramok</td><td><Status kind="done" /></td><td>Élő szintaktikai ellenőrzés, hibalista, ugrás a hibás sorra</td></tr>
           <tr><td>Szintaktikai ellenőrzés</td><td><Status kind="done" /></td><td>A kiírás 2.1 fejezete szerint</td></tr>
-          <tr><td>Interpreter</td><td><Status kind="prototype" /></td><td>Működik, de a továbbfejlesztése szünetel; tesztek még nincsenek</td></tr>
+          <tr><td>Interpreter</td><td><Status kind="done" /></td><td>A kiírás minden szabálya; pontos, kódolt hibaüzenetek javaslattal; több mint ezer megfelelőségi teszt</td></tr>
           <tr><td>Szimulátor (lejátszás, térkép, konzol)</td><td><Status kind="prototype" /></td><td>Futtatás, léptetés, szünet, sebesség, köd</td></tr>
           <tr><td>Térképimport, beépített pályák</td><td><Status kind="done" /></td><td>Hibás fájl nem írja felül a betöltött térképet</td></tr>
           <tr><td>Térképszerkesztő, térképexport</td><td><Status kind="planned" /></td><td><Link href="/docs/terkepek">Térképek</Link></td></tr>

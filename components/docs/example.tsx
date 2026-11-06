@@ -98,7 +98,11 @@ function Result({ outcome, passed }: { outcome: Outcome; passed: boolean | null 
           <p className="font-semibold text-[var(--d-bad)]">Szintaktikai hiba — a program nem indul el.</p>
           <ul className="mt-1 list-none space-y-0.5 p-0">
             {outcome.issues.map((issue, index) => (
-              <li key={index}><span className="font-mono text-xs text-[var(--d-bad)]">{issue.line}. sor:</span> {issue.message}</li>
+              <li key={index}>
+                <span className="font-mono text-xs text-[var(--d-bad)]">{issue.line}. sor, {issue.column}. oszlop · {issue.code}</span>
+                <div>{issue.message}</div>
+                {issue.hint && <div className="whitespace-pre-line text-xs text-[var(--d-muted)]"><span className="font-semibold">Javaslat:</span> {issue.hint}</div>}
+              </li>
             ))}
           </ul>
         </>
@@ -107,8 +111,11 @@ function Result({ outcome, passed }: { outcome: Outcome; passed: boolean | null 
           {outcome.snapshot.error ? (
             <p>
               <span className="font-mono font-semibold text-[var(--d-bad)]">{outcome.snapshot.error.code}</span>
-              <span className="text-[var(--d-muted)]"> · {outcome.snapshot.error.line}. sor — </span>
+              <span className="text-[var(--d-muted)]"> · {outcome.snapshot.error.line}. sor, {outcome.snapshot.error.column}. oszlop — </span>
               {outcome.snapshot.error.message}
+              {outcome.snapshot.error.hint && (
+                <span className="block whitespace-pre-line text-xs text-[var(--d-muted)]"><span className="font-semibold">Javaslat:</span> {outcome.snapshot.error.hint}</span>
+              )}
             </p>
           ) : (
             <p className="text-[var(--d-good)]">Hiba nélkül lefutott.</p>

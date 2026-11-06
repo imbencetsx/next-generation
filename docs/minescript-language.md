@@ -31,6 +31,19 @@ The PDF remains authoritative. Do not change expectations merely to match curren
   direction, and explored cells. Slow playback belongs in the UI, not the engine.
 - The initial map must remain available unchanged for the next run.
 
+## Engine structure and diagnostics
+
+- `lib/syntax.ts` is the only parser. One pass scans lines, tokenizes, builds blocks
+  (recovering from errors so one mistake does not cascade), and — only when there is
+  no syntax error — compiles the blocks into a flat instruction list.
+- `lib/interpreter.ts` runs that list with a program counter. `if`/`while` carry
+  `whenTrue`/`whenFalse` targets, a taken `else` is its own counted instruction, and
+  an empty `while` body points back to the `while` itself, so every condition check
+  is one processed line. `step()` returns a `StepEvent` (cells entered, printed text).
+- Every syntax and runtime problem is a coded `Diagnostic` with an exact column span,
+  usually a hint, and related lines. The full contract is
+  [diagnostics.md](diagnostics.md).
+
 ## Terminology
 
 | Term | Meaning |

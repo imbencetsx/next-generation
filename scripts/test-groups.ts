@@ -1,6 +1,7 @@
 /** Explicit dependencies: do not import application code to decide what to test. */
 export const GROUPS = {
   syntax: ['tests/syntax'],
+  diagnostics: ['tests/diagnostics'],
   maps: ['tests/maps'],
   parser: ['tests/interpreter/control.test.ts', 'tests/syntax'],
   semantics: ['tests/interpreter/semantics.test.ts', 'tests/interpreter/errors.test.ts'],
@@ -11,14 +12,14 @@ export const GROUPS = {
   scenarios: ['tests/scenarios'],
   docs: ['tests/docs'],
 } as const;
-const ENGINE = ['tests/interpreter', 'tests/scenarios', 'tests/docs'];
+const ENGINE = ['tests/interpreter', 'tests/scenarios', 'tests/docs', 'tests/diagnostics'];
 export function relatedTests(paths: string[]): { tests: string[]; unknown: string[]; ui: string[] } {
   const tests = new Set<string>();
   const unknown: string[] = [], ui: string[] = [];
   for (const original of paths) {
     const path = original.replace(/^\.\//, '').replaceAll('\\', '/');
     let selected: readonly string[] = [];
-    if (path === 'lib/minescript.ts') selected = ['tests/syntax', ...ENGINE];
+    if (['lib/minescript.ts', 'lib/syntax.ts', 'lib/diagnostics.ts'].includes(path)) selected = ['tests/syntax', ...ENGINE];
     else if (path === 'lib/interpreter.ts') selected = ENGINE;
     else if (path === 'lib/robot-map.ts') selected = ['tests/maps', ...ENGINE];
     else if (path.startsWith('lib/docs/') || path.startsWith('components/docs/') || path.startsWith('app/docs/')) selected = GROUPS.docs;

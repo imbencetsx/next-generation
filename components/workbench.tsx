@@ -35,7 +35,9 @@ export default function Workbench() {
   const { snapshot, locked } = simulation;
   const activeLine: ActiveLine =
     snapshot.line && (snapshot.status === "running" || snapshot.status === "error")
-      ? { line: snapshot.line, tone: snapshot.status === "error" ? "error" : "run" }
+      ? snapshot.status === "error" && snapshot.error
+        ? { line: snapshot.error.line, tone: "error", column: snapshot.error.column, endColumn: snapshot.error.endColumn }
+        : { line: snapshot.line, tone: "run" }
       : null;
 
   const lineCount = code.split("\n").length;
@@ -141,14 +143,21 @@ export default function Workbench() {
             ) : (
               <ul className="space-y-0.5">
                 {issues.map((issue, index) => (
-                  <li key={index}>
+                  <li key={index} className="rounded px-2 py-1 hover:bg-[#f2f5fc]">
                     <button
-                      className="w-full rounded px-2 py-1 text-left text-sm hover:bg-[#f2f5fc] focus-visible:outline-2 focus-visible:outline-[#4868d9]"
-                      onClick={() => editor.current?.focusLine(issue.line)}
+                      className="w-full text-left text-sm focus-visible:outline-2 focus-visible:outline-[#4868d9]"
+                      onClick={() => editor.current?.focusLine(issue.line, issue.column)}
                     >
                       <span className="mr-2 font-mono text-xs text-[#c84848]">Ln {issue.line}:{issue.column}</span>
+                      <span className="mr-2 rounded bg-[#fdecec] px-1 font-mono text-[10px] text-[#a33a3a]">{issue.code}</span>
                       {issue.message}
                     </button>
+                    {issue.hint && <p className="mt-0.5 whitespace-pre-line pl-1 text-xs text-[#65738a]"><span className="font-semibold">Hint:</span> {issue.hint}</p>}
+                    {issue.related?.map((item) => (
+                      <button key={item.line + item.message} className="block pl-1 text-xs text-[#4666ce] underline" onClick={() => editor.current?.focusLine(item.line)}>
+                        Line {item.line}: {item.message}
+                      </button>
+                    ))}
                   </li>
                 ))}
               </ul>
@@ -172,7 +181,7 @@ export default function Workbench() {
         </div>
 
         <aside className="min-h-0 min-w-0 lg:overflow-y-auto" aria-label="Simulator">
-          <Simulator simulation={simulation} firstIssueLine={issues[0]?.line ?? null} onJump={(line) => editor.current?.focusLine(line)} />
+          <Simulator simulation={simulation} firstIssue={issues[0] ?? null} onJump={(line, column) => editor.current?.focusLine(line, column)} />
         </aside>
       </main>
     </div>

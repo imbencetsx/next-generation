@@ -31,6 +31,7 @@ Unknown new modules need a dependency mapping or an explicit test group.
 | Reset, snapshots, independent machines | `bun run test:state` | State isolation, one-line stepping, terminal stability |
 | Hard combined problems | `bun run test:scenarios` | Collector, algorithms, nested loops, 64 serpentine sweeps, symmetry |
 | Docs examples and their expectations | `bun run test:docs` | Every DOC_EXAMPLES entry, negative expectation-matcher cases |
+| Rich diagnostics and stepping | `bun run test:diagnostics` | Every syntax/runtime code, hand-counted spans, hints/related lines, recovery, nextLine, StepEvent, map error lines |
 | Test selection logic | `bun run test:tooling` | Dependency selection, deduplication, unknown-file guard |
 | Interpreter broadly | `bun run test:interpreter` | All interpreter unit/contract groups |
 | Full engine baseline | `bun test tests` | All of the above; use for broad changes, harness/config edits, releases |
@@ -45,6 +46,10 @@ bun test ./tests/interpreter/limits.test.ts --watch
 
 Use the related-file selector for changed production dependencies: changing the
 validator affects the parser/interpreter/docs, not only standalone syntax tests.
+`lib/syntax.ts` and `lib/diagnostics.ts` select the same syntax, engine and diagnostics
+closure as `lib/minescript.ts`. Interpreter and map-model changes also include
+`tests/diagnostics`; map changes additionally include map parsing tests.
+
 A focused group is appropriate when investigating a specific behavior or editing
 that test file. Changes confined to prose do not require a full engine run.
 
@@ -118,3 +123,13 @@ Do not reduce assertions to hit an arbitrary duration target.
 
 For application/config changes, AGENTS.md still requires lint, typecheck, and build.
 Those checks are separate from the fast conformance runner.
+
+## Diagnostics contracts
+
+`tests/diagnostics/{syntax,runtime,engine}.test.ts` follow [diagnostics.md](diagnostics.md).
+Spans are 1-based and end-exclusive; expected columns are counted from the source,
+not copied from engine output. Assertions check key message/hint contents rather
+than full prose. Recovery cases assert the complete ordered issue list and parser
+parity. Runtime tests use the shared bounded harness. Stepping tests explicitly
+check the next instruction and returned events, including partial motion (D3).
+These tests do not verify editor highlighting or any other browser behavior.
