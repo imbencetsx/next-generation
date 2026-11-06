@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // A Convex CLI generálja.
+    "convex/_generated/**",
   ]),
 ]);
 

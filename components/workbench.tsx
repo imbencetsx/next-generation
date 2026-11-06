@@ -5,24 +5,34 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useRef, useState, type ChangeEvent } from "react";
-import { AlertCircle, BookOpen, CheckCircle2, Download, FilePlus2, Upload, WrapText } from "lucide-react";
+import { AlertCircle, BookOpen, CheckCircle2, Download, FileCode2, FilePlus2, Lock, Upload, WrapText } from "lucide-react";
+import UserMenu from "@/components/auth/user-menu";
+import LanguageSwitch from "@/components/language-switch";
+import Logo from "@/components/logo";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import CodeEditor, { type ActiveLine, type EditorHandle } from "@/components/code-editor";
 import RunConsole from "@/components/run-console";
 import Simulator from "@/components/simulator";
 import { useSimulation } from "@/components/use-simulation";
+import { useI18n } from "@/i18n/i18n-provider";
 import { EXAMPLES, validateMineScript } from "@/lib/minescript";
 
+// A szintaxis nem fordítandó; a leírás a szótárból jön.
 const REFERENCE = [
-  ["set <name> to <expr>", "Assign a value, isThere <v>, not <v>, or <v> <op> <v>"],
-  ["step forward <v>", "Move the robot forward"],
-  ["turn by <v>", "Rotate the robot"],
-  ["mine here", "Mine the current cell"],
-  ["print <v>", "Output a value"],
-  ["if <v>  /  else", "Conditional block (indent 2 spaces)"],
-  ["while <v>", "Loop block (indent 2 spaces)"],
+  ["set <name> to <expr>", "set"],
+  ["step forward <v>", "step"],
+  ["turn by <v>", "turn"],
+  ["mine here", "mine"],
+  ["print <v>", "print"],
+  ["if <v>  /  else", "if"],
+  ["while <v>", "while"],
 ] as const;
 
 export default function Workbench() {
+  const { t } = useI18n();
   const params = useSearchParams();
   const sharedCode = params.get("code");
   const [code, setCode] = useState(sharedCode ?? EXAMPLES[0].code);
@@ -75,46 +85,61 @@ export default function Workbench() {
   }
 
   return (
-    <div className="flex h-dvh flex-col bg-[#f6f7fb] text-[#34445b]">
-      <header className="flex flex-wrap items-center gap-3 border-b border-[#dfe4ec] bg-white px-4 py-3">
-        <h1 className="text-base font-semibold tracking-tight">MineScript Editor</h1>
-        <span className="rounded bg-[#eef1fb] px-2 py-0.5 font-mono text-xs text-[#4666ce]">{filename}</span>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          <label className="sr-only" htmlFor="example">Load example</label>
-          <select
-            id="example"
-            className="btn"
-            disabled={locked}
-            value=""
-            onChange={loadExample}
-          >
-            <option value="" disabled>Load example…</option>
-            {EXAMPLES.map((example) => (
-              <option key={example.filename} value={example.filename}>{example.name}</option>
-            ))}
-          </select>
-          <button className="btn" disabled={locked} onClick={newFile}>
-            <FilePlus2 size={16} aria-hidden /> New
-          </button>
-          <button className="btn" disabled={locked} onClick={() => fileInput.current?.click()}>
-            <Upload size={16} aria-hidden /> Import
-          </button>
-          <input ref={fileInput} type="file" accept=".mine,.txt,text/plain" hidden onChange={(event) => importFile(event.target.files?.[0])} />
-          <button className="btn" onClick={exportFile}>
-            <Download size={16} aria-hidden /> Export
-          </button>
-          <Link className="btn" href="/docs">
-            <BookOpen size={16} aria-hidden /> Docs
-          </Link>
-          <button className="btn" aria-pressed={wrap} onClick={() => setWrap((value) => !value)}>
-            <WrapText size={16} aria-hidden /> Wrap
-          </button>
+    <div className="app-ui flex h-dvh flex-col">
+      <header className="topbar">
+        <div className="flex min-h-[68px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-1.5">
+          <h1 className="flex">
+            <Logo />
+          </h1>
+          {/* Telefonon: logó és fiók az első sorban, a fájlműveletek alatta teljes szélességben. */}
+          <div className="order-3 flex w-full flex-wrap items-center gap-1.5 sm:order-2 sm:ml-auto sm:w-auto">
+            <label className="sr-only" htmlFor="example">{t.editor.loadExample}</label>
+            <NativeSelect id="example" disabled={locked} value="" onChange={loadExample}>
+              <NativeSelectOption value="" disabled>{t.editor.loadExample}</NativeSelectOption>
+              {EXAMPLES.map((example) => (
+                <NativeSelectOption key={example.filename} value={example.filename}>{t.editor.examples[example.filename] ?? example.name}</NativeSelectOption>
+              ))}
+            </NativeSelect>
+            <Button variant="ghost" disabled={locked} onClick={newFile}>
+              <FilePlus2 aria-hidden /> <span className="max-sm:sr-only">{t.editor.new}</span>
+            </Button>
+            <Button variant="ghost" disabled={locked} onClick={() => fileInput.current?.click()}>
+              <Upload aria-hidden /> <span className="max-sm:sr-only">{t.editor.import}</span>
+            </Button>
+            <input ref={fileInput} type="file" accept=".mine,.txt,text/plain" hidden onChange={(event) => importFile(event.target.files?.[0])} />
+            <Button variant="ghost" onClick={exportFile}>
+              <Download aria-hidden /> <span className="max-sm:sr-only">{t.editor.export}</span>
+            </Button>
+            <Link className={buttonVariants({ variant: "ghost" })} data-slot="button" data-variant="ghost" href="/docs">
+              <BookOpen aria-hidden /> <span className="max-sm:sr-only">{t.editor.docs}</span>
+            </Link>
+          </div>
+          <div className="order-2 ml-auto flex items-center gap-2 sm:order-3 sm:ml-0">
+            <LanguageSwitch />
+            <span className="mx-1 hidden h-6 w-px bg-border sm:block" aria-hidden />
+            <UserMenu />
+          </div>
         </div>
       </header>
 
       <main className="grid min-h-0 flex-1 gap-3 overflow-y-auto p-3 lg:grid-cols-2 lg:overflow-hidden">
-        <div className="flex min-h-0 min-w-0 flex-col gap-3">
-          <section className="flex min-h-[320px] min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-[#dfe4ec] bg-white">
+        <div className="flex min-w-0 flex-col gap-3 lg:min-h-0">
+          <Card role="region" aria-label={t.editor.region} className="min-h-[320px] min-w-0 flex-1 gap-0 py-0">
+            <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+              <span className="flex min-w-0 items-center gap-1.5 font-mono text-xs">
+                <FileCode2 size={14} className="shrink-0 text-muted-foreground" aria-hidden />
+                <span className="truncate">{filename}</span>
+              </span>
+              <span
+                className={`ml-auto flex shrink-0 items-center gap-1.5 text-xs ${issues.length ? "text-brick-text" : "text-muted-foreground"}`}
+              >
+                {issues.length ? <AlertCircle size={14} aria-hidden /> : <CheckCircle2 size={14} aria-hidden />}
+                {issues.length ? t.editor.problemCount(issues.length) : t.editor.noSyntaxErrors}
+              </span>
+              <Button variant="outline" size="sm" aria-pressed={wrap} onClick={() => setWrap((value) => !value)}>
+                <WrapText aria-hidden /> {t.editor.wrap}
+              </Button>
+            </div>
             <div className="min-h-0 flex-1">
               <CodeEditor
                 value={code}
@@ -124,67 +149,70 @@ export default function Workbench() {
                 wrap={wrap}
                 readOnly={locked}
                 activeLine={activeLine}
+                label={t.editor.sourceLabel}
               />
             </div>
-            <footer className="flex items-center gap-4 border-t border-[#dfe4ec] px-4 py-1.5 font-mono text-xs text-[#65738a]">
-              <span>Ln {cursor.line}, Col {cursor.column}</span>
-              <span>{lineCount} lines</span>
-              {locked && <span className="text-[#a66021]">Editing is locked while a run is in progress. Reset to edit.</span>}
-              <span className={`ml-auto flex items-center gap-1 ${issues.length ? "text-[#c84848]" : "text-[#2f8f5b]"}`}>
-                {issues.length ? <AlertCircle size={14} aria-hidden /> : <CheckCircle2 size={14} aria-hidden />}
-                {issues.length ? `${issues.length} problem${issues.length > 1 ? "s" : ""}` : "No syntax errors"}
-              </span>
+            <footer className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border px-3 py-1.5 font-mono text-[11px] text-muted-foreground">
+              <span className="whitespace-nowrap">{t.editor.cursor(cursor.line, cursor.column)}</span>
+              <span className="whitespace-nowrap">{t.editor.lineCount(lineCount)}</span>
+              {locked && (
+                <span className="ml-auto flex items-center gap-1 text-foreground">
+                  <Lock size={12} aria-hidden /> {t.editor.locked}
+                </span>
+              )}
             </footer>
-          </section>
+          </Card>
 
           <div className="grid shrink-0 gap-3 md:h-56 md:grid-cols-2">
-          <section className="min-h-0 overflow-y-auto rounded-lg border border-[#dfe4ec] bg-white p-3" aria-labelledby="problems">
-            <h2 id="problems" className="mb-1 text-sm font-semibold">Problems</h2>
-            {issues.length === 0 ? (
-              <p className="text-sm text-[#65738a]">Nothing to fix. The program is syntactically valid.</p>
-            ) : (
-              <ul className="space-y-0.5">
-                {issues.map((issue, index) => (
-                  <li key={index} className="rounded px-2 py-1 hover:bg-[#f2f5fc]">
-                    <button
-                      className="w-full text-left text-sm focus-visible:outline-2 focus-visible:outline-[#4868d9]"
-                      onClick={() => editor.current?.focusLine(issue.line, issue.column)}
-                    >
-                      <span className="mr-2 font-mono text-xs text-[#c84848]">Ln {issue.line}:{issue.column}</span>
-                      <span className="mr-2 rounded bg-[#fdecec] px-1 font-mono text-[10px] text-[#a33a3a]">{issue.code}</span>
-                      {issue.message}
-                    </button>
-                    {issue.hint && <p className="mt-0.5 whitespace-pre-line pl-1 text-xs text-[#65738a]"><span className="font-semibold">Hint:</span> {issue.hint}</p>}
-                    {issue.related?.map((item) => (
-                      <button key={item.line + item.message} className="block pl-1 text-xs text-[#4666ce] underline" onClick={() => editor.current?.focusLine(item.line)}>
-                        Line {item.line}: {item.message}
+            <Card role="region" aria-labelledby="problems" className="min-h-0 gap-0 overflow-y-auto p-3">
+              <h2 id="problems" className="panel-title mb-2 flex items-center gap-2">
+                {t.editor.problems}
+                {issues.length > 0 && <Badge variant="destructive" className="font-mono tracking-normal">{issues.length}</Badge>}
+              </h2>
+              {issues.length === 0 ? (
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle2 size={14} aria-hidden /> <span className="font-read">{t.editor.nothingToFix}</span>
+                </p>
+              ) : (
+                <ul className="space-y-1">
+                  {issues.map((issue, index) => (
+                    <li key={index} className="rounded border border-transparent px-2 py-1.5 hover:border-border hover:bg-accent/40">
+                      <button
+                        className="w-full text-left text-sm"
+                        onClick={() => editor.current?.focusLine(issue.line, issue.column)}
+                      >
+                        <span className="mr-2 font-mono text-xs text-brick-text">Ln {issue.line}:{issue.column}</span>
+                        <Badge variant="destructive" className="mr-2 h-4 px-1 font-mono text-[10px]">{issue.code}</Badge>
+                        <span className="font-read">{issue.message}</span>
                       </button>
-                    ))}
-                  </li>
-                ))}
-              </ul>
-            )}
-            <details className="mt-2 border-t border-[#eef1f6] pt-2">
-              <summary className="cursor-pointer text-sm font-semibold">Language reference</summary>
-              <dl className="mt-2 space-y-1.5 text-sm">
-                {REFERENCE.map(([syntax, description]) => (
-                  <div key={syntax}>
-                    <dt className="font-mono text-xs text-[#8656bd]">{syntax}</dt>
-                    <dd className="text-[#65738a]">{description}</dd>
-                  </div>
-                ))}
-              </dl>
-              <p className="mt-2 text-xs text-[#65738a]">
-                Values are variables, <code>true</code>/<code>false</code>, or integers 0–100. Operators: + - * = &lt;&gt; &lt; &lt;= &gt; &gt;= and or.
-                isThere: 0 empty, 1 wall, 2 gold. turn by turns left.
-              </p>
-            </details>
-          </section>
-          <RunConsole snapshot={snapshot} />
+                      {issue.hint && <p className="mt-1 whitespace-pre-line pl-1 font-read text-[13px] text-muted-foreground"><span className="text-foreground">{t.editor.hint}</span> {issue.hint}</p>}
+                      {issue.related?.map((item) => (
+                        <button key={item.line + item.message} className="block pl-1 text-xs underline underline-offset-4" onClick={() => editor.current?.focusLine(item.line)}>
+                          {t.editor.relatedLine(item.line)} {item.message}
+                        </button>
+                      ))}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <details className="mt-3 border-t border-border pt-2">
+                <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">{t.editor.reference}</summary>
+                <dl className="mt-2 space-y-1.5 text-sm">
+                  {REFERENCE.map(([syntax, key]) => (
+                    <div key={syntax}>
+                      <dt className="font-mono text-xs text-foreground">{syntax}</dt>
+                      <dd className="font-read text-muted-foreground">{t.editor.referenceItems[key]}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <p className="mt-2 font-read text-[13px] text-muted-foreground">{t.editor.referenceNote}</p>
+              </details>
+            </Card>
+            <RunConsole snapshot={snapshot} />
           </div>
         </div>
 
-        <aside className="min-h-0 min-w-0" aria-label="Simulator">
+        <aside className="min-w-0 lg:min-h-0" aria-label={t.sim.region}>
           <Simulator simulation={simulation} firstIssue={issues[0] ?? null} onJump={(line, column) => editor.current?.focusLine(line, column)} />
         </aside>
       </main>

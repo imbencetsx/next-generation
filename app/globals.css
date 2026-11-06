@@ -1,50 +1,209 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
+@custom-variant dark (&:is(.dark *));
+
+/* ------------------------------------------------------------------ téma (larp-stílusú pixel UI, csak sötét)
+   Két szín: fehér (szöveg, szerkezet, kiválasztott állapot) és arany (#F0A700, a gold_chips sprite-ból) csak
+   a fő műveletre, a fókuszra, a futó sorra és a kulcsszavakra. A tégla (#8C342B, wall sprite) kizárólag hibát jelez;
+   szövegként túl sötét (2:1), ezért szöveghez a --brick-text kell. A shadcn komponensek ezekből a tokenekből dolgoznak. */
 :root {
-  --background: #f6f7fb;
-  --foreground: #34445b;
-  color-scheme: light;
+  color-scheme: dark;
+  --background: #141414;
+  --foreground: #eae7dd;
+  --card: #1b1b1b;
+  --card-foreground: #eae7dd;
+  --popover: #212121;
+  --popover-foreground: #eae7dd;
+  --primary: #f0a700;
+  --primary-foreground: #1a1206;
+  --secondary: #232323;
+  --secondary-foreground: #eae7dd;
+  --muted: #1f1f1f;
+  --muted-foreground: #9c968a;
+  --accent: #282828;
+  --accent-foreground: #eae7dd;
+  --destructive: #8c342b;
+  --border: #2d2d2d;
+  --input: #3b3b3b;
+  --ring: #f0a700;
+  --radius: 4px;
+  --code: #171717;
+  --code-highlight: #211e19;
+  --gold: #f0a700;
+  --brick: #8c342b;
+  --brick-text: #e8806f;
+  /* A felső sáv alatti vonal: a szövegszín, visszafogottan. */
+  --rule: rgb(234 231 221 / 0.24);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-code: var(--code);
+  --color-gold: var(--gold);
+  --color-brick: var(--brick);
+  --color-brick-text: var(--brick-text);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-tiny);
+  --font-pixel: var(--font-pixel);
+  --font-read: var(--font-read);
+  --font-tiny: var(--font-tiny);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+  }
+  button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer; }
+}
+
+/* Komponensréteg: a Tailwind utility-osztályok felülírhatják. */
+@layer components {
+  .app-ui {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-pixel), monospace;
+    /* A Pixelify „fi” ligatúrája „A”-nak látszik. */
+    font-variant-ligatures: none;
+  }
+  .app-ui ::selection { background: var(--primary); color: var(--primary-foreground); }
+  .app-ui :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  .app-ui code, .app-ui kbd { font-family: var(--font-geist-mono), monospace; }
+  .app-ui select option { background: var(--popover); color: var(--foreground); }
+  /* Beviteli mezők és legördülők nem pixelesek: a beírt szövegnek jól olvashatónak kell lennie. */
+  .app-ui :is([data-slot="input"], [data-slot="native-select"], textarea) { font-family: var(--font-read), system-ui, sans-serif; }
+
+  /* Felső sáv: bal oldalt a pixel logó (public/logo.svg), alatta világos vonal. */
+  .topbar { border-bottom: 1px solid var(--rule); background: var(--background); }
+  /* Panelcím: kisbetűs, csendes; a tartalom számít, nem a címke. */
+  .panel-title { font-size: 14px; line-height: 1.2; color: var(--foreground); }
+  .display { font-family: var(--font-tiny), monospace; font-weight: 400; line-height: 1.1; }
+}
+
+/* ------------------------------------------------------------------ pixel keretek (a larp mintájára)
+   Kilencszeletes SVG keret (public/artwork/borders), így minden sarok a pixelrácson marad bármilyen méretnél;
+   a lépcsős clip-path levágja a háttér festését a sarokbevágásokból. A data-slot a shadcn komponensekből jön. */
+:root {
+  --pixel-frame-neutral: url("/artwork/borders/neutral-soft.svg");
+  --pixel-frame-input-soft: url("/artwork/borders/input-soft.svg");
+  --pixel-frame-input: url("/artwork/borders/input.svg");
+  --pixel-frame-primary: url("/artwork/borders/primary.svg");
+  --pixel-frame-focus: url("/artwork/borders/focus.svg");
+  --pixel-frame-danger: url("/artwork/borders/danger.svg");
+  --pixel-frame-danger-soft: url("/artwork/borders/danger-soft.svg");
+  --pixel-frame-light: url("/artwork/borders/light.svg");
+}
+.app-ui :is([data-slot="card"], [data-slot="button"], [data-slot="badge"], [data-slot="input"], [data-slot="native-select"], .pixel-frame) {
+  --pixel-unit: 1px;
+  --pixel-frame: var(--pixel-frame-input-soft);
+  --pixel-cutout: polygon(
+    calc(4 * var(--pixel-unit)) 0, calc(100% - 4 * var(--pixel-unit)) 0,
+    calc(100% - 4 * var(--pixel-unit)) var(--pixel-unit), calc(100% - 2 * var(--pixel-unit)) var(--pixel-unit),
+    calc(100% - 2 * var(--pixel-unit)) calc(2 * var(--pixel-unit)), calc(100% - var(--pixel-unit)) calc(2 * var(--pixel-unit)),
+    calc(100% - var(--pixel-unit)) calc(4 * var(--pixel-unit)), 100% calc(4 * var(--pixel-unit)),
+    100% calc(100% - 4 * var(--pixel-unit)), calc(100% - var(--pixel-unit)) calc(100% - 4 * var(--pixel-unit)),
+    calc(100% - var(--pixel-unit)) calc(100% - 2 * var(--pixel-unit)), calc(100% - 2 * var(--pixel-unit)) calc(100% - 2 * var(--pixel-unit)),
+    calc(100% - 2 * var(--pixel-unit)) calc(100% - var(--pixel-unit)), calc(100% - 4 * var(--pixel-unit)) calc(100% - var(--pixel-unit)),
+    calc(100% - 4 * var(--pixel-unit)) 100%, calc(4 * var(--pixel-unit)) 100%,
+    calc(4 * var(--pixel-unit)) calc(100% - var(--pixel-unit)), calc(2 * var(--pixel-unit)) calc(100% - var(--pixel-unit)),
+    calc(2 * var(--pixel-unit)) calc(100% - 2 * var(--pixel-unit)), var(--pixel-unit) calc(100% - 2 * var(--pixel-unit)),
+    var(--pixel-unit) calc(100% - 4 * var(--pixel-unit)), 0 calc(100% - 4 * var(--pixel-unit)),
+    0 calc(4 * var(--pixel-unit)), var(--pixel-unit) calc(4 * var(--pixel-unit)),
+    var(--pixel-unit) calc(2 * var(--pixel-unit)), calc(2 * var(--pixel-unit)) calc(2 * var(--pixel-unit)),
+    calc(2 * var(--pixel-unit)) var(--pixel-unit), calc(4 * var(--pixel-unit)) var(--pixel-unit)
+  );
+  border-style: solid;
+  border-color: transparent;
+  border-radius: 0;
+  border-image-source: var(--pixel-frame);
+  border-image-slice: 4;
+  border-image-width: calc(4 * var(--pixel-unit));
+  border-image-repeat: stretch;
+  clip-path: var(--pixel-cutout);
+}
+/* A kártyák vastagabb (2px-es) kerettel, gyűrű nélkül. */
+.app-ui :is([data-slot="card"], .pixel-frame) { --pixel-unit: 2px; --pixel-frame: var(--pixel-frame-neutral); border-width: 1px; box-shadow: none; }
+.app-ui [data-slot="card"] { --tw-ring-shadow: 0 0 #0000; }
+.app-ui .pixel-frame[data-tone="danger"] { --pixel-frame: var(--pixel-frame-danger-soft); }
+.app-ui :is([data-slot="input"], [data-slot="native-select"]) { --pixel-frame: var(--pixel-frame-input); }
+.app-ui [data-slot="button"][data-variant="default"] { --pixel-frame: var(--pixel-frame-primary); }
+.app-ui [data-slot="button"][data-variant="destructive"] { --pixel-frame: var(--pixel-frame-danger); }
+.app-ui [data-slot="button"][data-variant="outline"] { --pixel-frame: var(--pixel-frame-input); }
+.app-ui [data-slot="button"]:is([data-variant="ghost"], [data-variant="link"]) { --pixel-frame: none; clip-path: none; }
+.app-ui [data-slot="badge"][data-variant="destructive"] { --pixel-frame: var(--pixel-frame-danger-soft); }
+.app-ui [data-slot="input"][aria-invalid="true"] { --pixel-frame: var(--pixel-frame-danger); }
+/* A fókusz a vágott sarkokon belül marad, különben levágná a clip-path. */
+.app-ui :is([data-slot="button"], [data-slot="native-select"]):focus-visible,
+.app-ui [data-slot="input"]:focus-visible {
+  --pixel-frame: var(--pixel-frame-focus);
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--ring);
+}
+
+/* Pixeles gombok: alsó perem és egypixeles fényes él; lenyomva lesüllyed. */
+.app-ui [data-slot="button"]:not([data-variant="ghost"]):not([data-variant="link"]) {
+  --button-focus: inset 0 0 0 0 transparent;
+  --button-lip: 3px;
+  box-shadow: var(--button-focus), inset 0 1px 0 rgb(255 255 255 / 18%), inset 1px 0 0 rgb(255 255 255 / 5%),
+    inset 0 calc(-1 * var(--button-lip)) 0 rgb(0 0 0 / 22%), inset -1px 0 0 rgb(0 0 0 / 10%);
+  transform: translateY(0);
+  transition: transform 100ms steps(2, end), box-shadow 100ms ease-out, filter 100ms ease-out;
+}
+.app-ui [data-slot="button"]:is([data-variant="outline"], [data-variant="secondary"]) { --button-lip: 2px; }
+.app-ui [data-slot="button"]:not([data-variant="ghost"]):not([data-variant="link"]):focus-visible { --button-focus: inset 0 0 0 2px var(--ring); }
+@media (hover: hover) {
+  .app-ui [data-slot="button"]:not([data-variant="ghost"]):not([data-variant="link"]):not(:disabled):not([aria-disabled="true"]):hover {
+    transform: translateY(-1px);
+    filter: brightness(1.04);
+  }
+}
+.app-ui [data-slot="button"]:not([data-variant="ghost"]):not([data-variant="link"]):not(:disabled):not([aria-disabled="true"]):is(:active, [data-pressed]) {
+  transform: translateY(2px);
+  filter: brightness(0.98);
+  box-shadow: var(--button-focus), inset 0 1px 0 rgb(0 0 0 / 14%), inset 0 -1px 0 rgb(0 0 0 / 12%);
+}
+.app-ui [data-slot="button"]:not([data-variant="ghost"]):not([data-variant="link"]):is(:disabled, [aria-disabled="true"]) {
+  transform: none;
+  filter: none;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%), inset 0 -1px 0 rgb(0 0 0 / 10%);
+}
+.app-ui [data-slot="button"]:is([data-variant="ghost"], [data-variant="link"]):not(:disabled):active { transform: translateY(1px); }
+/* Bekapcsolt váltógomb (aria-pressed): fehér kerettel és világosabb háttérrel; az arany a fő műveleté. */
+.app-ui [data-slot="button"][aria-pressed="true"] { --pixel-frame: var(--pixel-frame-light); background: var(--accent); color: var(--foreground); }
+@media (prefers-reduced-motion: reduce) {
+  .app-ui [data-slot="button"] { transition: none; }
 }
 
 .code-editor,
 .code-editor .cm-editor {
   height: 100%;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 34px;
-  padding: 0 12px;
-  border: 1px solid #dfe4ec;
-  border-radius: 6px;
-  background: #fff;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background-color 0.15s;
-}
-.btn:hover { background: #f2f5fc; }
-.btn[aria-pressed="true"] { background: #eef1fb; border-color: #4666ce; color: #4666ce; }
-.btn:focus-visible { outline: 2px solid #4868d9; outline-offset: 2px; }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-primary { background: #4666ce; border-color: #4666ce; color: #fff; }
-.btn-primary:hover { background: #3b58b8; }
-.cell-fog {
-  background: repeating-linear-gradient(45deg, #e4e8f0, #e4e8f0 4px, #edf0f6 4px, #edf0f6 8px);
 }
 
 /* ------------------------------------------------------------------ docs (always dark) */

@@ -30,34 +30,48 @@ const language = StreamLanguage.define({
     return "invalid";
   },
 });
+// Két szín, mint a felület többi részén: a kulcsszavak aranyak, minden más fehér vagy szürke árnyalat.
+// Az érték (szám, logikai) fehér, a változónév halványabb, a műveleti jel szürke; hibás jel téglaszínű.
 const highlight = HighlightStyle.define([
-  { tag: tags.keyword, color: "#8656bd" },
-  { tag: tags.bool, color: "#a66021" },
-  { tag: tags.number, color: "#a66021" },
-  { tag: tags.operator, color: "#65738a" },
-  { tag: tags.variableName, color: "#34445b" },
-  { tag: tags.special(tags.variableName), color: "#247d88" },
+  { tag: tags.keyword, color: "#f0a700" },
+  { tag: tags.bool, color: "#eae7dd", fontWeight: "600" },
+  { tag: tags.number, color: "#eae7dd", fontWeight: "600" },
+  { tag: tags.operator, color: "#8a857a" },
+  { tag: tags.variableName, color: "#c4bfb3" },
+  { tag: tags.special(tags.variableName), color: "#eae7dd", fontWeight: "600" },
+  { tag: tags.invalid, color: "#e8806f" },
 ]);
-const theme = EditorView.theme({
-  "&": { height: "100%", fontSize: "14px", backgroundColor: "#ffffff", color: "#34445b" },
-  ".cm-scroller": { fontFamily: "var(--font-geist-mono), monospace", lineHeight: "1.95", overflow: "auto" },
-  ".cm-content": { padding: "22px 0", minHeight: "100%", caretColor: "#4868d9" },
-  ".cm-line": { padding: "0 24px 0 10px" },
-  ".cm-gutters": { backgroundColor: "#ffffff", border: "none", color: "#9aa4b3", padding: "22px 0 0 12px" },
-  ".cm-lineNumbers .cm-gutterElement": { minWidth: "34px", paddingRight: "16px" },
-  ".cm-activeLine": { backgroundColor: "#f2f5fc" },
-  ".cm-activeLineGutter": { backgroundColor: "transparent", color: "#4666ce" },
-  ".cm-selectionBackground, &.cm-focused .cm-selectionBackground": { backgroundColor: "#dce5ff" },
-  "&.cm-focused": { outline: "none" },
-  ".cm-foldGutter": { width: "12px" },
-  ".cm-tooltip": { border: "1px solid #dfe4ec", borderRadius: "6px", backgroundColor: "#fff" },
-  ".cm-run-line": { backgroundColor: "#fff1c9", boxShadow: "inset 3px 0 0 #d99a1d" },
-  ".cm-error-line": { backgroundColor: "#fde8e8", boxShadow: "inset 3px 0 0 #c84848" },
-  ".cm-lintRange-error": { backgroundImage: "none", textDecoration: "underline wavy #c84848", textUnderlineOffset: "4px" },
-  ".cm-error-span": { textDecoration: "underline wavy #c84848", textUnderlineOffset: "4px", backgroundColor: "#f9d0d0", borderRadius: "2px" },
-  ".cm-diagnostic": { whiteSpace: "pre-line", maxWidth: "420px" },
-  ".cm-diagnosticSource": { fontFamily: "var(--font-geist-mono), monospace", opacity: "0.7" },
-});
+const theme = EditorView.theme(
+  {
+    "&": { height: "100%", fontSize: "14px", backgroundColor: "var(--code)", color: "var(--foreground)" },
+    ".cm-scroller": { fontFamily: "var(--font-geist-mono), monospace", lineHeight: "1.95", overflow: "auto" },
+    ".cm-content": { padding: "16px 0", minHeight: "100%", caretColor: "var(--primary)" },
+    ".cm-line": { padding: "0 24px 0 10px" },
+    ".cm-gutters": { backgroundColor: "var(--code)", border: "none", borderRight: "1px solid var(--border)", color: "#5e5950", paddingLeft: "8px" },
+    ".cm-lineNumbers .cm-gutterElement": { minWidth: "30px", paddingRight: "12px" },
+    ".cm-activeLine": { backgroundColor: "var(--code-highlight)" },
+    ".cm-activeLineGutter": { backgroundColor: "transparent", color: "var(--primary)" },
+    ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--primary)", borderLeftWidth: "2px" },
+    ".cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection": { backgroundColor: "rgba(240, 167, 0, 0.22)" },
+    ".cm-matchingBracket": { backgroundColor: "rgba(240, 167, 0, 0.22)", outline: "none" },
+    "&.cm-focused": { outline: "none" },
+    ".cm-foldGutter": { width: "12px" },
+    ".cm-foldPlaceholder": { backgroundColor: "var(--accent)", border: "1px solid var(--border)", color: "var(--muted-foreground)" },
+    ".cm-tooltip": { border: "1px solid var(--border)", borderRadius: "var(--radius)", backgroundColor: "var(--popover)", color: "var(--foreground)" },
+    ".cm-tooltip-autocomplete > ul > li[aria-selected]": { backgroundColor: "var(--accent)", color: "var(--primary)" },
+    ".cm-tooltip-autocomplete > ul": { fontFamily: "var(--font-geist-mono), monospace" },
+    ".cm-run-line": { backgroundColor: "rgba(240, 167, 0, 0.12)", boxShadow: "inset 3px 0 0 #f0a700" },
+    ".cm-error-line": { backgroundColor: "rgba(140, 52, 43, 0.35)", boxShadow: "inset 3px 0 0 #e8806f" },
+    ".cm-lintRange-error": { backgroundImage: "none", textDecoration: "underline wavy #e8806f", textUnderlineOffset: "4px" },
+    ".cm-error-span": { textDecoration: "underline wavy #e8806f", textUnderlineOffset: "4px", backgroundColor: "rgba(140, 52, 43, 0.5)", borderRadius: "2px" },
+    ".cm-diagnostic": { whiteSpace: "pre-line", maxWidth: "420px", fontFamily: "var(--font-geist-mono), monospace", fontSize: "12px" },
+    ".cm-diagnostic-error": { borderLeftColor: "#e8806f" },
+    ".cm-diagnosticSource": { opacity: "0.7" },
+    ".cm-panels": { backgroundColor: "var(--popover)", color: "var(--foreground)" },
+    ".cm-searchMatch": { backgroundColor: "rgba(234, 231, 221, 0.18)" },
+  },
+  { dark: true },
+);
 
 /** A kiemelt sor; futásidejű hibánál az oszloptartomány a hibás részt is megjelöli. */
 export type ActiveLine = { line: number; tone: "run" | "error"; column?: number; endColumn?: number } | null;
@@ -126,9 +140,11 @@ type Props = {
   wrap: boolean;
   readOnly?: boolean;
   activeLine?: ActiveLine;
+  /** A szerkesztőterület akadálymentes neve (a felület nyelvén). */
+  label: string;
 };
 
-export default function CodeEditor({ value, onChange, onCursor, editorRef, wrap, readOnly = false, activeLine = null }: Props) {
+export default function CodeEditor({ value, onChange, onCursor, editorRef, wrap, readOnly = false, activeLine = null, label }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const initialValue = useRef(value);
   const view = useRef<EditorView | null>(null);
@@ -160,7 +176,7 @@ export default function CodeEditor({ value, onChange, onCursor, editorRef, wrap,
           wrapCompartment.current.of([]),
           readOnlyCompartment.current.of(EditorState.readOnly.of(false)),
           activeLineField,
-          EditorView.contentAttributes.of({ "aria-label": "MineScript source code", spellcheck: "false" }),
+          EditorView.contentAttributes.of({ spellcheck: "false" }),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) callbacks.current.onChange(update.state.doc.toString());
             if (update.selectionSet || update.docChanged) {
@@ -208,6 +224,10 @@ export default function CodeEditor({ value, onChange, onCursor, editorRef, wrap,
       effects: readOnlyCompartment.current.reconfigure(EditorState.readOnly.of(readOnly)),
     });
   }, [readOnly]);
+
+  useEffect(() => {
+    view.current?.contentDOM.setAttribute("aria-label", label);
+  }, [label]);
 
   const highlightedLine = activeLine?.line ?? null;
   const highlightTone = activeLine?.tone;
