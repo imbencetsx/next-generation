@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { ComponentType } from "react";
+import { Suspense, type ComponentType } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DOC_PAGES, type DocSlug } from "@/lib/docs/nav";
@@ -32,7 +32,15 @@ export async function generateMetadata({ params }: PageProps<"/docs/[slug]">): P
   return page ? { title: `${page.title} · MineScript dokumentáció`, description: page.description } : {};
 }
 
-export default async function DocPage({ params }: PageProps<"/docs/[slug]">) {
+export default function DocPage({ params }: PageProps<"/docs/[slug]">) {
+  return (
+    <Suspense fallback={<p role="status" className="text-[var(--d-muted)]">Dokumentáció betöltése…</p>}>
+      <DocArticle params={params} />
+    </Suspense>
+  );
+}
+
+async function DocArticle({ params }: Pick<PageProps<"/docs/[slug]">, "params">) {
   const { slug } = await params;
   const page = findPage(slug);
   if (!page) notFound();
