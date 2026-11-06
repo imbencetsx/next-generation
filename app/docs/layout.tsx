@@ -1,27 +1,30 @@
 import Link from "next/link";
-import { BookOpen, Code2 } from "lucide-react";
+import { Code2 } from "lucide-react";
 import DocsSidebar from "@/components/docs/sidebar";
+import Logo from "@/components/logo";
+import { buttonVariants } from "@/components/ui/button";
 
 export default function DocsLayout({ children }: LayoutProps<"/docs">) {
   // A dokumentáció magyar; a gyökér <html> nyelve az alkalmazás felületéé.
   return (
-    <div lang="hu" className="docs flex min-h-dvh flex-1 flex-col">
+    <div lang="hu" className="app-ui docs flex min-h-dvh flex-1 flex-col">
       <a href="#docs-content" className="skip-link">Ugrás a tartalomra</a>
-      <header className="sticky top-0 z-10 border-b border-[var(--d-border)] bg-[var(--d-bg)]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
-          <Link href="/docs" className="flex items-center gap-2 font-semibold text-[var(--d-strong)] no-underline">
-            <BookOpen size={18} aria-hidden /> MineScript dokumentáció
+      <header className="topbar sticky top-0 z-20">
+        <div className="mx-auto flex min-h-[68px] max-w-6xl items-center gap-4 px-4 py-1.5">
+          <Link href="/docs" className="flex items-center gap-3" aria-label="MineScript dokumentáció, kezdőlap">
+            <Logo />
+            <span className="font-pixel text-[15px] text-muted-foreground max-sm:sr-only">Dokumentáció</span>
           </Link>
-          <Link href="/test" className="dbtn ml-auto">
-            <Code2 size={14} aria-hidden /> Szerkesztő
+          <Link href="/test" className={`${buttonVariants({ variant: "outline" })} ml-auto`} data-slot="button" data-variant="outline">
+            <Code2 aria-hidden /> Szerkesztő
           </Link>
         </div>
       </header>
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 lg:flex-row">
-        <aside className="lg:sticky lg:top-20 lg:w-60 lg:shrink-0 lg:self-start">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8 lg:flex-row lg:gap-12">
+        <aside className="lg:sticky lg:top-[96px] lg:w-60 lg:shrink-0 lg:self-start">
           <DocsSidebar />
         </aside>
-        <main id="docs-content" className="min-w-0 flex-1 pb-16">{children}</main>
+        <main id="docs-content" className="min-w-0 flex-1 pb-20">{children}</main>
       </div>
     </div>
   );

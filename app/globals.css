@@ -152,6 +152,8 @@
 .app-ui :is([data-slot="card"], .pixel-frame) { --pixel-unit: 2px; --pixel-frame: var(--pixel-frame-neutral); border-width: 1px; box-shadow: none; }
 .app-ui [data-slot="card"] { --tw-ring-shadow: 0 0 #0000; }
 .app-ui .pixel-frame[data-tone="danger"] { --pixel-frame: var(--pixel-frame-danger-soft); }
+.app-ui .pixel-frame[data-tone="light"] { --pixel-frame: var(--pixel-frame-light); }
+.app-ui a.pixel-frame:focus-visible { --pixel-frame: var(--pixel-frame-focus); outline: none; box-shadow: inset 0 0 0 2px var(--ring); }
 .app-ui :is([data-slot="input"], [data-slot="native-select"]) { --pixel-frame: var(--pixel-frame-input); }
 .app-ui [data-slot="button"][data-variant="default"] { --pixel-frame: var(--pixel-frame-primary); }
 .app-ui [data-slot="button"][data-variant="destructive"] { --pixel-frame: var(--pixel-frame-danger); }
@@ -206,89 +208,64 @@
   height: 100%;
 }
 
-/* ------------------------------------------------------------------ docs (always dark) */
-.docs {
-  --d-bg: #0d1117;
-  --d-panel: #161b22;
-  --d-border: #30363d;
-  --d-text: #c9d1d9;
-  --d-strong: #f0f6fc;
-  --d-muted: #8b949e;
-  --d-accent: #7aa2f7;
-  --d-good: #3fb950;
-  --d-bad: #f85149;
-  --d-warn: #d29922;
-  color-scheme: dark;
-  background: var(--d-bg);
-  color: var(--d-text);
-}
-.docs a { color: var(--d-accent); text-underline-offset: 3px; }
-.docs :focus-visible { outline: 2px solid var(--d-accent); outline-offset: 2px; border-radius: 4px; }
+/* ------------------------------------------------------------------ dokumentáció (az alkalmazás stílusában)
+   A lap .app-ui: pixeles keret és címek, de a folyószöveg Google Sans (font-read), a kód Geist Mono. */
 .docs .skip-link { position: absolute; left: -9999px; }
-.docs .skip-link:focus { left: 16px; top: 8px; z-index: 50; background: var(--d-panel); padding: 8px 12px; }
+.docs .skip-link:focus { left: 16px; top: 12px; z-index: 50; padding: 8px 12px; background: var(--primary); color: var(--primary-foreground); }
 
-.docs-prose { line-height: 1.7; font-size: 15px; }
-.docs-prose h1 { margin: 0 0 8px; font-size: 2rem; font-weight: 700; color: var(--d-strong); letter-spacing: -0.02em; }
-.docs-prose .lead { margin: 0; font-size: 1.05rem; color: var(--d-muted); }
-.docs-prose h2 { margin: 2.5rem 0 0.75rem; padding-top: 0.5rem; font-size: 1.4rem; font-weight: 650; color: var(--d-strong); scroll-margin-top: 80px; }
-.docs-prose h3 { margin: 1.75rem 0 0.5rem; font-size: 1.1rem; font-weight: 600; color: var(--d-strong); scroll-margin-top: 80px; }
+.docs-prose { font-family: var(--font-read), system-ui, sans-serif; font-size: 16px; line-height: 1.7; color: var(--foreground); }
+.docs-prose > p, .docs-prose > ul, .docs-prose > ol, .docs-prose .note-body { max-width: 72ch; }
+.docs-prose h1 { margin: 0; font-family: var(--font-tiny), monospace; font-size: clamp(34px, 5vw, 48px); font-weight: 400; line-height: 1.05; }
+.docs-prose .lead { margin: 12px 0 0; max-width: 60ch; font-size: 18px; color: var(--muted-foreground); }
+.docs-prose h2 {
+  margin: 3rem 0 0.75rem; padding-top: 1.5rem; border-top: 1px solid var(--border);
+  font-family: var(--font-pixel), monospace; font-size: 24px; font-weight: 500; line-height: 1.25; scroll-margin-top: 96px;
+}
+.docs-prose h3 { margin: 2rem 0 0.5rem; font-family: var(--font-pixel), monospace; font-size: 18px; font-weight: 500; scroll-margin-top: 96px; }
 .docs-prose p { margin: 0.75rem 0; }
 .docs-prose ul, .docs-prose ol { margin: 0.75rem 0; padding-left: 1.4rem; }
-.docs-prose ul { list-style: disc; }
+.docs-prose ul { list-style: square; }
 .docs-prose ol { list-style: decimal; }
-.docs-prose li { margin: 0.25rem 0; }
-.docs-prose strong { color: var(--d-strong); }
+.docs-prose li { margin: 0.3rem 0; }
+.docs-prose li::marker { color: var(--muted-foreground); }
+.docs-prose strong { font-weight: 600; }
+.docs-prose a:not([data-slot]) { color: var(--foreground); text-decoration: underline; text-underline-offset: 4px; }
+.docs-prose a:not([data-slot]):hover { text-decoration: none; }
 .docs-prose :not(pre) > code {
-  padding: 0.1em 0.35em; border-radius: 4px; background: #1f2630; border: 1px solid var(--d-border);
-  font-family: var(--font-geist-mono), monospace; font-size: 0.88em; color: #e6edf3;
+  padding: 0.1em 0.4em; border: 1px solid var(--border); background: var(--code);
+  font-family: var(--font-geist-mono), monospace; font-size: 0.86em;
 }
-.docs-prose table { width: 100%; margin: 1rem 0; border-collapse: collapse; font-size: 14px; display: block; overflow-x: auto; }
-.docs-prose th, .docs-prose td { padding: 8px 10px; border: 1px solid var(--d-border); text-align: left; vertical-align: top; }
-.docs-prose th { background: var(--d-panel); color: var(--d-strong); font-weight: 600; }
+.docs-prose table { display: block; width: 100%; margin: 1.25rem 0; overflow-x: auto; border-collapse: collapse; font-size: 15px; }
+.docs-prose th, .docs-prose td { padding: 9px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+.docs-prose th { background: var(--card); font-family: var(--font-pixel), monospace; font-size: 14px; font-weight: 500; }
 .docs-prose .note-body > :first-child { margin-top: 0; }
 .docs-prose .note-body > :last-child { margin-bottom: 0; }
-.docs-prose .pager { padding: 8px 14px; border: 1px solid var(--d-border); border-radius: 8px; text-decoration: none; }
-.docs-prose .pager:hover { background: var(--d-panel); }
 
+/* Kódnézet: ugyanazok a színek, mint a szerkesztőben (kulcsszó arany, érték fehér, név halványabb). */
 .code-view {
-  margin: 0; padding: 10px 0; overflow-x: auto; border-radius: 8px; border: 1px solid var(--d-border);
-  background: #0a0e14; font-family: var(--font-geist-mono), monospace; font-size: 13px; line-height: 1.7; color: var(--d-text);
+  margin: 0; padding: 12px 0; overflow-x: auto; background: var(--code);
+  font-family: var(--font-geist-mono), monospace; font-size: 13.5px; line-height: 1.75;
 }
-.code-view.plain { padding: 10px 14px; }
-.code-view .code-line { display: block; padding-right: 14px; white-space: pre; }
-.code-view .code-line.is-marked { background: rgba(248, 81, 73, 0.15); box-shadow: inset 3px 0 0 var(--d-bad); }
-.code-view .ln { display: inline-block; width: 3ch; margin-right: 14px; text-align: right; color: #484f58; user-select: none; }
-.tok-kw { color: #c792ea; }
-.tok-fn { color: #4fd6be; }
-.tok-num, .tok-bool { color: #f78c6c; }
-.tok-op { color: #89ddff; }
-.tok-var { color: #e6edf3; }
-.tok-bad { color: var(--d-bad); text-decoration: underline wavy; }
-.tok-tab { display: inline-block; width: 2ch; color: var(--d-bad); }
-.tok-empty { color: var(--d-bad); font-style: italic; }
+.code-view.plain { padding: 12px 16px; }
+.code-view .code-line { display: block; padding-right: 16px; white-space: pre; }
+.code-view .code-line.is-marked { background: rgb(140 52 43 / 0.35); box-shadow: inset 3px 0 0 var(--brick-text); }
+.code-view .ln { display: inline-block; width: 3ch; margin-right: 16px; text-align: right; color: #5e5950; user-select: none; }
+.tok-kw { color: var(--gold); }
+.tok-fn, .tok-num, .tok-bool { color: var(--foreground); font-weight: 600; }
+.tok-op { color: #8a857a; }
+.tok-var { color: #c4bfb3; }
+.tok-bad { color: var(--brick-text); text-decoration: underline wavy; }
+.tok-tab { display: inline-block; width: 2ch; color: var(--brick-text); }
+.tok-empty { color: var(--brick-text); font-style: italic; }
 
+/* Szerkeszthető kód: kódbetű (felülírja a mezőkre vonatkozó olvasóbetűt), arany fókusz a keretben. */
 .code-edit {
-  width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--d-accent); background: #0a0e14;
-  color: var(--d-text); font-family: var(--font-geist-mono), monospace; font-size: 13px; line-height: 1.7; resize: vertical; tab-size: 2;
+  width: 100%; padding: 12px 16px; resize: vertical; tab-size: 2; outline: none;
+  border: 1px solid var(--input); background: var(--code); color: var(--foreground);
+  font-family: var(--font-geist-mono), monospace !important; font-size: 13.5px; line-height: 1.75;
 }
-
-.doc-example { margin: 1.25rem 0; padding: 14px; border-radius: 10px; border: 1px solid var(--d-border); background: var(--d-panel); }
-
-.badge { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; border: 1px solid; }
-.badge-good { color: var(--d-good); border-color: rgba(63, 185, 80, 0.4); background: rgba(63, 185, 80, 0.1); }
-.badge-bad { color: var(--d-bad); border-color: rgba(248, 81, 73, 0.4); background: rgba(248, 81, 73, 0.1); }
-.badge-warn { color: var(--d-warn); border-color: rgba(210, 153, 34, 0.4); background: rgba(210, 153, 34, 0.1); }
-.badge-muted { color: var(--d-muted); border-color: var(--d-border); background: transparent; }
-
-.dbtn {
-  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 6px;
-  border: 1px solid var(--d-border); background: #21262d; color: var(--d-text) !important; font-size: 13px;
-  text-decoration: none; cursor: pointer; transition: background-color 0.15s;
-}
-.dbtn:hover { background: #30363d; }
-.dbtn[aria-pressed="true"] { border-color: var(--d-accent); }
-.dbtn-primary { background: #238636; border-color: #2ea043; color: #fff !important; }
-.dbtn-primary:hover { background: #2ea043; }
+.app-ui .code-edit.pixel-frame { --pixel-unit: 1px; --pixel-frame: var(--pixel-frame-input); }
+.app-ui .code-edit:focus-visible { --pixel-frame: var(--pixel-frame-focus); outline: none; box-shadow: inset 0 0 0 2px var(--ring); }
 
 @media (prefers-reduced-motion: reduce) {
   .docs * { transition: none !important; }

@@ -4,8 +4,7 @@
 import type { Locale } from "./locale";
 
 const en = {
-  language: "Language",
-  languageNames: { en: "English", hu: "Magyar" },
+  switchLanguage: "Váltás magyarra",
   loading: "Loading…",
   loadingEditor: "Loading editor…",
   checkingSession: "Checking your session…",
@@ -110,8 +109,7 @@ const en = {
 export type Messages = typeof en;
 
 const hu: Messages = {
-  language: "Nyelv",
-  languageNames: { en: "English", hu: "Magyar" },
+  switchLanguage: "Switch to English",
   loading: "Betöltés…",
   loadingEditor: "Szerkesztő betöltése…",
   checkingSession: "Munkamenet ellenőrzése…",

@@ -25,9 +25,9 @@ function highlight(line: string): ReactNode[] {
 export function CodeView({ code, markLine }: { code: string; markLine?: number }) {
   const lines = code === "" ? [] : code.split("\n");
   return (
-    <pre className="code-view">
+    <pre className="code-view pixel-frame">
       <code>
-        {lines.length === 0 && <span className="text-[var(--d-muted)]">(üres program)</span>}
+        {lines.length === 0 && <span className="px-4 text-muted-foreground">(üres program)</span>}
         {lines.map((line, index) => (
           <span key={index} className={`code-line${markLine === index + 1 ? " is-marked" : ""}`}>
             <span className="ln" aria-hidden>{index + 1}</span>
@@ -41,9 +41,9 @@ export function CodeView({ code, markLine }: { code: string; markLine?: number }
 
 export function Pre({ children, label }: { children: string; label?: string }) {
   return (
-    <div className="my-4">
-      {label && <div className="mb-1 text-xs uppercase tracking-wide text-[var(--d-muted)]">{label}</div>}
-      <pre className="code-view plain"><code>{children}</code></pre>
-    </div>
+    <figure className="my-6">
+      {label && <figcaption className="mb-2 font-pixel text-sm text-muted-foreground">{label}</figcaption>}
+      <pre className="code-view plain pixel-frame"><code>{children}</code></pre>
+    </figure>
   );
 }

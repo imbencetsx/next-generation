@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Example from "@/components/docs/example";
-import { Note, Status } from "@/components/docs/ui";
+import { CheckCircle2, XCircle } from "lucide-react";
+import { DocBadge, Note, Status } from "@/components/docs/ui";
 
 const PIPELINE = [
   ["Szerkesztő", "CodeMirror 6: kiemelés, sorszámok, élő hibajelzés"],
@@ -28,21 +29,22 @@ export default function Attekintes() {
       <h2>Hogyan használd ezt a dokumentációt?</h2>
       <p>Minden kódpélda kipróbálható, és ugyanazzal az interpreterrel fut, mint a játék.</p>
       <ul>
-        <li><strong>Futtatás</strong> — lefuttatja a példát, és összeveti a <em>várt eredménnyel</em>. A zöld pipa azt jelenti, hogy a motor pontosan úgy viselkedik, ahogy a dokumentáció állítja.</li>
+        <li><strong>Futtatás</strong> — lefuttatja a példát, és összeveti a <em>várt eredménnyel</em>. Az „Egyezik a várt eredménnyel” jelzés azt jelenti, hogy a motor pontosan úgy viselkedik, ahogy a dokumentáció állítja.</li>
         <li><strong>Szerkesztés</strong> — átírhatod a kódot, és megnézheted, mi változik.</li>
         <li><strong>Megnyitás a szerkesztőben</strong> — átviszi a kódot és a térképet a teljes szerkesztőbe, ahol lassítva, animálva is lefuttathatod.</li>
       </ul>
-      <p>A <span className="badge badge-good">Helyes</span> példák hiba nélkül futnak, a <span className="badge badge-bad">Hibás</span> példák szándékosan szabályt sértenek.</p>
+      <p>A <DocBadge><CheckCircle2 aria-hidden /> Helyes</DocBadge> példák hiba nélkül futnak, a <DocBadge variant="destructive"><XCircle aria-hidden /> Hibás</DocBadge> példák szándékosan szabályt sértenek.</p>
 
       <Example id="pdf-program" />
 
       <h2>Hogyan működik?</h2>
-      <ol className="!list-none !pl-0 grid gap-2 sm:grid-cols-5">
+      {/* A feldolgozás lépései egymás után következnek, ezért számozottak. */}
+      <ol className="!my-6 !max-w-none !list-none !pl-0 grid gap-2 sm:grid-cols-5">
         {PIPELINE.map(([title, text], index) => (
-          <li key={title} className="!m-0 rounded-lg border border-[var(--d-border)] bg-[var(--d-panel)] p-3">
-            <div className="font-mono text-xs text-[var(--d-muted)]">{index + 1}.</div>
-            <div className="font-semibold text-[var(--d-strong)]">{title}</div>
-            <div className="text-xs text-[var(--d-muted)]">{text}</div>
+          <li key={title} className="pixel-frame !m-0 bg-card p-3">
+            <div className="font-mono text-xs text-muted-foreground">{index + 1}</div>
+            <div className="mt-1 font-pixel">{title}</div>
+            <div className="mt-1 text-sm leading-snug text-muted-foreground">{text}</div>
           </li>
         ))}
       </ol>
