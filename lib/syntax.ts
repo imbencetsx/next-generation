@@ -89,7 +89,7 @@ function describeInvalidCharacter(char: string, token: string): { message: strin
   const shown = `Invalid character ${quote(char)} (${code}).`;
   switch (char) {
     case "#": return { message: shown, hint: "MineScript has no comments. Remove the comment from the program." };
-    case "/": return { message: shown, hint: token.startsWith("//") ? "MineScript has no comments. Remove the comment from the program." : "There is no division; the operators are + - and *." };
+    case "/": return { message: shown, hint: "MineScript has no comments and no division (the operators are + - and *). Remove the “/”." };
     case "!": return { message: shown, hint: "Use <> for “not equal” and not for negation, e.g. set open to not wall." };
     case "&": return { message: shown, hint: "Use and, e.g. set both to a and b." };
     case "|": return { message: shown, hint: "Use or, e.g. set either to a or b." };
@@ -528,7 +528,8 @@ export function analyzeSource(source: string): Analysis {
       const parser = new LineParser(scan.tokens, line);
       if (!scan.invalid) parser.parse();
       if (parser.problem) report(parser.problem);
-      pending = attachElse(block, span, head, structural, report);
+      // Tabulátoros behúzásnál a szint bizonytalan: párosítunk, de szerkezeti hibát nem jelzünk.
+      pending = attachElse(block, span, head, structural, scan.indentHasTab ? () => {} : report);
     } else if (scan.invalid) {
       // Hibás karakterrel is megtartjuk a blokknyitók szerkezetét.
       pending = keepStructure(block, head, span);
@@ -579,7 +580,7 @@ function attachElse(block: Block, span: Span, token: Token, structural: boolean,
       report(issue("S_DUPLICATE_ELSE", at.line, at.column, at.end,
         `The if on line ${previous.span.line} already has an else (line ${previous.elseSpan!.line}). An if can have only one else.`,
         "Remove this else, or put a new if before it.",
-        [{ line: previous.elseSpan!.line, message: "first else" }, { line: previous.span.line, message: "the if" }]));
+        [{ line: previous.elseSpan!.line, message: "first else" }]));
       return orphan;
     }
     previous.else = [];
@@ -593,7 +594,7 @@ function attachElse(block: Block, span: Span, token: Token, structural: boolean,
     report(issue("S_ELSE_MISALIGNED", at.line, at.column, at.end,
       `This else is indented like the body of the if on line ${owner.span.line}. An else must line up with its if.`,
       width === 0
-        ? `Remove the indentation so else starts in column 1, like the if on line ${owner.span.line}.`
+        ? `Use 0 spaces of indentation (column 1) for the else, exactly like the if on line ${owner.span.line}.`
         : `Indent the else with ${width} space${width === 1 ? "" : "s"} (column ${width + 1}), exactly like the if on line ${owner.span.line}.`,
       [{ line: owner.span.line, message: "the if this else belongs to" }]));
     owner.else = [];

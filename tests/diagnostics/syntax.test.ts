@@ -15,7 +15,7 @@ function check(source: string, expected: Expected[]) {
   });
   const parsed = parseProgram(source);
   expect(parsed.ok).toBe(expected.length === 0);
-  if (!parsed.ok) expect(parsed.issues).toEqual(issues);
+  if (!parsed.ok) expect(parsed.issues as unknown).toEqual(issues);
 }
 const cases: [string, string, Expected[]][] = [
   ['S_EMPTY_LINE empty interior', 'print 1\n\nprint 2', [issue('S_EMPTY_LINE', 1, 2, ['empty'], [], 2)]],

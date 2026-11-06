@@ -86,6 +86,12 @@ Whitespace problems do not hide content problems: `set x  to 101` reports both
 - A line with a content error still counts as an instruction of its block, so an
   `else` after it is reported as `S_ELSE_WITHOUT_IF` (the line separates it from the `if`).
 
+- A tab between tokens acts as a separator: `print\t1` gives only `S_TAB`.
+- `S_INDENT_MISMATCH` lists every block width that was open **before** the invalid
+  dedent (widths 0, 2, 6 and a dedent to 4 → “0 or 2 or 6”).
+- When the instruction limit stops the program, `step()` still returns a `StepEvent`
+  for the rejected instruction (its line and kind, empty `path`).
+
 ### Indentation rules used for spans
 
 - A tab in the indentation gives `S_TAB`, and the line is treated as being at the
