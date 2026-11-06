@@ -3,8 +3,11 @@
 // A robot aktuális állapota, a térkép és a futás vezérlői.
 
 import { useRef, useState, type ChangeEvent } from "react";
-import { Pause, Play, RotateCcw, SkipForward, Upload } from "lucide-react";
+import { Activity, AlertCircle, CheckCircle2, Circle, CloudFog, Compass, Pause, Play, RotateCcw, SkipForward, Upload } from "lucide-react";
 import PixelMap from "@/components/pixel-map";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { SPEEDS, type Simulation } from "@/components/use-simulation";
 import { MAP_PRESETS, DIRECTIONS } from "@/lib/robot-map";
 
@@ -53,66 +56,49 @@ export default function Simulator({ simulation, onJump, firstIssue }: Props) {
     event.target.value = "";
   }
 
-  return (
-    <div className="flex h-full min-h-[70vh] flex-col gap-2 lg:min-h-0">
-      <section className="flex flex-wrap items-center gap-2 rounded-lg border border-[#dfe4ec] bg-white p-2" aria-label="Playback controls">
-        {simulation.playing ? (
-          <button className="btn" onClick={simulation.pause}><Pause size={16} aria-hidden /> Pause</button>
-        ) : (
-          <button className="btn btn-primary" onClick={runProgram}>
-            <Play size={16} aria-hidden /> {runLabel}
-          </button>
-        )}
-        <button className="btn" onClick={stepProgram} disabled={simulation.playing}><SkipForward size={16} aria-hidden /> Step</button>
-        <button className="btn" onClick={simulation.reset} disabled={!simulation.started}><RotateCcw size={16} aria-hidden /> Reset</button>
-        <label className="flex items-center gap-2 text-xs text-[#65738a]">
-          Speed
-          <select className="btn" value={simulation.speed} onChange={(event) => simulation.setSpeed(Number(event.target.value))}>
-            {SPEEDS.map((speed, index) => <option key={speed.label} value={index}>{speed.label}</option>)}
-          </select>
-        </label>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          <label className="sr-only" htmlFor="map-select">Choose map</label>
-          <select
-            id="map-select" className="btn" value="" disabled={simulation.locked}
-            onChange={(event) => simulation.selectMap(event.target.value)}
-          >
-            <option value="" disabled>Load map…</option>
-            {MAP_PRESETS.map((preset) => <option key={preset.name} value={preset.name}>{preset.name}</option>)}
-          </select>
-          <button className="btn" disabled={simulation.locked} onClick={() => fileInput.current?.click()}>
-            <Upload size={16} aria-hidden /> Import map
-          </button>
-          <input
-            ref={fileInput} type="file" accept=".txt,.map,text/plain" hidden
-            onChange={importMap}
-          />
-          <button className="btn" aria-pressed={fog} onClick={() => setFog((value) => !value)}>Fog</button>
-        </div>
-      </section>
-      {simulation.notice && <p role="alert" className="text-sm text-[#c84848]">{simulation.notice}</p>}
-      {simulation.mapError && <p role="alert" className="text-sm text-[#c84848]">{simulation.mapError}</p>}
+  const status = statusLabel(simulation);
+  const StatusIcon = snapshot.status === "error" ? AlertCircle : snapshot.status === "done" ? CheckCircle2 : simulation.playing ? Activity : Circle;
+  const presetNames = MAP_PRESETS.map((preset) => preset.name);
 
-      <section className="grid grid-cols-4 gap-2" aria-label="Run statistics">
-        <Stat label="Map" value={simulation.mapName} />
-        <Stat label="Gold mined" value={`${snapshot.mined} / ${totalGold}`} />
-        <Stat label="Lines run" value={`${snapshot.steps} / 1000`} />
-        <Stat label="Status" value={statusLabel(simulation)} tone={snapshot.status === "error" ? "error" : snapshot.status === "done" ? "ok" : undefined} />
-      </section>
+  return (
+    <div className="flex h-full min-h-[70vh] flex-col gap-3 lg:min-h-0">
+      <Card role="region" aria-label="Playback" className="flex-row flex-wrap items-center gap-1.5 p-2">
+        {simulation.playing ? (
+          <Button variant="outline" onClick={simulation.pause}><Pause aria-hidden /> Pause</Button>
+        ) : (
+          <Button onClick={runProgram}>
+            <Play aria-hidden /> {runLabel}
+          </Button>
+        )}
+        <Button variant="outline" onClick={stepProgram} disabled={simulation.playing}><SkipForward aria-hidden /> Step</Button>
+        <Button variant="outline" onClick={simulation.reset} disabled={!simulation.started}><RotateCcw aria-hidden /> Reset</Button>
+        <label className="ml-2 flex items-center gap-2 text-sm text-muted-foreground">
+          Speed
+          <NativeSelect value={simulation.speed} onChange={(event) => simulation.setSpeed(Number(event.target.value))}>
+            {SPEEDS.map((speed, index) => <NativeSelectOption key={speed.label} value={index}>{speed.label}</NativeSelectOption>)}
+          </NativeSelect>
+        </label>
+        <p role="status" className={`ml-auto flex items-center gap-1.5 px-1 text-sm ${snapshot.status === "error" ? "text-brick-text" : "text-foreground"}`}>
+          <StatusIcon size={15} aria-hidden /> {status}
+        </p>
+      </Card>
+      {simulation.notice && <p role="alert" className="flex items-center gap-2 font-read text-sm text-brick-text"><AlertCircle size={14} aria-hidden /> {simulation.notice}</p>}
+      {simulation.mapError && <p role="alert" className="flex items-center gap-2 font-read text-sm text-brick-text"><AlertCircle size={14} aria-hidden /> {simulation.mapError}</p>}
 
       {error && (
-        <div role="alert" className="rounded-lg border border-[#efc2c2] bg-[#fdf0f0] p-3 text-sm">
-          <p className="font-mono text-xs font-semibold text-[#c84848]">
-            {error.code} · line {error.line}, column {error.column}
+        <div role="alert" className="pixel-frame bg-brick/15 p-3 text-sm" data-tone="danger">
+          <p className="flex items-center gap-2 font-mono text-xs text-brick-text">
+            <AlertCircle size={14} aria-hidden />
+            {error.code} on line {error.line}, column {error.column}
           </p>
-          <p>{error.message}</p>
-          {error.hint && <p className="mt-1 whitespace-pre-line text-xs text-[#65738a]"><span className="font-semibold">Hint:</span> {error.hint}</p>}
-          <div className="mt-1 flex flex-wrap gap-x-3">
-            <button className="text-xs text-[#4666ce] underline" onClick={() => onJump(error.line, error.column)}>
+          <p className="mt-1 font-read">{error.message}</p>
+          {error.hint && <p className="mt-1 whitespace-pre-line font-read text-[13px] text-muted-foreground"><span className="text-foreground">Hint:</span> {error.hint}</p>}
+          <div className="mt-1.5 flex flex-wrap gap-x-3">
+            <button className="text-xs underline underline-offset-4" onClick={() => onJump(error.line, error.column)}>
               Go to line {error.line}
             </button>
             {error.related?.map((item) => (
-              <button key={item.line + item.message} className="text-xs text-[#4666ce] underline" onClick={() => onJump(item.line)}>
+              <button key={item.line + item.message} className="text-xs underline underline-offset-4" onClick={() => onJump(item.line)}>
                 Line {item.line}: {item.message}
               </button>
             ))}
@@ -120,8 +106,32 @@ export default function Simulator({ simulation, onJump, firstIssue }: Props) {
         </div>
       )}
 
-      <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-[#2c1c19] bg-[#170c0a]" aria-label="Map">
-        <div className="min-h-0 flex-1 p-3">
+      <Card role="region" aria-label="Map" className="relative min-h-0 flex-1 gap-0 py-0">
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-border p-2">
+          <label className="sr-only" htmlFor="map-select">Map</label>
+          <NativeSelect
+            id="map-select" value={simulation.mapName} disabled={simulation.locked}
+            onChange={(event) => simulation.selectMap(event.target.value)}
+          >
+            {!presetNames.includes(simulation.mapName) && <NativeSelectOption value={simulation.mapName} disabled>{simulation.mapName}</NativeSelectOption>}
+            {presetNames.map((name) => <NativeSelectOption key={name} value={name}>{name}</NativeSelectOption>)}
+          </NativeSelect>
+          <Button variant="ghost" disabled={simulation.locked} onClick={() => fileInput.current?.click()}>
+            <Upload aria-hidden /> Import
+          </Button>
+          <input
+            ref={fileInput} type="file" accept=".txt,.map,text/plain" hidden
+            onChange={importMap}
+          />
+          <Button variant="outline" aria-pressed={fog} onClick={() => setFog((value) => !value)}>
+            <CloudFog aria-hidden /> Fog
+          </Button>
+          <dl className="ml-auto flex items-baseline gap-5 px-1">
+            <Stat label="Gold" value={`${snapshot.mined}/${totalGold}`} />
+            <Stat label="Lines" value={`${snapshot.steps}`} suffix="/1000" />
+          </dl>
+        </div>
+        <div className="min-h-0 flex-1 bg-[#0f0a09] p-3">
           <PixelMap
             map={map}
             robot={snapshot.robot}
@@ -132,20 +142,23 @@ export default function Simulator({ simulation, onJump, firstIssue }: Props) {
             label={`Map with ${map.rows} rows and ${map.cols} columns. Robot at row ${snapshot.robot.y + 1}, column ${snapshot.robot.x + 1}, facing ${direction}.`}
           />
         </div>
-        <p className="border-t border-[#2c1c19] px-3 py-1.5 text-center text-xs text-[#b8a39d]">
-          Robot faces {direction} · {fog ? "solid dirt hides everything unexplored" : "dug-out (dark) dirt marks explored cells"}
+        <p className="flex items-center justify-center gap-2 border-t border-border px-3 py-1.5 text-center font-read text-[13px] text-muted-foreground">
+          <Compass size={13} aria-hidden />
+          Robot faces {direction}. {fog ? "Solid dirt hides everything unexplored." : "Dug-out dirt marks explored cells."}
         </p>
-      </section>
+      </Card>
     </div>
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: string; tone?: "ok" | "error" }) {
-  const color = tone === "error" ? "text-[#c84848]" : tone === "ok" ? "text-[#2f8f5b]" : "";
+function Stat({ label, value, suffix }: { label: string; value: string; suffix?: string }) {
   return (
-    <div className="min-w-0 rounded-lg border border-[#dfe4ec] bg-white px-3 py-1.5">
-      <div className="text-xs text-[#65738a]">{label}</div>
-      <div className={`truncate font-mono text-sm font-semibold ${color}`} title={value}>{value}</div>
+    <div className="flex items-baseline gap-1.5">
+      <dt className="text-sm text-muted-foreground">{label}</dt>
+      <dd className="display text-xl text-foreground">
+        {value}
+        {suffix && <span className="font-pixel text-xs text-muted-foreground">{suffix}</span>}
+      </dd>
     </div>
   );
 }
