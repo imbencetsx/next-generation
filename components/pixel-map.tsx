@@ -5,21 +5,9 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { Motion } from "@/components/use-simulation";
+import { ROBOT_FOOT_PADDING, ROBOT_ROW, TILE } from "@/components/sprites";
 import type { GameMap } from "@/lib/robot-map";
 
-const TILE = 32;
-const MAX_SCALE = 8;
-// robot_sheet.png: 4×4 képkocka (32×32). Oszlopok: áll, lépés 1–3. Sorok a képen: le, balra, jobbra, fel.
-// Irány → sor (észak, nyugat, dél, kelet).
-const ROBOT_ROW = [3, 1, 0, 2];
-// A talp alatti üres hely képkockánként eltér; ezt eltoljuk, hogy a robot a mező alján álljon.
-// Irányonként: álló kép, majd a három járásképkocka, az eredeti sprite pixelméretében.
-const ROBOT_FOOT_PADDING = [
-  [7, 7, 7, 7],
-  [4, 3, 4, 3],
-  [3, 2, 3, 2],
-  [5, 4, 4, 4],
-];
 const WALK_FRAMES = 3;
 const SHINE_FRAMES = ["down-half", "down", "up-half", "up"] as const;
 // Mezőnként ennyi ugrással lép a robot (32 px-es sprite-nál 8 pixelenként), hogy ne simán csússzon.
@@ -40,19 +28,23 @@ const sprite = (name: string): CSSProperties => ({ backgroundImage: `url(/sprite
 
 export default function PixelMap({ map, robot, explored, gold, fog, motion, label }: Props) {
   const frame = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: 0, height: 0 });
+  const [size, setSize] = useState({ width: 0, height: 0, dpr: 1 });
 
   useEffect(() => {
     const element = frame.current;
     if (!element) return;
-    const observer = new ResizeObserver(([entry]) => setSize({ width: entry.contentRect.width, height: entry.contentRect.height }));
+    const observer = new ResizeObserver(([entry]) =>
+      setSize({ width: entry.contentRect.width, height: entry.contentRect.height, dpr: window.devicePixelRatio || 1 }),
+    );
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
 
-  // Egész számú nagyítás, hogy minden pixel egyforma és éles maradjon; ha a 32 px sem fér el, kicsinyítünk.
+  // A térkép mindig kitölti a rendelkezésre álló helyet, amennyire az arány engedi. A cellaméretet egész
+  // eszközpixelre kerekítjük lefelé, így a mezők között nincs elmosódott varrat, és sosem lóg ki a keretből.
+  // (A 32-es sprite-ok emiatt nem mindig egész szorzóval nagyítódnak; a pixelated megjelenítés élesen tartja őket.)
   const fit = size.width && size.height ? Math.min(size.width / map.cols, size.height / map.rows) : TILE;
-  const cell = fit >= TILE ? Math.min(MAX_SCALE, Math.floor(fit / TILE)) * TILE : Math.max(8, Math.floor(fit));
+  const cell = Math.max(1, Math.floor(fit * size.dpr)) / size.dpr;
 
   const revealAt = new Map(motion?.reveals.map((reveal) => [reveal.index, reveal.at]));
   const footPadding = ROBOT_FOOT_PADDING[robot.dir];

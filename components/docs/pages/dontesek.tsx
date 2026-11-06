@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Example from "@/components/docs/example";
+import { DocBadge } from "@/components/docs/ui";
 import type { DocExampleId } from "@/lib/docs/examples";
 
 type Decision = {
@@ -80,11 +81,11 @@ export default function Dontesek() {
       {DECISIONS.map((item) => (
         <section key={item.id}>
           <h2 id={item.id}>
-            <span className="mr-2 font-mono text-base text-[var(--d-muted)]">{item.id}</span>
+            <span className="mr-2 font-mono text-base text-muted-foreground">{item.id}</span>
             {item.title}{" "}
-            <span className={`badge align-middle ${item.status === "decided" ? "badge-good" : "badge-warn"}`}>
+            <DocBadge className={item.status === "decided" ? "" : "text-gold"}>
               {item.status === "decided" ? "Eldöntve" : "Ideiglenes"}
-            </span>
+            </DocBadge>
           </h2>
           <table>
             <tbody>
