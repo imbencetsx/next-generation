@@ -1,8 +1,9 @@
+// A dokumentáció kipróbálható példái és az elvárt eredményeik.
+
 import type { SyntaxIssue } from "@/lib/minescript";
 import { Machine, parseProgram, type ErrorCode, type Snapshot } from "@/lib/interpreter";
 import { MAP_PRESETS, parseMap, type GameMap } from "@/lib/robot-map";
 
-/** Maps used by the runnable documentation examples. */
 export const DOC_MAPS = {
   corridor: { name: "Folyosó", text: MAP_PRESETS[0].text },
   spec: { name: "PDF példatérkép", text: "3 15\n....@..........\n.#############.\n.......@...>..." },
@@ -19,7 +20,7 @@ export type DocExample = {
   code: string;
   expect: Expectation;
   map?: DocMapId;
-  /** Show the map next to the code (useful for robot examples). */
+  /** A robot mozgását bemutató példák mellé térképet is teszünk. */
   showMap?: boolean;
 };
 
@@ -33,25 +34,38 @@ export function loadDocMap(id: DocMapId = "corridor"): GameMap {
   return result.map;
 }
 
-/** Runs a program to the end with the real interpreter. Terminates because of the 1000-line limit. */
+// Nincs animációs várakozás; a végtelen ciklusokat a motor 1000 soros korlátja állítja meg.
 export function runExample(code: string, mapId: DocMapId = "corridor"): Outcome {
   const parsed = parseProgram(code);
   if (!parsed.ok) return { kind: "syntax", issues: parsed.issues };
+
   const map = loadDocMap(mapId);
   const machine = new Machine(parsed.program, map);
-  while (machine.status === "running") machine.step();
+  while (machine.status === "running") {
+    machine.step();
+  }
   return { kind: "run", snapshot: machine.snapshot(), map };
 }
 
-export function matchesExpectation(outcome: Outcome, expect: Expectation): boolean {
-  if (expect.kind === "syntax") return outcome.kind === "syntax" && outcome.issues[0]?.line === expect.line;
+export function matchesExpectation(outcome: Outcome, expected: Expectation): boolean {
+  if (expected.kind === "syntax") {
+    return outcome.kind === "syntax" && outcome.issues[0]?.line === expected.line;
+  }
   if (outcome.kind !== "run") return false;
+
   const { snapshot } = outcome;
-  if (expect.kind === "runtime") return snapshot.error?.code === expect.code && snapshot.error.line === expect.line;
-  return snapshot.status === "done"
-    && (expect.output === undefined || JSON.stringify(expect.output) === JSON.stringify(snapshot.output))
-    && (expect.steps === undefined || expect.steps === snapshot.steps)
-    && (expect.mined === undefined || expect.mined === snapshot.mined);
+  if (expected.kind === "runtime") {
+    return snapshot.error?.code === expected.code && snapshot.error.line === expected.line;
+  }
+
+  if (snapshot.status !== "done") return false;
+  if (expected.steps !== undefined && snapshot.steps !== expected.steps) return false;
+  if (expected.mined !== undefined && snapshot.mined !== expected.mined) return false;
+  if (expected.output !== undefined) {
+    return expected.output.length === snapshot.output.length
+      && expected.output.every((line, index) => line === snapshot.output[index]);
+  }
+  return true;
 }
 
 export function describeExpectation(expect: Expectation): string {
@@ -65,7 +79,6 @@ export function describeExpectation(expect: Expectation): string {
 }
 
 export const DOC_EXAMPLES = {
-  // ------------------------------------------------------------ áttekintés
   "pdf-program": {
     title: "A PDF fő példaprogramja: előre a falig, közben bányászik",
     code: `set count to 0
@@ -86,7 +99,6 @@ print count`,
     showMap: true,
   },
 
-  // ------------------------------------------------------------ nyelv
   "pdf-hello": {
     title: "A PDF első példája",
     code: "set arany to isThere 2\nprint arany",
@@ -200,7 +212,6 @@ print count`,
     expect: { kind: "ok", output: [], steps: 0 },
   },
 
-  // ------------------------------------------------------------ típusok
   "type-lock": {
     title: "A változó típusa rögzül",
     code: "set x to 1\nset x to true",
@@ -252,7 +263,6 @@ print count`,
     expect: { kind: "ok", output: ["false"] },
   },
 
-  // ------------------------------------------------------------ robot
   "turn-left": {
     title: "A turn balra fordít",
     code: "turn by 1\nset fal to isThere 1\nprint fal",
@@ -331,7 +341,6 @@ print count`,
     expect: { kind: "runtime", code: "E_BAD_ARG", line: 2 },
   },
 
-  // ------------------------------------------------------------ számlálás
   "count-else-false": {
     title: "Lefutó else ág: az else sora is számít",
     code: "set a to false\nif a\n  print 1\nelse\n  print 2",

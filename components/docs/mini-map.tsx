@@ -1,18 +1,17 @@
 import { DIRECTIONS, type GameMap } from "@/lib/robot-map";
 
-const ROTATION = [0, -90, 180, 90]; // north, west, south, east
+const ROTATION = [0, -90, 180, 90]; // észak, nyugat, dél, kelet
 const DIRECTION_HU: Record<string, string> = { north: "észak", west: "nyugat", south: "dél", east: "kelet" };
 
 type Props = {
   map: GameMap;
   robot?: GameMap["robot"];
   gold?: boolean[];
-  /** When given, unexplored cells are dimmed. */
+  /** Ha megadjuk, a még fel nem fedezett mezők halványabban jelennek meg. */
   explored?: boolean[];
   caption?: string;
 };
 
-/** Small static rendering of a map state; used by the docs. */
 export function MiniMap({ map, robot = map.robot, gold = map.gold, explored, caption }: Props) {
   const label = `${map.rows}×${map.cols} térkép, a robot a(z) ${robot.y + 1}. sor ${robot.x + 1}. oszlopában áll, ${DIRECTION_HU[DIRECTIONS[robot.dir].name]} felé néz.`;
   return (

@@ -1,8 +1,10 @@
 "use client";
 
+// A kódszerkesztő, a fájlkezelés és a szimulátor közös felülete.
+
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type ChangeEvent } from "react";
 import { AlertCircle, BookOpen, CheckCircle2, Download, FilePlus2, Upload, WrapText } from "lucide-react";
 import CodeEditor, { type ActiveLine, type EditorHandle } from "@/components/code-editor";
 import Simulator from "@/components/simulator";
@@ -20,7 +22,6 @@ const REFERENCE = [
 ] as const;
 
 export default function Workbench() {
-  // The docs' "open in editor" button passes ?code= and ?map= (map file text).
   const params = useSearchParams();
   const sharedCode = params.get("code");
   const [code, setCode] = useState(sharedCode ?? EXAMPLES[0].code);
@@ -30,14 +31,28 @@ export default function Workbench() {
   const editor = useRef<EditorHandle | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const issues = useMemo(() => validateMineScript(code), [code]);
-  const sim = useSimulation(code, params.get("map"));
-  const { snapshot, locked } = sim;
+  const simulation = useSimulation(code, params.get("map"));
+  const { snapshot, locked } = simulation;
   const activeLine: ActiveLine =
     snapshot.line && (snapshot.status === "running" || snapshot.status === "error")
       ? { line: snapshot.line, tone: snapshot.status === "error" ? "error" : "run" }
       : null;
 
   const lineCount = code.split("\n").length;
+
+  function newFile() {
+    setCode("");
+    setFilename("untitled.mine");
+    simulation.reset();
+  }
+
+  function loadExample(event: ChangeEvent<HTMLSelectElement>) {
+    const example = EXAMPLES.find((item) => item.filename === event.target.value);
+    if (!example) return;
+
+    setCode(example.code);
+    setFilename(example.filename);
+  }
 
   function exportFile() {
     const url = URL.createObjectURL(new Blob([code], { type: "text/plain" }));
@@ -50,6 +65,7 @@ export default function Workbench() {
 
   async function importFile(file: File | undefined) {
     if (!file) return;
+
     setCode(await file.text());
     setFilename(file.name);
     if (fileInput.current) fileInput.current.value = "";
@@ -67,17 +83,14 @@ export default function Workbench() {
             className="btn"
             disabled={locked}
             value=""
-            onChange={(event) => {
-              const example = EXAMPLES.find((item) => item.filename === event.target.value);
-              if (example) { setCode(example.code); setFilename(example.filename); }
-            }}
+            onChange={loadExample}
           >
             <option value="" disabled>Load example…</option>
             {EXAMPLES.map((example) => (
               <option key={example.filename} value={example.filename}>{example.name}</option>
             ))}
           </select>
-          <button className="btn" disabled={locked} onClick={() => { setCode(""); setFilename("untitled.mine"); sim.reset(); }}>
+          <button className="btn" disabled={locked} onClick={newFile}>
             <FilePlus2 size={16} aria-hidden /> New
           </button>
           <button className="btn" disabled={locked} onClick={() => fileInput.current?.click()}>
@@ -159,7 +172,7 @@ export default function Workbench() {
         </div>
 
         <aside className="min-h-0 min-w-0 lg:overflow-y-auto" aria-label="Simulator">
-          <Simulator sim={sim} firstIssueLine={issues[0]?.line ?? null} onJump={(line) => editor.current?.focusLine(line)} />
+          <Simulator simulation={simulation} firstIssueLine={issues[0]?.line ?? null} onJump={(line) => editor.current?.focusLine(line)} />
         </aside>
       </main>
     </div>

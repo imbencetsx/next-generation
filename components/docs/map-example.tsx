@@ -5,7 +5,6 @@ import { Check, ScanSearch, X } from "lucide-react";
 import { MiniMap } from "@/components/docs/mini-map";
 import { parseMap, type MapParseResult } from "@/lib/robot-map";
 
-/** An editable map file that is checked with the real map parser. */
 export default function MapExample({ title, text, valid }: { title: string; text: string; valid: boolean }) {
   const [value, setValue] = useState(text);
   const [result, setResult] = useState<MapParseResult | null>(null);

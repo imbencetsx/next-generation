@@ -1,13 +1,15 @@
 "use client";
 
+// A CodeMirror és a React állapotának összekötése.
+
 import { useEffect, useRef } from "react";
 import { basicSetup } from "codemirror";
 import { EditorState, Compartment, StateEffect, StateField } from "@codemirror/state";
 import { Decoration, EditorView, keymap, type DecorationSet } from "@codemirror/view";
 import { indentWithTab } from "@codemirror/commands";
-import { autocompletion } from "@codemirror/autocomplete";
+import { autocompletion, type CompletionContext } from "@codemirror/autocomplete";
 import { StreamLanguage, HighlightStyle, syntaxHighlighting, indentUnit, indentService } from "@codemirror/language";
-import { linter, lintGutter, forceLinting } from "@codemirror/lint";
+import { linter, lintGutter, forceLinting, type Diagnostic } from "@codemirror/lint";
 import { tags } from "@lezer/highlight";
 import { KEYWORDS, validateMineScript } from "@/lib/minescript";
 
@@ -17,8 +19,8 @@ const language = StreamLanguage.define({
     if (stream.match(/\d+/)) return "number";
     if (stream.match(/(?:<>|<=|>=|[+*=<>-])/)) return "operator";
     const word = stream.match(/[a-zA-Z][a-zA-Z0-9]*/);
-    if (word) {
-      const value = (word as RegExpMatchArray)[0];
+    if (Array.isArray(word)) {
+      const value = word[0];
       if (["true", "false"].includes(value)) return "bool";
       if (value === "isThere") return "variableName.special";
       if (KEYWORDS.includes(value)) return "keyword";
@@ -64,17 +66,41 @@ const activeLineField = StateField.define<DecorationSet>({
     for (const effect of transaction.effects) {
       if (!effect.is(setActiveLine)) continue;
       const target = effect.value;
-      decorations = !target || target.line > transaction.state.doc.lines
-        ? Decoration.none
-        : Decoration.set([
-            Decoration.line({ class: target.tone === "error" ? "cm-error-line" : "cm-run-line" })
-              .range(transaction.state.doc.line(target.line).from),
-          ]);
+      if (!target || target.line > transaction.state.doc.lines) {
+        decorations = Decoration.none;
+        continue;
+      }
+
+      const line = transaction.state.doc.line(target.line);
+      const className = target.tone === "error" ? "cm-error-line" : "cm-run-line";
+      decorations = Decoration.set([Decoration.line({ class: className }).range(line.from)]);
     }
     return decorations;
   },
   provide: (field) => EditorView.decorations.from(field),
 });
+
+function completeKeywords(context: CompletionContext) {
+  const word = context.matchBefore(/[a-zA-Z]*/);
+  if (!word || (word.from === word.to && !context.explicit)) return null;
+
+  return {
+    from: word.from,
+    options: KEYWORDS.map((label) => ({ label, type: "keyword" })),
+  };
+}
+
+function lintMineScript(editor: EditorView): Diagnostic[] {
+  return validateMineScript(editor.state.doc.toString()).map((issue) => {
+    const line = editor.state.doc.line(issue.line);
+    return {
+      from: Math.min(line.to, line.from + issue.column - 1),
+      to: line.to,
+      severity: "error",
+      message: issue.message,
+    };
+  });
+}
 
 export type EditorHandle = { focusLine: (line: number) => void; check: () => void };
 type Props = {
@@ -89,18 +115,22 @@ type Props = {
 
 export default function CodeEditor({ value, onChange, onCursor, editorRef, wrap, readOnly = false, activeLine = null }: Props) {
   const container = useRef<HTMLDivElement>(null);
+  const initialValue = useRef(value);
   const view = useRef<EditorView | null>(null);
+  // A szerkesztőt nem építjük újra minden rendernél, de a callbackekből mindig a friss kell.
   const callbacks = useRef({ onChange, onCursor });
   const wrapCompartment = useRef(new Compartment());
   const readOnlyCompartment = useRef(new Compartment());
-  useEffect(() => { callbacks.current = { onChange, onCursor }; }, [onChange, onCursor]);
+  useEffect(() => {
+    callbacks.current = { onChange, onCursor };
+  }, [onChange, onCursor]);
 
   useEffect(() => {
     if (!container.current) return;
     const instance = new EditorView({
       parent: container.current,
       state: EditorState.create({
-        doc: value,
+        doc: initialValue.current,
         extensions: [
           basicSetup, language, syntaxHighlighting(highlight), theme,
           indentUnit.of("  "), keymap.of([indentWithTab]),
@@ -109,16 +139,9 @@ export default function CodeEditor({ value, onChange, onCursor, editorRef, wrap,
             const indent = line.text.match(/^ */)![0].length;
             return indent + (/^\s*(if |while |else$)/.test(line.text) ? 2 : 0);
           }),
-          autocompletion({ override: [(context) => {
-            const word = context.matchBefore(/[a-zA-Z]*/);
-            if (!word || (word.from === word.to && !context.explicit)) return null;
-            return { from: word.from, options: KEYWORDS.map((label) => ({ label, type: "keyword" })) };
-          }] }),
+          autocompletion({ override: [completeKeywords] }),
           lintGutter(),
-          linter((editor) => validateMineScript(editor.state.doc.toString()).map((issue) => {
-            const line = editor.state.doc.line(issue.line);
-            return { from: Math.min(line.to, line.from + issue.column - 1), to: line.to, severity: "error" as const, message: issue.message };
-          }), { delay: 350 }),
+          linter(lintMineScript, { delay: 350 }),
           wrapCompartment.current.of([]),
           readOnlyCompartment.current.of(EditorState.readOnly.of(false)),
           activeLineField,
@@ -141,12 +164,16 @@ export default function CodeEditor({ value, onChange, onCursor, editorRef, wrap,
         instance.dispatch({ selection: { anchor: line.from }, scrollIntoView: true });
         instance.focus();
       },
-      check() { forceLinting(instance); },
+      check() {
+        forceLinting(instance);
+      },
     };
-    return () => { instance.destroy(); view.current = null; editorRef.current = null; };
-    // The editor is created once; external document changes are dispatched below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => {
+      instance.destroy();
+      view.current = null;
+      editorRef.current = null;
+    };
+  }, [editorRef]);
 
   useEffect(() => {
     const instance = view.current;
@@ -154,18 +181,36 @@ export default function CodeEditor({ value, onChange, onCursor, editorRef, wrap,
       instance.dispatch({ changes: { from: 0, to: instance.state.doc.length, insert: value } });
     }
   }, [value]);
-  useEffect(() => { view.current?.dispatch({ effects: wrapCompartment.current.reconfigure(wrap ? EditorView.lineWrapping : []) }); }, [wrap]);
-  useEffect(() => { view.current?.dispatch({ effects: readOnlyCompartment.current.reconfigure(EditorState.readOnly.of(readOnly)) }); }, [readOnly]);
-  const activeKey = activeLine ? `${activeLine.line}:${activeLine.tone}` : "";
+  useEffect(() => {
+    view.current?.dispatch({
+      effects: wrapCompartment.current.reconfigure(wrap ? EditorView.lineWrapping : []),
+    });
+  }, [wrap]);
+
+  useEffect(() => {
+    view.current?.dispatch({
+      effects: readOnlyCompartment.current.reconfigure(EditorState.readOnly.of(readOnly)),
+    });
+  }, [readOnly]);
+
+  const highlightedLine = activeLine?.line ?? null;
+  const highlightTone = activeLine?.tone;
+
   useEffect(() => {
     const instance = view.current;
     if (!instance) return;
-    const target = activeKey ? { line: Number(activeKey.split(":")[0]), tone: activeKey.split(":")[1] as "run" | "error" } : null;
+
+    const target = highlightedLine !== null && highlightTone
+      ? { line: highlightedLine, tone: highlightTone }
+      : null;
     const effects: StateEffect<unknown>[] = [setActiveLine.of(target)];
+
     if (target && target.line <= instance.state.doc.lines) {
-      effects.push(EditorView.scrollIntoView(instance.state.doc.line(target.line).from, { y: "nearest" }));
+      const line = instance.state.doc.line(target.line);
+      effects.push(EditorView.scrollIntoView(line.from, { y: "nearest" }));
     }
     instance.dispatch({ effects });
-  }, [activeKey]);
+  }, [highlightedLine, highlightTone]);
+
   return <div className="code-editor" ref={container} />;
 }

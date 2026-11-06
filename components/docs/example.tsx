@@ -10,7 +10,7 @@ import {
   type DocExample, type DocExampleId, type Outcome,
 } from "@/lib/docs/examples";
 
-/** A documentation example that runs with the real interpreter and checks its expected result. */
+// A példákat ugyanazzal a motorral futtatjuk, mint a szerkesztőben.
 export default function Example({ id }: { id: DocExampleId }) {
   const example: DocExample = DOC_EXAMPLES[id];
   const mapId = example.map ?? "corridor";

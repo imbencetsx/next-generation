@@ -1,4 +1,6 @@
-/** Directions are ordered counter-clockwise so that "turn left" is `dir + 1`. */
+// Térképfájlok beolvasása és a beépített pályák.
+
+// Ebben a sorrendben az irány növelése egy balra fordulást jelent.
 export const DIRECTIONS = [
   { name: "north", dx: 0, dy: -1 },
   { name: "west", dx: -1, dy: 0 },
@@ -20,7 +22,7 @@ export type MapParseResult = { ok: true; map: GameMap } | { ok: false; error: st
 const ROBOT_SYMBOLS: Record<string, Direction> = { "^": 0, "<": 1, v: 2, ">": 3 };
 const MAX_SIZE = 15;
 
-/** Parses the map file format: "<rows> <cols>" followed by one line per row. */
+// Csak teljesen érvényes fájlból adunk vissza térképet.
 export function parseMap(text: string): MapParseResult {
   const lines = text.replace(/\r\n?/g, "\n").split("\n");
   if (lines.at(-1) === "") lines.pop();
