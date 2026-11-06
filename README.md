@@ -11,7 +11,7 @@ bun install
 bun run dev
 ```
 
-Open [localhost:3000](http://localhost:3000) in your browser.
+Open [localhost:3000/test](http://localhost:3000/test) for the editor and simulator. Documentation is at `/docs`.
 
 ## Commands
 

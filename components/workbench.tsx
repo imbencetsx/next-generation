@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { useMemo, useRef, useState, type ChangeEvent } from "react";
 import { AlertCircle, BookOpen, CheckCircle2, Download, FilePlus2, Upload, WrapText } from "lucide-react";
 import CodeEditor, { type ActiveLine, type EditorHandle } from "@/components/code-editor";
+import RunConsole from "@/components/run-console";
 import Simulator from "@/components/simulator";
 import { useSimulation } from "@/components/use-simulation";
 import { EXAMPLES, validateMineScript } from "@/lib/minescript";
@@ -111,7 +112,7 @@ export default function Workbench() {
         </div>
       </header>
 
-      <main className="grid min-h-0 flex-1 gap-3 overflow-y-auto p-3 lg:grid-cols-[minmax(0,1fr)_minmax(380px,460px)] lg:overflow-hidden">
+      <main className="grid min-h-0 flex-1 gap-3 overflow-y-auto p-3 lg:grid-cols-2 lg:overflow-hidden">
         <div className="flex min-h-0 min-w-0 flex-col gap-3">
           <section className="flex min-h-[320px] min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-[#dfe4ec] bg-white">
             <div className="min-h-0 flex-1">
@@ -136,7 +137,8 @@ export default function Workbench() {
             </footer>
           </section>
 
-          <section className="max-h-52 shrink-0 overflow-y-auto rounded-lg border border-[#dfe4ec] bg-white p-3" aria-labelledby="problems">
+          <div className="grid shrink-0 gap-3 md:h-56 md:grid-cols-2">
+          <section className="min-h-0 overflow-y-auto rounded-lg border border-[#dfe4ec] bg-white p-3" aria-labelledby="problems">
             <h2 id="problems" className="mb-1 text-sm font-semibold">Problems</h2>
             {issues.length === 0 ? (
               <p className="text-sm text-[#65738a]">Nothing to fix. The program is syntactically valid.</p>
@@ -178,9 +180,11 @@ export default function Workbench() {
               </p>
             </details>
           </section>
+          <RunConsole snapshot={snapshot} />
+          </div>
         </div>
 
-        <aside className="min-h-0 min-w-0 lg:overflow-y-auto" aria-label="Simulator">
+        <aside className="min-h-0 min-w-0" aria-label="Simulator">
           <Simulator simulation={simulation} firstIssue={issues[0] ?? null} onJump={(line, column) => editor.current?.focusLine(line, column)} />
         </aside>
       </main>

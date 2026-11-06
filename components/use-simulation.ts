@@ -3,7 +3,7 @@
 // A futás indítása, léptetése és időzített lejátszása.
 
 import { useEffect, useRef, useState } from "react";
-import { Machine, idleSnapshot, parseProgram, type Snapshot } from "@/lib/interpreter";
+import { Machine, idleSnapshot, parseProgram, type Snapshot, type StepEvent } from "@/lib/interpreter";
 import { MAP_PRESETS, parseMap, presetMap } from "@/lib/robot-map";
 
 export const SPEEDS = [
@@ -12,6 +12,23 @@ export const SPEEDS = [
   { label: "Fast", delay: 80 },
   { label: "Turbo", delay: 10 },
 ] as const;
+
+/** A legutóbbi lépés mozgása: meddig csúszik a robot, és melyik mező mikor ásódik ki alatta. */
+export type Motion = { id: number; duration: number; cells: number; reveals: { index: number; at: number }[] };
+
+const CELL_MS = 200;
+
+// A mező akkor ásódik ki, amikor a robot eleje beér (a mező felénél), nem a lépés indulásakor.
+function motionFor(id: number, before: Snapshot, event: StepEvent | null, cols: number, delay: number): Motion {
+  const path = event?.path ?? [];
+  if (!path.length) return { id, duration: 0, cells: 0, reveals: [] };
+  const duration = Math.min(path.length * CELL_MS, delay * 0.85);
+  const reveals = path.flatMap((cell, k) => {
+    const index = cell.y * cols + cell.x;
+    return before.explored[index] ? [] : [{ index, at: (duration * (k + 0.5)) / path.length }];
+  });
+  return { id, duration, cells: path.length, reveals };
+}
 
 function initialMap(text: string | null) {
   if (text !== null) {
@@ -31,6 +48,8 @@ export function useSimulation(code: string, initialMapText: string | null = null
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [notice, setNotice] = useState<string | null>(null);
+  const [motion, setMotion] = useState<Motion | null>(null);
+  const motionId = useRef(0);
 
   const delay = SPEEDS[speed].delay;
 
@@ -41,14 +60,16 @@ export function useSimulation(code: string, initialMapText: string | null = null
       const current = machine.current;
       if (!current) return;
 
-      current.step();
+      const before = current.snapshot();
+      const event = current.step();
       const next = current.snapshot();
+      setMotion(motionFor(++motionId.current, before, event, map.cols, delay));
       setSnapshot(next);
       if (next.status !== "running") setPlaying(false);
     }, delay);
 
     return () => clearInterval(timer);
-  }, [playing, delay]);
+  }, [playing, delay, map.cols]);
 
   // Szünet után folytatunk; befejezés vagy visszaállítás után új futást indítunk.
   function ensureMachine(): Machine | null {
@@ -64,6 +85,7 @@ export function useSimulation(code: string, initialMapText: string | null = null
     setNotice(null);
     machine.current = new Machine(parsed.program, map);
     setSnapshot(machine.current.snapshot());
+    setMotion(null);
     return machine.current;
   }
 
@@ -80,7 +102,9 @@ export function useSimulation(code: string, initialMapText: string | null = null
     const current = ensureMachine();
     if (!current) return;
 
-    current.step();
+    const before = current.snapshot();
+    const event = current.step();
+    setMotion(motionFor(++motionId.current, before, event, map.cols, delay));
     setSnapshot(current.snapshot());
     setPlaying(false);
   }
@@ -90,6 +114,7 @@ export function useSimulation(code: string, initialMapText: string | null = null
     setSnapshot(null);
     setPlaying(false);
     setNotice(null);
+    setMotion(null);
   }
 
   function selectMap(name: string) {
@@ -126,6 +151,7 @@ export function useSimulation(code: string, initialMapText: string | null = null
     playing,
     speed,
     setSpeed,
+    motion,
     snapshot: snapshot ?? idleSnapshot(map),
     started: snapshot !== null,
     locked: snapshot?.status === "running",

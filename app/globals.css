@@ -134,3 +134,51 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .docs * { transition: none !important; }
 }
+
+/* ------------------------------------------------------------------ pixel art térkép */
+.pixel-map { background: #241411; image-rendering: pixelated; }
+.pixel-sprite { background-size: 100% 100%; background-repeat: no-repeat; image-rendering: pixelated; }
+.pixel-robot { position: absolute; left: 0; top: 0; z-index: 2; transition-property: transform; }
+.pixel-robot-sprite {
+  background-image: url(/sprites/robot_sheet.png); background-size: 400% 400%; background-repeat: no-repeat;
+  image-rendering: pixelated; animation-timing-function: step-end;
+  transform: translateY(var(--robot-foot-idle));
+}
+/* Járás: a lépés 1–3 képkockák körbe, minden ugrással egy kockát lépve. */
+@keyframes robot-walk {
+  0% { background-position-x: 33.3333%; transform: translateY(var(--robot-foot-walk-1)); }
+  33.3333% { background-position-x: 66.6667%; transform: translateY(var(--robot-foot-walk-2)); }
+  66.6667% { background-position-x: 100%; transform: translateY(var(--robot-foot-walk-3)); }
+  100% { background-position-x: 100%; transform: translateY(var(--robot-foot-walk-3)); }
+}
+/* A kiásás pillanatáig a régi (tömör) földet mutatja, utána eltűnik. */
+.pixel-cover { position: absolute; inset: 0; z-index: 1; animation: pixel-uncover 1ms step-end forwards; }
+@keyframes pixel-uncover { to { opacity: 0; } }
+/* Ködben a frissen felfedezett arany a robot érkezésekor jelenik meg. */
+.pixel-appear { animation: pixel-appear 1ms step-end both; }
+@keyframes pixel-appear { from { opacity: 0; } to { opacity: 1; } }
+
+/* Arany: átlátszó hátterű rögök (gold_chips*.png) a mező földje fölött; a villanás képkockái lépcsőzetesen váltanak. */
+.gold-shine { position: absolute; inset: 0; z-index: 1; }
+.gold-shine > i {
+  position: absolute; inset: 0; opacity: 0;
+  background-size: 100% 100%; image-rendering: pixelated;
+  animation: 3.2s step-end infinite; animation-delay: var(--shine-delay, 0s);
+}
+.gold-shine > .chips { background-image: url(/sprites/gold_chips.png); opacity: 1; animation: none; }
+.gold-shine > .shine-down-half { background-image: url(/sprites/gold_chips_down_half.png); animation-name: shine-down-half; }
+.gold-shine > .shine-down { background-image: url(/sprites/gold_chips_down.png); animation-name: shine-down; }
+.gold-shine > .shine-up-half { background-image: url(/sprites/gold_chips_up_half.png); animation-name: shine-up-half; }
+.gold-shine > .shine-up { background-image: url(/sprites/gold_chips_up.png); animation-name: shine-up; }
+@keyframes shine-down-half { 0% { opacity: 0 } 40% { opacity: 1 } 45% { opacity: 0 } 50% { opacity: 1 } 55% { opacity: 0 } 100% { opacity: 0 } }
+@keyframes shine-down { 0% { opacity: 0 } 45% { opacity: 1 } 50% { opacity: 0 } 100% { opacity: 0 } }
+@keyframes shine-up-half { 0% { opacity: 0 } 85% { opacity: 1 } 90% { opacity: 0 } 95% { opacity: 1 } 100% { opacity: 0 } }
+@keyframes shine-up { 0% { opacity: 0 } 90% { opacity: 1 } 95% { opacity: 0 } 100% { opacity: 0 } }
+
+@media (prefers-reduced-motion: reduce) {
+  .gold-shine > i { animation: none; }
+  .pixel-robot { transition: none !important; }
+  .pixel-robot-sprite { animation: none !important; }
+  .pixel-cover { display: none; }
+  .pixel-appear { animation: none; }
+}

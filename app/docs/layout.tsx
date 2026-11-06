@@ -11,7 +11,7 @@ export default function DocsLayout({ children }: LayoutProps<"/docs">) {
           <Link href="/docs" className="flex items-center gap-2 font-semibold text-[var(--d-strong)] no-underline">
             <BookOpen size={18} aria-hidden /> MineScript dokumentáció
           </Link>
-          <Link href="/" className="dbtn ml-auto">
+          <Link href="/test" className="dbtn ml-auto">
             <Code2 size={14} aria-hidden /> Szerkesztő
           </Link>
         </div>
