@@ -48,7 +48,8 @@ Submission must also include a short description (how to reach each feature, wha
 ### Repo map
 
 ```
-app/page.tsx                 editor + simulator workbench
+app/page.tsx                 redirects / to /test
+app/test/page.tsx            /test: editor + simulator workbench
 app/docs/                    docs site: layout (dark), /docs → /docs/attekintes, [slug] pages
 components/docs/pages/       one Hungarian content component per docs page
 components/docs/example.tsx  runnable example card (runs the real engine, checks the expected result)
@@ -56,7 +57,9 @@ lib/docs/examples.ts         DOC_EXAMPLES catalogue: code + map + expected resul
 lib/docs/nav.ts              docs page list (slug, title, description) — drives nav and static params
 components/code-editor.tsx   CodeMirror wrapper: MineScript mode, lint, active/error line, read-only lock
 components/workbench.tsx     page shell: header, editor, problems, reference, simulator
-components/simulator.tsx     map grid, controls, stats, console, variables
+components/simulator.tsx     controls, stats, console, variables (renders PixelMap)
+components/pixel-map.tsx     pixel-art map: 32×32 sprites, integer scaling, gold shine, sliding robot
+public/sprites/              tiles: empty-dirt (dug chamber), full_dirt (undug/fog), gold + 4 shine frames and gold_chips* cut-outs (regenerate with scripts/cut-gold-chips.py), robot_sheet (4×4: idle + 3 walk frames; rows down/left/right/up), wall (brick)
 components/use-simulation.ts map state, Machine instance, playback timer
 lib/syntax.ts                the only parser: line scan, tokens, block structure + recovery, compile to flat instructions
 lib/diagnostics.ts           Diagnostic / SyntaxCode / ErrorCode types and message helpers
@@ -323,7 +326,7 @@ print i
 - Hungarian, always dark, statically prerendered. Pages: `attekintes`, `nyelv`, `robot`, `terkepek`, `interpreter`, `hibak`, `dontesek`. Add a page by adding it to `lib/docs/nav.ts` and to the `CONTENT` map in `app/docs/[slug]/page.tsx`.
 - **Every MineScript example in the docs comes from `DOC_EXAMPLES`** and is shown with `<Example id="…" />`. Each entry states its expected result (`ok` with output/steps/gold, `syntax` with line, or `runtime` with error code and line). The reader can run it; a green check means the engine agrees with the docs.
 - When you add or change an example, or change engine behaviour, run every `DOC_EXAMPLES` entry through `runExample` + `matchesExpectation` and make sure all pass. A failing example means either the docs or the engine is wrong — find out which; don't just edit the expectation.
-- "Megnyitás a szerkesztőben" opens `/?code=…&map=…`; the workbench reads these via `useSearchParams` (that is why `app/page.tsx` wraps it in `<Suspense>`).
+- "Megnyitás a szerkesztőben" opens `/test?code=…&map=…`; the workbench reads these via `useSearchParams` (that is why `app/test/page.tsx` wraps it in `<Suspense>`).
 - Keep `/docs/dontesek` and §6 of this file in sync.
 
 ## 9. Testing policy — targeted, fast, specification-driven

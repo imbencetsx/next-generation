@@ -74,7 +74,7 @@ export default function Example({ id }: { id: DocExampleId }) {
             <RotateCcw size={14} aria-hidden /> Visszaállítás
           </button>
         )}
-        <Link className="dbtn" href={{ pathname: "/", query: { code, map: DOC_MAPS[mapId].text } }}>
+        <Link className="dbtn" href={{ pathname: "/test", query: { code, map: DOC_MAPS[mapId].text } }}>
           <ExternalLink size={14} aria-hidden /> Megnyitás a szerkesztőben
         </Link>
       </div>
