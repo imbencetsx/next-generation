@@ -5,7 +5,7 @@
 import { convexAuthNextjsMiddleware, createRouteMatcher } from "@convex-dev/auth/nextjs/server";
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 
-const isProtected = createRouteMatcher(["/test(.*)"]);
+const isProtected = createRouteMatcher(["/test(.*)", "/profile(.*)"]);
 const isLogin = createRouteMatcher(["/login"]);
 
 const convexAuthProxy = convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
@@ -34,5 +34,5 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
 
 export const config = {
   // A dokumentáció és a statikus fájlok kimaradnak; csak ezeknél kell a munkamenet.
-  matcher: ["/test/:path*", "/login", "/api/auth"],
+  matcher: ["/test/:path*", "/profile/:path*", "/login", "/api/auth"],
 };

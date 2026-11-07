@@ -102,6 +102,13 @@
 
   /* Felső sáv: bal oldalt a pixel logó (public/logo.svg), alatta világos vonal. */
   .topbar { border-bottom: 1px solid var(--rule); background: var(--background); }
+  /* Az aránytartó háttér alul rögzül; keskeny képernyőn a szélek vágódnak le, nem a bánya alja. */
+  .login-background {
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background-image: url("/artwork/pixel_ore_background.png");
+    background-size: cover; background-position: center bottom; background-repeat: no-repeat;
+    image-rendering: pixelated;
+  }
   /* Panelcím: kisbetűs, csendes; a tartalom számít, nem a címke. */
   .panel-title { font-size: 14px; line-height: 1.2; color: var(--foreground); }
   .display { font-family: var(--font-tiny), monospace; font-weight: 400; line-height: 1.1; }
@@ -199,6 +206,33 @@
 .app-ui [data-slot="button"]:is([data-variant="ghost"], [data-variant="link"]):not(:disabled):active { transform: translateY(1px); }
 /* Bekapcsolt váltógomb (aria-pressed): fehér kerettel és világosabb háttérrel; az arany a fő műveleté. */
 .app-ui [data-slot="button"][aria-pressed="true"] { --pixel-frame: var(--pixel-frame-light); background: var(--accent); color: var(--foreground); }
+/* Lépcsős kör: a kiemelés és az árnyék csak az átellenes sarkokon jelenik meg. */
+@layer components {
+.pixel-avatar {
+  --avatar-cutout: polygon(
+    37.5% 0, 62.5% 0, 62.5% 6.25%, 75% 6.25%, 75% 12.5%, 81.25% 12.5%,
+    81.25% 18.75%, 87.5% 18.75%, 87.5% 25%, 93.75% 25%, 93.75% 37.5%,
+    100% 37.5%, 100% 62.5%, 93.75% 62.5%, 93.75% 75%, 87.5% 75%,
+    87.5% 81.25%, 81.25% 81.25%, 81.25% 87.5%, 75% 87.5%, 75% 93.75%,
+    62.5% 93.75%, 62.5% 100%, 37.5% 100%, 37.5% 93.75%, 25% 93.75%,
+    25% 87.5%, 18.75% 87.5%, 18.75% 81.25%, 12.5% 81.25%, 12.5% 75%,
+    6.25% 75%, 6.25% 62.5%, 0 62.5%, 0 37.5%, 6.25% 37.5%, 6.25% 25%,
+    12.5% 25%, 12.5% 18.75%, 18.75% 18.75%, 18.75% 12.5%, 25% 12.5%,
+    25% 6.25%, 37.5% 6.25%
+  );
+  position: relative; display: inline-block; flex-shrink: 0; vertical-align: middle;
+}
+.pixel-avatar-face {
+  position: absolute; inset: 0;
+  display: grid; place-items: center; overflow: hidden;
+  clip-path: var(--avatar-cutout); background: var(--accent);
+}
+.pixel-avatar-face img { image-rendering: pixelated; }
+.pixel-avatar-lighting { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.pixel-avatar-edge { fill: var(--foreground); fill-opacity: 0.16; }
+.pixel-avatar-light-edge { fill: var(--foreground); fill-opacity: 0.45; }
+.pixel-avatar-dark-edge { fill: black; fill-opacity: 0.55; }
+}
 @media (prefers-reduced-motion: reduce) {
   .app-ui [data-slot="button"] { transition: none; }
 }

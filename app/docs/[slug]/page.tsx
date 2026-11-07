@@ -30,12 +30,12 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps<"/docs/[slug]">): Promise<Metadata> {
   const page = findPage((await params).slug);
-  return page ? { title: `${page.title} · MineScript dokumentáció`, description: page.description } : {};
+  return page ? { title: `${page.title} · MineScript Nyelv Dokumentáció`, description: page.description } : {};
 }
 
 export default function DocPage({ params }: PageProps<"/docs/[slug]">) {
   return (
-    <Suspense fallback={<p role="status" className="text-muted-foreground">Dokumentáció betöltése…</p>}>
+    <Suspense fallback={<p role="status" className="text-muted-foreground">Nyelv Dokumentáció betöltése…</p>}>
       <DocArticle params={params} />
     </Suspense>
   );

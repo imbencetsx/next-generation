@@ -1,5 +1,15 @@
 # MineScript conformance tests
 
+## Profile and account tests
+
+`bun run test:profile` runs the separate Vitest suite: Convex functions in an
+in-memory `convex-test` backend (edge runtime), and profile-page rendering in
+English and Hungarian (Node). It checks ownership/session requirements, username
+conflicts and sign-in consistency, current-password checks and rate limits,
+password-change races, session revocation, and picture validation/replacement.
+It does not access a deployed database or test browser file selection and cropping.
+The engine suite below remains Bun-native and independent of this configuration.
+
 ## Running just what changed
 
 Install with `bun install`. Tests use **Bun's native TypeScript test runner**; no
