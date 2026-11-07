@@ -7,12 +7,17 @@ import Workbench from "./index";
 const navigation = vi.hoisted(() => ({ query: "" }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(navigation.query) }));
 vi.mock("@/components/auth/user-menu", () => ({ default: () => null }));
+// Közzétett térképen a futás végén a rögzítő mutáció hívódik; a legjobb eredményt a lekérdezés adja.
+const convex = vi.hoisted(() => ({ record: vi.fn(), best: null as { gold: number; steps: number } | null }));
+vi.mock("convex/react", () => ({ useMutation: () => convex.record, useQuery: () => convex.best }));
 
 // A letöltött fájl neve és tartalma (a downloadText egy <a download> kattintással ment).
 let downloads: { filename: string; blob: Blob }[] = [];
 
 beforeEach(() => {
   navigation.query = "";
+  convex.record.mockReset();
+  convex.best = null;
   downloads = [];
   const blobs = new Map<string, Blob>();
   vi.stubGlobal(
@@ -95,5 +100,86 @@ describe("workbench / program name", () => {
   test("the field has a Hungarian label", () => {
     open("hu");
     expect((screen.getByLabelText("Program neve") as HTMLInputElement).value).toBe("collect-gold");
+  });
+});
+
+describe("workbench / results on published maps", () => {
+  const CORRIDOR = "3 10\n##########\n>.@..@.@.#\n##########";
+  const PROGRAM = "step forward 2\nmine here";
+
+  function openPublished(extra: Record<string, string> = {}) {
+    navigation.query = new URLSearchParams({
+      map: CORRIDOR,
+      mapName: "Corridor run",
+      mapId: "map1",
+      code: PROGRAM,
+      ...extra,
+    }).toString();
+    open();
+  }
+  const step = () => fireEvent.click(screen.getByRole("button", { name: "Step" }));
+
+  test("a run that reaches its end on a published map is recorded once, with the program that ran", async () => {
+    convex.record.mockResolvedValue({
+      run: { gold: 1, steps: 2, errorCode: null },
+      best: { gold: 1, steps: 2 },
+      improved: true,
+    });
+    openPublished();
+    expect(screen.getByText("No result yet on this map.")).toBeTruthy();
+    step();
+    expect(convex.record).not.toHaveBeenCalled();
+    step();
+    await waitFor(() => expect(screen.getByText("Recorded: 1 gold · 2 steps — a new best!")).toBeTruthy());
+    expect(convex.record).toHaveBeenCalledTimes(1);
+    expect(convex.record).toHaveBeenCalledWith({ mapId: "map1", code: PROGRAM });
+  });
+
+  test("a run ending with a runtime error is recorded too, and an unchanged best is reported", async () => {
+    convex.best = { gold: 2, steps: 4 };
+    convex.record.mockResolvedValue({
+      run: { gold: 1, steps: 3, errorCode: "E_NO_GOLD" },
+      best: { gold: 2, steps: 4 },
+      improved: false,
+    });
+    openPublished({ code: "step forward 2\nmine here\nmine here" });
+    expect(screen.getByText("Your best: 2 gold · 4 steps")).toBeTruthy();
+    step();
+    step();
+    step();
+    await waitFor(() => expect(screen.getByText("Recorded: 1 gold · 3 steps. Your best is unchanged.")).toBeTruthy());
+    expect(convex.record).toHaveBeenCalledTimes(1);
+  });
+
+  test("a run stopped with Reset is not recorded", () => {
+    openPublished();
+    step();
+    fireEvent.click(screen.getByRole("button", { name: "Reset" }));
+    expect(convex.record).not.toHaveBeenCalled();
+  });
+
+  test("nothing is recorded on built-in maps, or after switching away from the published map", () => {
+    open();
+    step();
+    step();
+    expect(convex.record).not.toHaveBeenCalled();
+    cleanup();
+    openPublished();
+    fireEvent.change(screen.getByRole("combobox", { name: "Map" }), { target: { value: "Corridor" } });
+    step();
+    step();
+    expect(convex.record).not.toHaveBeenCalled();
+    expect(screen.queryByText(/Published map/)).toBeNull();
+  });
+
+  test("a failed recording is shown in the player's language", async () => {
+    convex.record.mockRejectedValue(new Error('ConvexError: {"code":"RESULT_notFound"}'));
+    navigation.query = new URLSearchParams({ map: CORRIDOR, mapId: "map1", code: PROGRAM }).toString();
+    open("hu");
+    fireEvent.click(screen.getByRole("button", { name: "Lépés" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lépés" }));
+    await waitFor(() =>
+      expect(screen.getByText("Ezt a pályát közben törölték, ezért az eredmény nem rögzült.")).toBeTruthy(),
+    );
   });
 });

@@ -3,7 +3,7 @@
 // A jobb oldali panel: a futási hiba, a térképválasztás és -import, a köd kapcsolója, a statisztika és maga a térkép.
 // A futás vezérlői a szerkesztő fejlécében vannak (playback-bar.tsx).
 
-import { useRef, useState, type ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { Alert, Compass, Fog, Upload } from "@/components/icons";
 import PixelMap from "@/components/pixel-map";
 import { Button } from "@/components/ui/button";
@@ -17,9 +17,11 @@ import { MAP_PRESETS } from "@/lib/robot-map";
 type Props = {
   simulation: Simulation;
   onJump: (line: number, column?: number) => void;
+  /** A térkép alatt megjelenő kiegészítés (pl. közzétett térképen a rögzített eredmény). */
+  footer?: ReactNode;
 };
 
-export default function Simulator({ simulation, onJump }: Props) {
+export default function Simulator({ simulation, onJump, footer }: Props) {
   const { t } = useI18n();
   const { snapshot, map } = simulation;
   const [fog, setFog] = useState(false);
@@ -105,6 +107,7 @@ export default function Simulator({ simulation, onJump }: Props) {
           <Compass size={13} aria-hidden />
           {t.sim.facing(direction)} {fog ? t.sim.fogCaption : t.sim.exploredCaption}
         </p>
+        {footer}
       </Card>
     </div>
   );

@@ -26,7 +26,7 @@ const ENGINE_CONSUMERS = [
   "tests/diagnostics",
 ];
 const FULL_SUITE = ["tests"];
-const APP_SUITE = ["convex", "components/profile", "components/map-editor", "components/workbench"];
+const APP_SUITE = ["convex", "components/profile", "components/map-editor", "components/workbench", "components/home"];
 
 type Rule = {
   matches: (path: string) => boolean;
@@ -58,6 +58,8 @@ const RULES: Rule[] = [
     tests: ["tests/syntax", ...ENGINE_CONSUMERS],
   },
   { matches: isOneOf("lib/interpreter.ts"), tests: ENGINE_CONSUMERS },
+  // A ranglista pontozása: a motor tesztje és a szerveroldali rögzítés (Convex).
+  { matches: isOneOf("lib/scoring.ts"), tests: ["tests/interpreter/scoring.test.ts"], appTests: ["convex"] },
   { matches: isOneOf("lib/robot-map.ts"), tests: ["tests/maps", ...ENGINE_CONSUMERS] },
   { matches: isOneOf("lib/map-editor.ts"), tests: GROUPS.maps, appTests: ["components/map-editor"] },
   // A térképmezők képe (felfedezett / felfedezetlen / köd).
@@ -105,11 +107,12 @@ const RULES: Rule[] = [
   { matches: isUnder("convex/_generated/"), tests: [], appTests: APP_SUITE },
   { matches: isUnder("convex/"), tests: [], appTests: ["convex"] },
   { matches: isUnder("components/profile/"), tests: [], appTests: ["components/profile"], ui: true },
+  { matches: isUnder("components/home/"), tests: [], appTests: ["components/home"], ui: true },
   // A szótár szövegeit a profil, a térképszerkesztő és a munkafelület renderelési tesztjei ellenőrzik.
   {
     matches: isUnder("i18n/"),
     tests: [],
-    appTests: ["components/profile", "components/map-editor", "components/workbench"],
+    appTests: ["components/profile", "components/map-editor", "components/workbench", "components/home"],
     ui: true,
   },
   { matches: isOneOf("vitest.config.mts"), tests: [], appTests: APP_SUITE },

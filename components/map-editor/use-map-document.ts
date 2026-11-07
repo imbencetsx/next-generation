@@ -20,9 +20,14 @@ import type { GameMap } from "@/lib/robot-map";
 const MAX_FILE_BYTES = 16 * 1024;
 export type FileError = { kind: "read" | "large" } | { kind: "invalid"; message: string };
 
-/** @param initialSource A szimulátorból (?map=) érkező térkép, ha van; különben egy új, üres térkép. */
-export function useMapDocument(initialSource: string | null) {
-  const [document, setDocument] = useState(() => createMapDocument(initialSource ?? undefined));
+/**
+ * @param initialSource A szimulátorból vagy a kezdőlapról (?map=) érkező térkép, ha van; különben egy új, üres térkép.
+ * @param initialName A térkép neve (?mapName=), ha van.
+ */
+export function useMapDocument(initialSource: string | null, initialName: string | null = null) {
+  const [document, setDocument] = useState(() =>
+    createMapDocument(initialSource ?? undefined, initialName ? mapName(initialName) : undefined),
+  );
   const [fileError, setFileError] = useState<FileError | null>(null);
   // Egy lassú import nem írhatja felül a közben létrehozott vagy szerkesztett térképet.
   const operation = useRef(0);

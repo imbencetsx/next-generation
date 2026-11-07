@@ -28,7 +28,7 @@ import { ROUTES } from "@/lib/routes";
 type Flow = "signIn" | "signUp";
 
 /** Ide lépünk tovább bejelentkezés után, ha a ?next= paraméter hiányzik vagy nem biztonságos. */
-const DEFAULT_AFTER_LOGIN = ROUTES.workbench;
+const DEFAULT_AFTER_LOGIN = ROUTES.home;
 
 /**
  * Nyílt átirányítás elleni védelem: csak a saját oldalunkon belüli útvonalra (egy „/” jellel kezdődőre)

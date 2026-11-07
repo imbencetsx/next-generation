@@ -153,16 +153,25 @@
     background: var(--background);
   }
   /* Az aránytartó háttér alul rögzül; keskeny képernyőn a szélek vágódnak le, nem a bánya alja. */
-  .login-background {
+  /* Teljes oldalas pixel art háttér (a tartalom mögött, rögzítve). A szülőnek „isolate” kell. */
+  .login-background,
+  .home-background {
     position: fixed;
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background-image: url("/artwork/pixel_ore_background.png");
     background-size: cover;
-    background-position: center bottom;
     background-repeat: no-repeat;
     image-rendering: pixelated;
+  }
+  .login-background {
+    background-image: url("/artwork/pixel_ore_background.png");
+    background-position: center bottom;
+  }
+  /* Kanyon naplementében (160×90 px); a szöveg mindig kártyán ül, így a kép teljes fényerővel látszhat. */
+  .home-background {
+    background-image: url("/artwork/mine_canyon_background.png");
+    background-position: center;
   }
   /* Panelcím: kisbetűs, csendes; a tartalom számít, nem a címke. */
   .panel-title {

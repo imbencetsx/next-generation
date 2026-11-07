@@ -1,4 +1,5 @@
-// Kis, statikus térkép a dokumentációhoz, a játék saját sprite-jaival (animáció nélkül).
+// Kis, statikus térkép a játék saját sprite-jaival (animáció nélkül): a dokumentáció példáihoz és a kezdőlap
+// térképkártyáihoz.
 // Ugyanaz a jelölés, mint a szimulátorban (mapTile): a felfedezett mező kiásott föld vagy világos tégla,
 // a felfedezetlen tömör föld vagy sötét tégla.
 
@@ -15,18 +16,22 @@ type Props = {
   explored?: boolean[];
   caption?: string;
   cell?: number;
+  /** Akadálymentes leírás; ha hiányzik, a dokumentáció magyar leírása (méret, robot helye és iránya). */
+  label?: string;
 };
 
-export function MiniMap({ map, robot = map.robot, gold = map.gold, explored, caption, cell = 24 }: Props) {
+export function MiniMap({ map, robot = map.robot, gold = map.gold, explored, caption, cell = 24, label }: Props) {
   const robotIndex = cellIndex(map, robot.x, robot.y);
   const facing = DIRECTION_HU[DIRECTIONS[robot.dir].name];
-  const label = `${map.rows}×${map.cols} térkép, a robot a ${robot.y + 1}. sor ${robot.x + 1}. oszlopában áll, ${facing} felé néz.`;
+  const description =
+    label ??
+    `${map.rows}×${map.cols} térkép, a robot a ${robot.y + 1}. sor ${robot.x + 1}. oszlopában áll, ${facing} felé néz.`;
 
   return (
     <figure className="m-0 flex shrink-0 flex-col items-center gap-1.5">
       <div
         role="img"
-        aria-label={label}
+        aria-label={description}
         className="pixel-map grid border-2 border-border"
         style={{ gridTemplateColumns: `repeat(${map.cols}, ${cell}px)` }}
       >

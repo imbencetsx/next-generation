@@ -17,7 +17,7 @@ import UsernameForm from "./username-form";
 import { ROUTES } from "@/lib/routes";
 
 /** Ide visz vissza a logó és a „Vissza” gomb. */
-const BACK_HREF = ROUTES.workbench;
+const BACK_HREF = ROUTES.home;
 
 export default function ProfilePage() {
   const { t } = useI18n();

@@ -28,6 +28,7 @@ function proxyMatcher(): string[] {
 
 test("proxy matcher covers every session-dependent route", () => {
   expect(proxyMatcher()).toEqual([
+    ROUTES.home,
     `${ROUTES.workbench}/:path*`,
     `${ROUTES.profile}/:path*`,
     `${ROUTES.mapEditor}/:path*`,

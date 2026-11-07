@@ -1,6 +1,6 @@
 // Kódolt hibák a kliens felé. A szerver nem mondatot küld, hanem egy kódot (pl. "PROFILE_taken") a
 // ConvexError adatában ({ code }), a kliens pedig ebből választ fordítást a felület nyelvén
-// (i18n: auth.errors, profile.errors).
+// (i18n: auth.errors, profile.errors, maps.errors, results.errors).
 //
 // Két út van a klienshez:
 //   - a profil függvényei közvetlenül a Convex klienstől jönnek: ott a hiba adata (`error.data.code`) olvasható;
@@ -12,6 +12,8 @@ import { ConvexError } from "convex/values";
 
 export const AUTH_ERROR_PREFIX = "AUTH_";
 export const PROFILE_ERROR_PREFIX = "PROFILE_";
+export const MAP_ERROR_PREFIX = "MAP_";
+export const RESULT_ERROR_PREFIX = "RESULT_";
 
 export type CodedErrorData = { code: string };
 

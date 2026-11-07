@@ -30,7 +30,11 @@ Submission must also include a short description (how to reach each feature, wha
 | Map editor (text + visual, new/import/export, presets, back to the simulator) | done | `app/map-editor/`, `components/map-editor/`, `lib/map-editor.ts`, `components/code-editor/map-mode.ts` |
 | Backend: Convex cloud (dev deployment from `.env.local`; production via `bun run build:prod`) | set up | `convex/` |
 | Auth: Convex Auth, username + password, open registration; httpOnly cookie sessions, `/workbench` and `/profile` gated server-side by `proxy.ts` | done | `convex/auth.ts`, `convex/users.ts`, `proxy.ts`, `app/login/`, `components/auth/` |
-| Persistence of maps/programs/runs, leaderboard with server re-run | planned | — |
+| Home page (`/`): write a program, make a map, browse published maps | done | `app/(home)/`, `components/home/` |
+| Map publishing (shared, immutable, owner can delete; server re-validates with `parseMap`) | done | `convex/maps.ts`, `convex/mapRules.ts`, `components/map-editor/publish-map.tsx` |
+| Best result per player per published map (server re-runs the program; only a better score replaces it) | done | `convex/results.ts`, `lib/scoring.ts`, `components/workbench/use-result-recorder.ts` |
+| Leaderboard: top 5 per published map on its home-page card (places by PDF 3.5 order; equal results share a place, the earlier one first) | done | `convex/results.ts` (`leaderboard`), `components/home/map-leaderboard.tsx` |
+| Saving programs | planned | — |
 | Fast conformance tests (Bun native runner) | done | `tests/`, `scripts/test-related.ts`, `docs/testing.md` |
 | Browser / React playback integration tests | planned | — |
 
@@ -55,10 +59,17 @@ Submission must also include a short description (how to reach each feature, wha
 ### Repo map
 
 ```
-app/page.tsx                 redirects / to /workbench (next.config.ts also redirects the old /test URL there)
+app/(home)/                  / home page (signed-in): start cards + published maps; route group keeps the root layout static (next.config.ts redirects the old /test URL to /workbench)
+components/home/             index.tsx (page), published-maps.tsx (All/Mine, paginated), map-card.tsx (preview, open in the workbench, delete own), map-leaderboard.tsx (top 5 table)
+convex/maps.ts               publish / list (paginated, newest first, `mine`) / remove; table `maps` (immutable, by_ownerId)
+convex/mapRules.ts           MAP_* error codes and publishedMapName (1–60 chars), shared with the client
+convex/results.ts            record (server re-runs the code on the stored map, keeps the player's best; an improvement replaces the row so _creationTime = when it was reached) / myBest / leaderboard (top LEADERBOARD_SIZE); table `results` (by_mapId_and_userId, by_mapId_and_rank)
+convex/resultRules.ts        RESULT_* error codes and the recorded-code size limit
+lib/scoring.ts               Score, isBetterScore (PDF 3.5 order), scoreRank (single sortable key), scoreProgram (run to the end, as the UI would)
+components/workbench/use-result-recorder.ts, published-map-result.tsx  record finished runs on a published map (?mapId=) and show the player's best
 app/icon.svg, app/favicon.ico, app/apple-icon.png  favicon: the robot's front idle frame (robot_sheet row 1, col 1), transparent, centred on its visible 22×23 pixels (the sprite has near-invisible alpha ≤ 16 noise pixels; drop them before measuring); 32 px 1:1, 64 px 2×, Apple 6× (regenerate all three if the sprite changes)
 app/workbench/page.tsx       /workbench: editor + simulator workbench
-app/map-editor/page.tsx      /map-editor: map editor (signed-in; ?map=, ?code=, ?filename= carry the simulator's state both ways)
+app/map-editor/page.tsx      /map-editor: map editor (signed-in; ?map=, ?mapName=, ?code=, ?filename= carry the state between home, simulator and editor; `withMap()` in lib/routes.ts builds the map links)
 lib/map-editor.ts            pure map-editing operations: createMap, formatMap (= parseMap inverse), resizeMap, paintCell, MapDocument (source + name), mapName/mapFilename
 components/map-editor/       index.tsx (layout, problems), file-toolbar.tsx, map-controls.tsx (brushes, size, direction), map-grid.tsx (keyboard grid), use-map-document.ts
 components/code-editor/map-mode.ts  CodeMirror support for map files (highlighting + parseMap lint); CodeEditor `mode="map"`
@@ -273,6 +284,8 @@ The leaderboard's **step count = processed program lines**, *not* cells moved. `
 | D5 | Trailing newline at end of file. | One terminal newline is ignored; any other blank line is a syntax error. | provisional |
 | D6 | Range of computed integers. | JavaScript `number` (exact up to 2^53); no clamping. Only *literals* are limited to 0–100. | provisional, ask organizers |
 | D7 | What counts as explored? | The start cell, every cell the robot enters, and the in-map cell inspected by `isThere`. | provisional |
+| D9 | Which runs are recorded for the leaderboard? (PDF 3.5: "minden programfuttatás végén") | Only runs on a **published** map. Every run that **ends** counts: program end, runtime error or the 1000-line limit, with the gold mined and lines processed until then. A run stopped with **Reset** has not ended and is **not recorded**. Only each player's **best** per map is stored (more gold, then fewer steps; an exact tie keeps the earlier one). The server re-runs the code itself (`lib/scoring.ts`). | best-only: user request 2026-11-07; which runs count: provisional |
+| D8 | Are maps per user or shared? (PDF 3.2 leaves it to the team) | **Published maps are shared** with every signed-in player (home page). A published map is **immutable**; edits are published again, so leaderboard results always refer to the exact map they were played on. Owners can delete their own maps. | sharing: user request 2026-11-07; immutability + owner delete: provisional |
 
 When you hit a new gap: **do not guess silently.** Ask the user, then record the answer here.
 

@@ -2,7 +2,8 @@
 
 // A térképszerkesztő oldal (/map-editor). Bal oldalon a térképfájl szövege CodeMirrorban, fájlműveletekkel és
 // hibalistával; jobb oldalon ugyanaz a térkép rajzolva, ecsetekkel. A két nézet ugyanazt a szöveget szerkeszti.
-// A „Használat a szimulátorban” a térképet (és a magával hozott programot) visszaviszi a munkafelületre.
+// A „Használat a szimulátorban” a térképet (és a magával hozott programot) visszaviszi a munkafelületre,
+// a „Közzététel” pedig minden játékosnak megosztja (publish-map.tsx).
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -19,6 +20,7 @@ import { ROUTES } from "@/lib/routes";
 import FileToolbar from "./file-toolbar";
 import MapControls from "./map-controls";
 import MapGrid from "./map-grid";
+import PublishMap from "./publish-map";
 import { useMapDocument, type FileError } from "./use-map-document";
 import type { Messages } from "@/i18n/messages";
 
@@ -31,7 +33,7 @@ function fileErrorMessage(error: FileError, labels: Messages["mapEditor"]): stri
 export default function MapEditor() {
   const { t } = useI18n();
   const params = useSearchParams();
-  const file = useMapDocument(params.get("map"));
+  const file = useMapDocument(params.get("map"), params.get("mapName"));
   const { preview, validation, source } = file.document;
   const editor = useRef<EditorHandle | null>(null);
   const [wrap, setWrap] = useState(false);
@@ -39,7 +41,9 @@ export default function MapEditor() {
   const [tool, setTool] = useState<MapTool>("wall");
   const [notice, setNotice] = useState(false);
   const returnQuery = Object.fromEntries(
-    ["code", "filename", "map"].flatMap((key) => (params.get(key) !== null ? [[key, params.get(key)!]] : [])),
+    ["code", "filename", "map", "mapName"].flatMap((key) =>
+      params.get(key) !== null ? [[key, params.get(key)!]] : [],
+    ),
   );
 
   function paint(x: number, y: number) {
@@ -53,7 +57,7 @@ export default function MapEditor() {
     <div className="app-ui flex h-dvh flex-col">
       <TopBar
         brand={
-          <Link href={{ pathname: ROUTES.workbench, query: returnQuery }} aria-label={t.mapEditor.workbench}>
+          <Link href={ROUTES.home} aria-label={t.home.title}>
             <Logo />
           </Link>
         }
@@ -138,19 +142,26 @@ export default function MapEditor() {
             <p id="map-export-hint" className="font-read text-xs text-muted-foreground">
               {t.mapEditor.exportHint}
             </p>
+            <p id="map-publish-hint" className="font-read text-xs text-muted-foreground">
+              {t.mapEditor.publishHint}
+            </p>
           </Card>
         </section>
         <Card className="min-h-[480px] min-w-0 gap-0 py-0 lg:min-h-0" role="region" aria-labelledby="map-visual-title">
-          <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border p-3">
-            <h2 id="map-visual-title" className="panel-title">
+          <header className="flex flex-wrap items-center gap-2 border-b border-border p-3">
+            <h2 id="map-visual-title" className="panel-title mr-auto">
               {t.mapEditor.visual}
             </h2>
+            <PublishMap name={file.document.name} text={validation.ok ? formatMap(validation.map) : null} />
             {validation.ok ? (
               <Link
                 data-slot="button"
                 data-variant="default"
                 className={buttonVariants()}
-                href={{ pathname: ROUTES.workbench, query: { ...returnQuery, map: formatMap(validation.map) } }}
+                href={{
+                  pathname: ROUTES.workbench,
+                  query: { ...returnQuery, map: formatMap(validation.map), mapName: file.document.name },
+                }}
               >
                 {t.mapEditor.useMap}
               </Link>

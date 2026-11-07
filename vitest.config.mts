@@ -10,6 +10,7 @@ export default defineConfig({
       "components/profile/**/*.test.tsx",
       "components/map-editor/**/*.test.tsx",
       "components/workbench/**/*.test.tsx",
+      "components/home/**/*.test.tsx",
     ],
   },
 });

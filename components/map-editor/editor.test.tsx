@@ -9,9 +9,13 @@ import MapEditor from "./index";
 const navigation = vi.hoisted(() => ({ query: "" }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(navigation.query) }));
 vi.mock("@/components/auth/user-menu", () => ({ default: () => null }));
+// A közzététel a Convex mutációt hívja; a teszt a hívást és a válaszát figyeli.
+const convex = vi.hoisted(() => ({ publish: vi.fn() }));
+vi.mock("convex/react", () => ({ useMutation: () => convex.publish }));
 
 beforeEach(() => {
   navigation.query = new URLSearchParams({ map: "1 2\n>.", code: "print true", filename: "test.mine" }).toString();
+  convex.publish.mockReset();
   vi.stubGlobal(
     "URL",
     class extends URL {
@@ -139,5 +143,33 @@ describe("map editor / React and CodeMirror integration", () => {
     const programField = screen.getByLabelText("Program name");
     expect(programField.className).toBe(mapField.className);
     expect(programField.nextElementSibling?.textContent).toBe(".mine");
+  });
+
+  test("publishes the valid map under the file name and shows the result", async () => {
+    convex.publish.mockResolvedValue("map-id");
+    open();
+    fireEvent.change(screen.getByLabelText("Map filename"), { target: { value: "tiny" } });
+    fireEvent.click(screen.getByRole("button", { name: "Publish" }));
+    expect(await screen.findByText(/Published as “tiny”/)).toBeTruthy();
+    expect(convex.publish).toHaveBeenCalledWith({ name: "tiny", text: "1 2\n>." });
+    expect(screen.getByRole("link", { name: "Open the home page" }).getAttribute("href")).toBe("/");
+  });
+
+  test("an invalid map cannot be published, and a server error is shown in the user's language", async () => {
+    open("hu");
+    setSource("1 2\n@@");
+    expect(screen.getByRole("button", { name: "Közzététel" }).hasAttribute("disabled")).toBe(true);
+    setSource("1 1\n>");
+    convex.publish.mockRejectedValue(new Error('Uncaught ConvexError: {"code":"MAP_name"}'));
+    fireEvent.click(screen.getByRole("button", { name: "Közzététel" }));
+    await waitFor(() => expect(screen.getByText("Adj a térképnek 1–60 karakteres nevet.")).toBeTruthy());
+  });
+
+  test("a map name from the link becomes the file name and travels back to the simulator", () => {
+    navigation.query = new URLSearchParams({ map: "1 1\n>", mapName: "Cave of Gold" }).toString();
+    open();
+    expect((screen.getByLabelText("Map filename") as HTMLInputElement).value).toBe("Cave of Gold");
+    const link = screen.getByRole("link", { name: "Use in simulator" }).getAttribute("href")!;
+    expect(new URL(link, "http://localhost").searchParams.get("mapName")).toBe("Cave of Gold");
   });
 });

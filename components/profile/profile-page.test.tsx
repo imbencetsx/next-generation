@@ -35,7 +35,7 @@ describe("profile page rendering", () => {
       ]) {
         expect(html).toContain(text);
       }
-      expect(html).toContain('href="/workbench"');
+      expect(html).toContain('href="/"');
       expect(html).toContain('href="/profile"');
       expect(html).toContain('autoComplete="current-password"');
       expect(html).toContain('autoComplete="new-password"');

@@ -22,6 +22,8 @@ import type { Snapshot } from "@/lib/interpreter";
 import { validateMineScript, type SyntaxIssue } from "@/lib/minescript";
 import FileToolbar from "./file-toolbar";
 import ProblemsPanel from "./problems-panel";
+import PublishedMapResult from "./published-map-result";
+import { useResultRecorder } from "./use-result-recorder";
 import { useProgramFile } from "./use-program-file";
 import { ROUTES } from "@/lib/routes";
 
@@ -41,7 +43,16 @@ export default function Workbench() {
   // A dokumentáció „Megnyitás a szerkesztőben” linkje ezekben küldi a példát.
   const params = useSearchParams();
   const file = useProgramFile(params.get("code"), params.get("filename"));
-  const simulation = useSimulation(file.code, params.get("map"));
+  // Közzétett térképen (a kezdőlapról, ?mapId=) minden végigért futás eredménye rögzül.
+  const recorder = useResultRecorder();
+  const simulation = useSimulation(file.code, {
+    mapText: params.get("map"),
+    mapName: params.get("mapName"),
+    mapId: params.get("mapId"),
+    onRunEnd: ({ code, mapId }) => {
+      if (mapId) void recorder.recordRun(mapId, code);
+    },
+  });
   const { snapshot, locked } = simulation;
 
   const [wrap, setWrap] = useState(false);
@@ -67,7 +78,9 @@ export default function Workbench() {
       <TopBar
         brand={
           <h1 className="flex">
-            <Logo />
+            <Link href={ROUTES.home} aria-label={t.home.title}>
+              <Logo />
+            </Link>
           </h1>
         }
       >
@@ -77,7 +90,12 @@ export default function Workbench() {
           data-variant="ghost"
           href={{
             pathname: ROUTES.mapEditor,
-            query: { map: formatMap(simulation.map), code: file.code, filename: file.filename },
+            query: {
+              map: formatMap(simulation.map),
+              mapName: simulation.mapName,
+              code: file.code,
+              filename: file.filename,
+            },
           }}
         >
           <Pencil aria-hidden />
@@ -136,7 +154,15 @@ export default function Workbench() {
         </div>
 
         <aside className="min-w-0 lg:min-h-0" aria-label={t.sim.region}>
-          <Simulator simulation={simulation} onJump={jumpTo} />
+          <Simulator
+            simulation={simulation}
+            onJump={jumpTo}
+            footer={
+              simulation.publishedMapId && (
+                <PublishedMapResult mapId={simulation.publishedMapId} record={recorder.state} />
+              )
+            }
+          />
         </aside>
       </main>
     </div>
