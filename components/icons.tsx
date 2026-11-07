@@ -1,6 +1,6 @@
 // Pixeles ikonok (pixelarticons, MIT) egy helyen, a felület saját neveivel.
-// A rajzok 24×24-es rácson vannak: a méretet a legközelebbi 12/16/20/24 px-re igazítjuk, és élesen rajzoljuk,
-// hogy a vonalak ne mosódjanak el (12 és 24 px minden kijelzőn pontos, 16 és 20 px Retinán).
+// A rajzok 24×24-es rácson vannak: a méretet a legközelebbi 12/16/20/24/48 px-re igazítjuk, és élesen rajzoljuk,
+// hogy a vonalak ne mosódjanak el (12, 24 és 48 px minden kijelzőn pontos, 16 és 20 px Retinán).
 
 import type { SVGProps } from "react";
 import { ArrowBarRight } from "pixelarticons/react/ArrowBarRight.js";
@@ -44,7 +44,8 @@ import { WarningDiamond } from "pixelarticons/react/WarningDiamond.js";
 export type IconProps = Omit<SVGProps<SVGSVGElement>, "ref"> & { size?: number };
 type Glyph = (props: SVGProps<SVGSVGElement>) => React.JSX.Element;
 
-const GRID_SIZES = [12, 16, 20, 24];
+// A 48 px a 24-es rács pontos kétszerese: nagy, díszítő ikonokhoz (pl. a kezdőlap belépési pontjai).
+const GRID_SIZES = [12, 16, 20, 24, 48];
 // Döntetlennél a nagyobbat választjuk (14 → 16), hogy a kis ikonok ne zsugorodjanak olvashatatlanra.
 const snap = (size: number) =>
   GRID_SIZES.reduce((best, step) => (Math.abs(step - size) <= Math.abs(best - size) ? step : best));

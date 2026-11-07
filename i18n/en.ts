@@ -171,7 +171,8 @@ export const en = {
 
   home: {
     title: "Home",
-    heading: "Mine for gold with code",
+    /** A kiemelt szó (`gold`) aranyszínű; a három rész együtt adja a címet. */
+    heading: { before: "Mine for ", gold: "gold", after: " with code" },
     intro:
       "Write a MineScript program that steers the robot through a mine, or build a mine of your own for others to solve.",
     writeTitle: "Free programming",

@@ -174,7 +174,7 @@ export const hu: Messages = {
 
   home: {
     title: "Kezdőlap",
-    heading: "Bányássz aranyat kóddal",
+    heading: { before: "Bányássz ", gold: "aranyat", after: " kóddal" },
     intro:
       "Írj MineScript programot, amely végigvezeti a robotot a bányán, vagy építs saját bányát, amit mások oldhatnak meg.",
     writeTitle: "Szabad program írása",
