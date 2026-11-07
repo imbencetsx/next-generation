@@ -24,9 +24,7 @@ export type DocExample = {
   showMap?: boolean;
 };
 
-export type Outcome =
-  | { kind: "syntax"; issues: SyntaxIssue[] }
-  | { kind: "run"; snapshot: Snapshot; map: GameMap };
+export type Outcome = { kind: "syntax"; issues: SyntaxIssue[] } | { kind: "run"; snapshot: Snapshot; map: GameMap };
 
 export function loadDocMap(id: DocMapId = "corridor"): GameMap {
   const result = parseMap(DOC_MAPS[id].text);
@@ -62,8 +60,10 @@ export function matchesExpectation(outcome: Outcome, expected: Expectation): boo
   if (expected.steps !== undefined && snapshot.steps !== expected.steps) return false;
   if (expected.mined !== undefined && snapshot.mined !== expected.mined) return false;
   if (expected.output !== undefined) {
-    return expected.output.length === snapshot.output.length
-      && expected.output.every((line, index) => line === snapshot.output[index]);
+    return (
+      expected.output.length === snapshot.output.length &&
+      expected.output.every((line, index) => line === snapshot.output[index])
+    );
   }
   return true;
 }

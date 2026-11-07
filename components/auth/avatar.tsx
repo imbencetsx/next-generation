@@ -15,13 +15,31 @@ for (let y = 0; y < 32; y++) {
   }
 }
 
-export default function Avatar({ name, imageUrl, size = 28 }: { name: string; imageUrl: string | null; size?: number }) {
+export default function Avatar({
+  name,
+  imageUrl,
+  size = 28,
+}: {
+  name: string;
+  imageUrl: string | null;
+  size?: number;
+}) {
   return (
     <span className="pixel-avatar display" style={{ width: size, height: size, fontSize: size / 2 }} aria-hidden>
       <span className="pixel-avatar-face">
-        {imageUrl ? <Image src={imageUrl} alt="" width={size} height={size} unoptimized className="size-full object-cover" /> : name.charAt(0).toUpperCase()}
+        {imageUrl ? (
+          <Image src={imageUrl} alt="" width={size} height={size} unoptimized className="size-full object-cover" />
+        ) : (
+          name.charAt(0).toUpperCase()
+        )}
       </span>
-      <svg className="pixel-avatar-lighting" viewBox="0 0 32 32" shapeRendering="crispEdges" aria-hidden focusable="false">
+      <svg
+        className="pixel-avatar-lighting"
+        viewBox="0 0 32 32"
+        shapeRendering="crispEdges"
+        aria-hidden
+        focusable="false"
+      >
         <path d={lighting.darkCorner} className="pixel-avatar-dark-edge" transform="translate(1 1)" />
         <path d={lighting.edge} className="pixel-avatar-edge" />
         <path d={lighting.lightCorner} className="pixel-avatar-light-edge" />

@@ -1,8 +1,11 @@
 # MineScript conformance tests
 
+`bun run test` runs everything: the Bun-native engine suite (`bun run test:engine`, below)
+and the Vitest app suite (`bun run test:app`).
+
 ## Profile and account tests
 
-`bun run test:profile` runs the separate Vitest suite: Convex functions in an
+`bun run test:app` runs the separate Vitest suite: Convex functions in an
 in-memory `convex-test` backend (edge runtime), and profile-page rendering in
 English and Hungarian (Node). It checks ownership/session requirements, username
 conflicts and sign-in consistency, current-password checks and rate limits,
@@ -57,7 +60,7 @@ bun test ./tests/interpreter/limits.test.ts --watch
 
 Use the related-file selector for changed production dependencies: changing the
 validator affects the parser/interpreter/docs, not only standalone syntax tests.
-`lib/syntax.ts` and `lib/diagnostics.ts` select the same syntax, engine and diagnostics
+`lib/syntax/` and `lib/diagnostics.ts` select the same syntax, engine and diagnostics
 closure as `lib/minescript.ts`. Interpreter and map-model changes also include
 `tests/diagnostics`; map changes additionally include map parsing tests.
 

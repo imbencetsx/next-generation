@@ -11,9 +11,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
-  DOC_EXAMPLES, DOC_MAPS, describeExpectation, loadDocMap, matchesExpectation, runExample,
-  type DocExample, type DocExampleId, type Outcome,
+  DOC_EXAMPLES,
+  DOC_MAPS,
+  describeExpectation,
+  loadDocMap,
+  matchesExpectation,
+  runExample,
+  type DocExample,
+  type DocExampleId,
+  type Outcome,
 } from "@/lib/docs/examples";
+import { ROUTES } from "@/lib/routes";
 
 export default function Example({ id }: { id: DocExampleId }) {
   const example: DocExample = DOC_EXAMPLES[id];
@@ -25,8 +33,12 @@ export default function Example({ id }: { id: DocExampleId }) {
   const modified = code !== example.code;
   const good = example.expect.kind === "ok";
   const passed = outcome && !modified ? matchesExpectation(outcome, example.expect) : null;
-  const errorLine = outcome?.kind === "syntax" ? outcome.issues[0]?.line
-    : outcome?.kind === "run" ? outcome.snapshot.error?.line : undefined;
+  const errorLine =
+    outcome?.kind === "syntax"
+      ? outcome.issues[0]?.line
+      : outcome?.kind === "run"
+        ? outcome.snapshot.error?.line
+        : undefined;
 
   function update(value: string) {
     setCode(value);
@@ -40,7 +52,9 @@ export default function Example({ id }: { id: DocExampleId }) {
           <Badge variant={good ? "outline" : "destructive"} className="font-pixel">
             {good ? <Check aria-hidden /> : <Cross aria-hidden />} {good ? "Helyes" : "Hibás"}
           </Badge>
-          <figcaption id={`ex-${id}`} className="font-pixel text-[15px]">{example.title}</figcaption>
+          <figcaption id={`ex-${id}`} className="font-pixel text-[15px]">
+            {example.title}
+          </figcaption>
         </div>
 
         <div className="flex flex-col gap-4 md:flex-row md:items-start">
@@ -58,11 +72,18 @@ export default function Example({ id }: { id: DocExampleId }) {
               <CodeView code={code} markLine={errorLine} />
             )}
           </div>
-          {example.showMap && (
-            outcome?.kind === "run"
-              ? <MiniMap map={outcome.map} robot={outcome.snapshot.robot} gold={outcome.snapshot.gold} explored={outcome.snapshot.explored} caption="Futás után" />
-              : <MiniMap map={loadDocMap(mapId)} caption={`${DOC_MAPS[mapId].name}, kezdőállapot`} />
-          )}
+          {example.showMap &&
+            (outcome?.kind === "run" ? (
+              <MiniMap
+                map={outcome.map}
+                robot={outcome.snapshot.robot}
+                gold={outcome.snapshot.gold}
+                explored={outcome.snapshot.explored}
+                caption="Futás után"
+              />
+            ) : (
+              <MiniMap map={loadDocMap(mapId)} caption={`${DOC_MAPS[mapId].name}, kezdőállapot`} />
+            ))}
         </div>
 
         <p className="mt-3 text-[15px] text-muted-foreground">
@@ -85,15 +106,13 @@ export default function Example({ id }: { id: DocExampleId }) {
             className={buttonVariants({ variant: "ghost" })}
             data-slot="button"
             data-variant="ghost"
-            href={{ pathname: "/test", query: { code, map: DOC_MAPS[mapId].text } }}
+            href={{ pathname: ROUTES.workbench, query: { code, map: DOC_MAPS[mapId].text } }}
           >
             <ExternalLink aria-hidden /> Megnyitás a szerkesztőben
           </Link>
         </div>
 
-        <div aria-live="polite">
-          {outcome && <Result outcome={outcome} passed={passed} />}
-        </div>
+        <div aria-live="polite">{outcome && <Result outcome={outcome} passed={passed} />}</div>
       </Card>
     </figure>
   );
@@ -102,8 +121,16 @@ export default function Example({ id }: { id: DocExampleId }) {
 function Result({ outcome, passed }: { outcome: Outcome; passed: boolean | null }) {
   return (
     <div className="pixel-frame mt-4 bg-code p-3 text-[15px]">
-      {passed === true && <p className="mb-2 flex items-center gap-1.5 font-pixel"><Check size={16} aria-hidden /> Egyezik a várt eredménnyel</p>}
-      {passed === false && <p className="mb-2 flex items-center gap-1.5 font-pixel text-brick-text"><Cross size={16} aria-hidden /> Eltér a várt eredménytől</p>}
+      {passed === true && (
+        <p className="mb-2 flex items-center gap-1.5 font-pixel">
+          <Check size={16} aria-hidden /> Egyezik a várt eredménnyel
+        </p>
+      )}
+      {passed === false && (
+        <p className="mb-2 flex items-center gap-1.5 font-pixel text-brick-text">
+          <Cross size={16} aria-hidden /> Eltér a várt eredménytől
+        </p>
+      )}
       {passed === null && <p className="mb-2 font-pixel text-muted-foreground">A módosított kód eredménye</p>}
 
       {outcome.kind === "syntax" ? (
@@ -112,9 +139,15 @@ function Result({ outcome, passed }: { outcome: Outcome; passed: boolean | null 
           <ul className="mt-1 list-none space-y-2 p-0">
             {outcome.issues.map((issue, index) => (
               <li key={index}>
-                <span className="font-mono text-xs text-brick-text">{issue.line}. sor, {issue.column}. oszlop: {issue.code}</span>
+                <span className="font-mono text-xs text-brick-text">
+                  {issue.line}. sor, {issue.column}. oszlop: {issue.code}
+                </span>
                 <div>{issue.message}</div>
-                {issue.hint && <div className="whitespace-pre-line text-sm text-muted-foreground"><span className="text-foreground">Javaslat:</span> {issue.hint}</div>}
+                {issue.hint && (
+                  <div className="whitespace-pre-line text-sm text-muted-foreground">
+                    <span className="text-foreground">Javaslat:</span> {issue.hint}
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -124,23 +157,48 @@ function Result({ outcome, passed }: { outcome: Outcome; passed: boolean | null 
           {outcome.snapshot.error ? (
             <p>
               <span className="font-mono text-brick-text">{outcome.snapshot.error.code}</span>
-              <span className="text-muted-foreground"> a {outcome.snapshot.error.line}. sor {outcome.snapshot.error.column}. oszlopában: </span>
+              <span className="text-muted-foreground">
+                {" "}
+                a {outcome.snapshot.error.line}. sor {outcome.snapshot.error.column}. oszlopában:{" "}
+              </span>
               {outcome.snapshot.error.message}
               {outcome.snapshot.error.hint && (
-                <span className="block whitespace-pre-line text-sm text-muted-foreground"><span className="text-foreground">Javaslat:</span> {outcome.snapshot.error.hint}</span>
+                <span className="block whitespace-pre-line text-sm text-muted-foreground">
+                  <span className="text-foreground">Javaslat:</span> {outcome.snapshot.error.hint}
+                </span>
               )}
             </p>
           ) : (
-            <p className="flex items-center gap-1.5"><Check size={16} aria-hidden /> Hiba nélkül lefutott.</p>
+            <p className="flex items-center gap-1.5">
+              <Check size={16} aria-hidden /> Hiba nélkül lefutott.
+            </p>
           )}
           <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1">
-            <div className="flex items-baseline gap-1.5"><dt className="text-muted-foreground">Feldolgozott sorok</dt><dd className="display text-lg">{outcome.snapshot.steps}<span className="font-pixel text-xs text-muted-foreground">/1000</span></dd></div>
-            <div className="flex items-baseline gap-1.5"><dt className="text-muted-foreground">Kibányászott arany</dt><dd className="display text-lg">{outcome.snapshot.mined}</dd></div>
+            <div className="flex items-baseline gap-1.5">
+              <dt className="text-muted-foreground">Feldolgozott sorok</dt>
+              <dd className="display text-lg">
+                {outcome.snapshot.steps}
+                <span className="font-pixel text-xs text-muted-foreground">/1000</span>
+              </dd>
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <dt className="text-muted-foreground">Kibányászott arany</dt>
+              <dd className="display text-lg">{outcome.snapshot.mined}</dd>
+            </div>
           </dl>
           <div className="mt-2 border border-border bg-background px-2.5 py-2 font-mono text-xs leading-relaxed">
-            {outcome.snapshot.output.length === 0
-              ? <span className="text-muted-foreground">(nincs kimenet)</span>
-              : outcome.snapshot.output.map((line, index) => <div key={index}><span className="text-muted-foreground" aria-hidden>&gt; </span>{line}</div>)}
+            {outcome.snapshot.output.length === 0 ? (
+              <span className="text-muted-foreground">(nincs kimenet)</span>
+            ) : (
+              outcome.snapshot.output.map((line, index) => (
+                <div key={index}>
+                  <span className="text-muted-foreground" aria-hidden>
+                    &gt;{" "}
+                  </span>
+                  {line}
+                </div>
+              ))
+            )}
           </div>
         </>
       )}

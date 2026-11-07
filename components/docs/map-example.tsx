@@ -32,13 +32,24 @@ export default function MapExample({ title, text, valid }: { title: string; text
             value={value}
             spellCheck={false}
             rows={value.split("\n").length + 1}
-            onChange={(event) => { setValue(event.target.value); setResult(null); }}
+            onChange={(event) => {
+              setValue(event.target.value);
+              setResult(null);
+            }}
           />
           <div aria-live="polite" className="min-w-0 flex-1 text-[15px]">
             {result?.ok && <MiniMap map={result.map} caption="Betöltve" />}
             {result && !result.ok && <p className="text-brick-text">{result.error}</p>}
-            {passed === true && <p className="mt-2 flex items-center gap-1.5 font-pixel"><Check size={16} aria-hidden /> Egyezik a várt eredménnyel</p>}
-            {passed === false && <p className="mt-2 flex items-center gap-1.5 font-pixel text-brick-text"><Cross size={16} aria-hidden /> Eltér a várt eredménytől</p>}
+            {passed === true && (
+              <p className="mt-2 flex items-center gap-1.5 font-pixel">
+                <Check size={16} aria-hidden /> Egyezik a várt eredménnyel
+              </p>
+            )}
+            {passed === false && (
+              <p className="mt-2 flex items-center gap-1.5 font-pixel text-brick-text">
+                <Cross size={16} aria-hidden /> Eltér a várt eredménytől
+              </p>
+            )}
           </div>
         </div>
         <div className="mt-3">

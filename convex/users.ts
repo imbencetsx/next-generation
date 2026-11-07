@@ -1,9 +1,20 @@
+// A bejelentkezett felhasználó adatai és a profil módosítása (név, jelszó, profilkép).
+// Minden függvény a munkamenetből azonosítja a hívót; felhasználó-azonosítót argumentumként nem fogadunk el.
+
 import { getAuthSessionId, getAuthUserId, retrieveAccount } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 import { Scrypt } from "lucia";
-import { action, internalMutation, mutation, query, type QueryCtx } from "./_generated/server";
+import { action, internalMutation, internalQuery, mutation, query, type QueryCtx } from "./_generated/server";
 import { api, internal } from "./_generated/api";
-import { AUTH_PROVIDER, MAX_PASSWORD_LENGTH, normalizeUsername, passwordProblem, usernameProblem } from "./credentials";
+import type { Id } from "./_generated/dataModel";
+import {
+  AUTH_PROVIDER,
+  MAX_PASSWORD_LENGTH,
+  isLockedOut,
+  normalizeUsername,
+  isValidPassword,
+  isValidUsername,
+} from "./credentials";
 import { profileError, validAvatar } from "./profileRules";
 
 /**
@@ -18,15 +29,53 @@ export async function currentUserId(ctx: QueryCtx) {
   return session?.userId === userId ? userId : null;
 }
 
+/** A bejelentkezett felhasználó rekordja, vagy null. */
+async function currentUser(ctx: QueryCtx) {
+  const userId = await currentUserId(ctx);
+  return userId === null ? null : await ctx.db.get(userId);
+}
+
+/** A hívó felhasználói rekordja; ha nincs bejelentkezve, „unauthenticated” hibát dob. */
+async function requireUser(ctx: QueryCtx) {
+  const user = await currentUser(ctx);
+  if (!user) throw profileError("unauthenticated");
+  return user;
+}
+
+/** A felhasználó jelszavas fiókja (a bejelentkezési név és a jelszó-hash itt van, nem a users táblában). */
+function passwordAccount(ctx: QueryCtx, userId: Id<"users">) {
+  return ctx.db
+    .query("authAccounts")
+    .withIndex("userIdAndProvider", (q) => q.eq("userId", userId).eq("provider", AUTH_PROVIDER))
+    .unique();
+}
+
+function accountByUsername(ctx: QueryCtx, username: string) {
+  return ctx.db
+    .query("authAccounts")
+    .withIndex("providerAndAccountId", (q) => q.eq("provider", AUTH_PROVIDER).eq("providerAccountId", username))
+    .unique();
+}
+
+/** Foglalt-e már a név (regisztráció előtt, convex/auth.ts). */
+export const isUsernameTaken = internalQuery({
+  args: { username: v.string() },
+  returns: v.boolean(),
+  handler: async (ctx, args) => (await accountByUsername(ctx, args.username)) !== null,
+});
+
 /** A bejelentkezett felhasználó, vagy null. */
 export const viewer = query({
   args: {},
-  returns: v.union(v.null(), v.object({ _id: v.id("users"), name: v.string(), imageUrl: v.union(v.string(), v.null()) })),
+  returns: v.union(
+    v.null(),
+    v.object({ _id: v.id("users"), name: v.string(), imageUrl: v.union(v.string(), v.null()) }),
+  ),
   handler: async (ctx) => {
-    const userId = await currentUserId(ctx);
-    if (userId === null) return null;
-    const user = await ctx.db.get(userId);
-    return user ? { _id: user._id, name: user.name ?? "player", imageUrl: user.avatarId ? await ctx.storage.getUrl(user.avatarId) : null } : null;
+    const user = await currentUser(ctx);
+    if (!user) return null;
+    const imageUrl = user.avatarId ? await ctx.storage.getUrl(user.avatarId) : null;
+    return { _id: user._id, name: user.name ?? "player", imageUrl };
   },
 });
 
@@ -34,37 +83,58 @@ export const updateUsername = mutation({
   args: { username: v.string() },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const userId = await currentUserId(ctx);
-    if (!userId) return profileError("unauthenticated");
+    const user = await requireUser(ctx);
     const username = normalizeUsername(args.username);
-    if (usernameProblem(username)) return profileError("username");
-    const account = await ctx.db.query("authAccounts").withIndex("userIdAndProvider", (q) => q.eq("userId", userId).eq("provider", AUTH_PROVIDER)).unique();
-    if (!account) return profileError("unauthenticated");
-    const existing = await ctx.db.query("authAccounts").withIndex("providerAndAccountId", (q) => q.eq("provider", AUTH_PROVIDER).eq("providerAccountId", username)).unique();
-    if (existing && existing._id !== account._id) return profileError("taken");
+    if (!isValidUsername(username)) throw profileError("username");
+
+    const account = await passwordAccount(ctx, user._id);
+    if (!account) throw profileError("unauthenticated");
+    const existing = await accountByUsername(ctx, username);
+    if (existing && existing._id !== account._id) throw profileError("taken");
+
     // A bejelentkezési név és a megjelenített név egyetlen tranzakcióban változik.
     await ctx.db.patch(account._id, { providerAccountId: username });
-    await ctx.db.patch(userId, { name: username });
+    await ctx.db.patch(user._id, { name: username });
     return null;
   },
 });
 
+/**
+ * Jelszócsere. Több lépésből áll, mert a scrypt lassú (ezért actionben fut, nem mutationben), és a jelenlegi jelszót a
+ * Convex Auth saját ellenőrzésével kell megnézni (az számolja a hibás próbálkozásokat):
+ *   1. changePassword (action): bejelentkezés és az új jelszó szabályának ellenőrzése;
+ *   2. a jelenlegi jelszó ellenőrzése a retrieveAccount-tal; sok hibás próbánál „locked”;
+ *   3. az új jelszó hash-elése;
+ *   4. commitPassword (internalMutation): egy tranzakcióban beírja az új hash-t, ha közben nem változott,
+ *      és kilépteti a felhasználó többi munkamenetét.
+ */
 export const changePassword = action({
   args: { currentPassword: v.string(), newPassword: v.string() },
   returns: v.null(),
   handler: async (ctx, args) => {
     const viewer = await ctx.runQuery(api.users.viewer, {});
-    if (!viewer) return profileError("unauthenticated");
-    if (passwordProblem(args.newPassword)) return profileError("password");
-    if (!args.currentPassword || args.currentPassword.length > MAX_PASSWORD_LENGTH) return profileError("currentPassword");
-    // A meglévő auth-ellenőrzés a hibás jelszópróbálkozásokat is korlátozza.
-    const verified = await retrieveAccount(ctx, { provider: AUTH_PROVIDER, account: { id: viewer.name, secret: args.currentPassword } }).catch((error: unknown) => {
-      if (error instanceof Error && error.message.includes("TooManyFailedAttempts")) return profileError("locked");
-      return profileError("currentPassword");
-    });
-    if (verified.user._id !== viewer._id || !verified.account.secret) return profileError("conflict");
+    if (!viewer) throw profileError("unauthenticated");
+    if (!isValidPassword(args.newPassword)) throw profileError("password");
+    if (!args.currentPassword || args.currentPassword.length > MAX_PASSWORD_LENGTH) {
+      throw profileError("currentPassword");
+    }
+
+    // A Convex Auth ellenőrzése a hibás próbálkozásokat is számolja és korlátozza.
+    const credentials = { id: viewer.name, secret: args.currentPassword };
+    const verified = await retrieveAccount(ctx, { provider: AUTH_PROVIDER, account: credentials }).catch(
+      (error: unknown) => {
+        throw profileError(isLockedOut(error) ? "locked" : "currentPassword");
+      },
+    );
+    if (verified.user._id !== viewer._id || !verified.account.secret) throw profileError("conflict");
+
+    // Ugyanazt a scrypt hash-formátumot használjuk, mint a Convex Auth (convex/auth.ts), ezért a lucia csomagból.
     const newSecret = await new Scrypt().hash(args.newPassword);
-    await ctx.runMutation(internal.users.commitPassword, { accountId: verified.account._id, expectedSecret: verified.account.secret, newSecret });
+    await ctx.runMutation(internal.users.commitPassword, {
+      accountId: verified.account._id,
+      expectedSecret: verified.account.secret,
+      newSecret,
+    });
     return null;
   },
 });
@@ -75,26 +145,37 @@ export const commitPassword = internalMutation({
   handler: async (ctx, args) => {
     const userId = await currentUserId(ctx);
     const sessionId = await getAuthSessionId(ctx);
-    if (!userId || !sessionId) return profileError("unauthenticated");
+    if (!userId || !sessionId) throw profileError("unauthenticated");
+
     const account = await ctx.db.get(args.accountId);
-    if (!account || account.userId !== userId || account.provider !== AUTH_PROVIDER || account.secret !== args.expectedSecret) return profileError("conflict");
-    // A közben megváltozott jelszót nem írjuk felül egy korábbi ellenőrzés alapján.
+    const stillTheSameAccount =
+      account &&
+      account.userId === userId &&
+      account.provider === AUTH_PROVIDER &&
+      // A közben megváltozott jelszót nem írjuk felül egy korábbi ellenőrzés alapján.
+      account.secret === args.expectedSecret;
+    if (!stillTheSameAccount) throw profileError("conflict");
+
     await ctx.db.patch(account._id, { secret: args.newSecret });
+    // A többi eszközön lévő munkamenet kilép; a jelenlegi megmarad.
     await ctx.runMutation(internal.auth.store, { args: { type: "invalidateSessions", userId, except: [sessionId] } });
     return null;
   },
 });
 
+/** Profilkép mentése. A tárolás action, mert a fájltárba írni csak actionből lehet. */
 export const setPicture = action({
   args: { image: v.bytes() },
   returns: v.null(),
   handler: async (ctx, args) => {
-    if (!await ctx.runQuery(api.users.viewer, {})) return profileError("unauthenticated");
-    if (!validAvatar(args.image)) return profileError("image");
+    if (!(await ctx.runQuery(api.users.viewer, {}))) throw profileError("unauthenticated");
+    if (!validAvatar(args.image)) throw profileError("image");
+
     const avatarId = await ctx.storage.store(new Blob([args.image], { type: "image/png" }));
     try {
       await ctx.runMutation(internal.users.commitPicture, { avatarId });
     } catch (error) {
+      // Ha a hozzárendelés nem sikerült, ne maradjon gazdátlan fájl a tárban.
       await ctx.storage.delete(avatarId);
       throw error;
     }
@@ -106,11 +187,8 @@ export const commitPicture = internalMutation({
   args: { avatarId: v.id("_storage") },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const userId = await currentUserId(ctx);
-    if (!userId) return profileError("unauthenticated");
-    const user = await ctx.db.get(userId);
-    if (!user) return profileError("unauthenticated");
-    await ctx.db.patch(userId, { avatarId: args.avatarId });
+    const user = await requireUser(ctx);
+    await ctx.db.patch(user._id, { avatarId: args.avatarId });
     if (user.avatarId) await ctx.storage.delete(user.avatarId);
     return null;
   },
@@ -120,11 +198,8 @@ export const removePicture = mutation({
   args: {},
   returns: v.null(),
   handler: async (ctx) => {
-    const userId = await currentUserId(ctx);
-    if (!userId) return profileError("unauthenticated");
-    const user = await ctx.db.get(userId);
-    if (!user) return profileError("unauthenticated");
-    await ctx.db.patch(userId, { avatarId: undefined });
+    const user = await requireUser(ctx);
+    await ctx.db.patch(user._id, { avatarId: undefined });
     if (user.avatarId) await ctx.storage.delete(user.avatarId);
     return null;
   },

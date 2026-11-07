@@ -1,12 +1,15 @@
 // A bejelentkezés jelenete: bánya-folyosó a játék sprite-jaiból, a robot helyben sétál és buborékban szól a játékoshoz.
 
-import type { CSSProperties } from "react";
+import { robotSpriteStyle, tileBackground, TILES } from "@/components/sprites";
 
-const TILES = ["wall", "empty-dirt", "empty-dirt", "empty-dirt", "full_dirt", "full_dirt", "wall"] as const;
+/** A folyosó mezői balról jobbra: fal, három kiásott mező, két tömör föld, fal. */
+const CORRIDOR = [TILES.wall, TILES.dug, TILES.dug, TILES.dug, TILES.solid, TILES.solid, TILES.wall];
 const ROBOT_AT = 1;
 const GOLD_AT = 3;
-// A jobbra néző sor (3. sor) talppárnái a robot_sheet képkockáin, pixelben (lásd pixel-map.tsx).
-const FOOT = [5, 4, 4, 4].map((px) => `${(px / 32) * 100}%`);
+/** Kelet felé néz (DIRECTIONS sorrendjében a 3.), a folyosó irányába. */
+const FACING_EAST = 3;
+/** Helyben járás: a robot-walk animáció egy ciklusa (három képkocka). */
+const WALK_IN_PLACE = "robot-walk 0.48s step-end infinite";
 
 export default function LoginScene({ message }: { message: string }) {
   return (
@@ -24,28 +27,22 @@ export default function LoginScene({ message }: { message: string }) {
         </span>
       </div>
       <div aria-hidden className="flex border-2 border-foreground shadow-[0_4px_0_var(--foreground)]">
-      {TILES.map((tile, index) => (
-        <div key={index} className="pixel-sprite relative size-12 sm:size-14" style={{ backgroundImage: `url(/sprites/${tile}.png)` }}>
-          {index === GOLD_AT && (
-            <span className="gold-shine">
-              <i className="gold-sprite gold-sparkle absolute inset-0" />
-            </span>
-          )}
-          {index === ROBOT_AT && (
-            <div
-              className="pixel-robot-sprite absolute inset-0"
-              style={{
-                backgroundPosition: "0% 66.6667%",
-                animation: "robot-walk 0.48s step-end infinite",
-                "--robot-foot-idle": FOOT[0],
-                "--robot-foot-walk-1": FOOT[1],
-                "--robot-foot-walk-2": FOOT[2],
-                "--robot-foot-walk-3": FOOT[3],
-              } as CSSProperties}
-            />
-          )}
-        </div>
-      ))}
+        {CORRIDOR.map((tile, index) => (
+          // A folyosó rögzített, sosem változik, ezért az index stabil kulcs.
+          <div key={index} className="pixel-sprite relative size-12 sm:size-14" style={tileBackground(tile)}>
+            {index === GOLD_AT && (
+              <span className="gold-shine">
+                <i className="gold-sprite gold-sparkle absolute inset-0" />
+              </span>
+            )}
+            {index === ROBOT_AT && (
+              <div
+                className="pixel-robot-sprite absolute inset-0"
+                style={{ ...robotSpriteStyle(FACING_EAST), animation: WALK_IN_PLACE }}
+              />
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

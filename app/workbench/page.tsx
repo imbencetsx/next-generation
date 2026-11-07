@@ -3,7 +3,7 @@ import RequireAuth from "@/components/auth/require-auth";
 import LoadingStatus from "@/components/loading-status";
 import Workbench from "@/components/workbench";
 
-export default function TestPage() {
+export default function WorkbenchPage() {
   return (
     // A dokumentációból érkező kódot és térképet az URL-ből olvassuk, ezért kell a Suspense.
     <Suspense fallback={<LoadingStatus message="loadingEditor" />}>
