@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Code2 } from "lucide-react";
+import { Code } from "@/components/icons";
 import DocsSidebar from "@/components/docs/sidebar";
 import Logo from "@/components/logo";
 import { buttonVariants } from "@/components/ui/button";
@@ -11,12 +11,12 @@ export default function DocsLayout({ children }: LayoutProps<"/docs">) {
       <a href="#docs-content" className="skip-link">Ugrás a tartalomra</a>
       <header className="topbar sticky top-0 z-20">
         <div className="mx-auto flex min-h-[68px] max-w-6xl items-center gap-4 px-4 py-1.5">
-          <Link href="/docs" className="flex items-center gap-3" aria-label="MineScript dokumentáció, kezdőlap">
+          <Link href="/docs" className="flex items-center gap-3" aria-label="MineScript Nyelv Dokumentáció, kezdőlap">
             <Logo />
-            <span className="font-pixel text-[15px] text-muted-foreground max-sm:sr-only">Dokumentáció</span>
+            <span className="font-pixel text-[15px] text-muted-foreground max-sm:sr-only">Nyelv Dokumentáció</span>
           </Link>
           <Link href="/test" className={`${buttonVariants({ variant: "outline" })} ml-auto`} data-slot="button" data-variant="outline">
-            <Code2 aria-hidden /> Szerkesztő
+            <Code aria-hidden /> Szerkesztő
           </Link>
         </div>
       </header>

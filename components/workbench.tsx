@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useRef, useState, type ChangeEvent } from "react";
-import { AlertCircle, BookOpen, CheckCircle2, Download, FileCode2, FilePlus2, Lock, Upload, WrapText } from "lucide-react";
+import { Alert, Book, Check, Download, FileIcon, Lock, NewFile, Upload, Wrap } from "@/components/icons";
 import UserMenu from "@/components/auth/user-menu";
 import LanguageSwitch from "@/components/language-switch";
 import Logo from "@/components/logo";
@@ -14,6 +14,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import CodeEditor, { type ActiveLine, type EditorHandle } from "@/components/code-editor";
+import PlaybackBar from "@/components/playback-bar";
 import RunConsole from "@/components/run-console";
 import Simulator from "@/components/simulator";
 import { useSimulation } from "@/components/use-simulation";
@@ -53,6 +54,11 @@ export default function Workbench() {
 
   const lineCount = code.split("\n").length;
 
+  // Hibás programnál a futtatás nem indul el; ilyenkor az első hibára ugrunk, hogy látszódjon, mit kell javítani.
+  function showFirstIssue() {
+    if (issues[0]) editor.current?.focusLine(issues[0].line, issues[0].column);
+  }
+
   function newFile() {
     setCode("");
     setFilename("untitled.mine");
@@ -91,30 +97,10 @@ export default function Workbench() {
           <h1 className="flex">
             <Logo />
           </h1>
-          {/* Telefonon: logó és fiók az első sorban, a fájlműveletek alatta teljes szélességben. */}
-          <div className="order-3 flex w-full flex-wrap items-center gap-1.5 sm:order-2 sm:ml-auto sm:w-auto">
-            <label className="sr-only" htmlFor="example">{t.editor.loadExample}</label>
-            <NativeSelect id="example" disabled={locked} value="" onChange={loadExample}>
-              <NativeSelectOption value="" disabled>{t.editor.loadExample}</NativeSelectOption>
-              {EXAMPLES.map((example) => (
-                <NativeSelectOption key={example.filename} value={example.filename}>{t.editor.examples[example.filename] ?? example.name}</NativeSelectOption>
-              ))}
-            </NativeSelect>
-            <Button variant="ghost" disabled={locked} onClick={newFile}>
-              <FilePlus2 aria-hidden /> <span className="max-sm:sr-only">{t.editor.new}</span>
-            </Button>
-            <Button variant="ghost" disabled={locked} onClick={() => fileInput.current?.click()}>
-              <Upload aria-hidden /> <span className="max-sm:sr-only">{t.editor.import}</span>
-            </Button>
-            <input ref={fileInput} type="file" accept=".mine,.txt,text/plain" hidden onChange={(event) => importFile(event.target.files?.[0])} />
-            <Button variant="ghost" onClick={exportFile}>
-              <Download aria-hidden /> <span className="max-sm:sr-only">{t.editor.export}</span>
-            </Button>
+          <div className="ml-auto flex items-center gap-2">
             <Link className={buttonVariants({ variant: "ghost" })} data-slot="button" data-variant="ghost" href="/docs">
-              <BookOpen aria-hidden /> <span className="max-sm:sr-only">{t.editor.docs}</span>
+              <Book aria-hidden /> <span className="max-sm:sr-only">{t.editor.docs}</span>
             </Link>
-          </div>
-          <div className="order-2 ml-auto flex items-center gap-2 sm:order-3 sm:ml-0">
             <LanguageSwitch />
             <span className="mx-1 hidden h-6 w-px bg-border sm:block" aria-hidden />
             <UserMenu />
@@ -125,20 +111,40 @@ export default function Workbench() {
       <main className="grid min-h-0 flex-1 gap-3 overflow-y-auto p-3 lg:grid-cols-2 lg:overflow-hidden">
         <div className="flex min-w-0 flex-col gap-3 lg:min-h-0">
           <Card role="region" aria-label={t.editor.region} className="min-h-[320px] min-w-0 flex-1 gap-0 py-0">
-            <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-              <span className="flex min-w-0 items-center gap-1.5 font-mono text-xs">
-                <FileCode2 size={14} className="shrink-0 text-muted-foreground" aria-hidden />
+            {/* Első sor: a fájl és műveletei; alatta a futás vezérlői. A program és a futtatása így egy helyen van. */}
+            <div className="flex flex-col gap-2 border-b border-border px-2 py-2">
+            {/* Bal szélen a fájlnév, jobb szélen a példaválasztó, köztük középen a fájlműveletek. */}
+            <div className="flex flex-wrap items-center justify-center gap-1.5 md:flex-nowrap">
+              <span className="flex min-w-0 shrink items-center gap-1.5 pl-1 font-mono text-xs md:max-w-48">
+                <FileIcon size={14} className="shrink-0 text-muted-foreground" aria-hidden />
                 <span className="truncate">{filename}</span>
               </span>
-              <span
-                className={`ml-auto flex shrink-0 items-center gap-1.5 text-xs ${issues.length ? "text-brick-text" : "text-muted-foreground"}`}
-              >
-                {issues.length ? <AlertCircle size={14} aria-hidden /> : <CheckCircle2 size={14} aria-hidden />}
-                {issues.length ? t.editor.problemCount(issues.length) : t.editor.noSyntaxErrors}
-              </span>
-              <Button variant="outline" size="sm" aria-pressed={wrap} onClick={() => setWrap((value) => !value)}>
-                <WrapText aria-hidden /> {t.editor.wrap}
-              </Button>
+              <div className="flex flex-1 flex-wrap items-center justify-center gap-1.5">
+                <Button variant="ghost" size="sm" disabled={locked} onClick={newFile} title={t.editor.new}>
+                  <NewFile aria-hidden /> <span className="max-2xl:sr-only">{t.editor.new}</span>
+                </Button>
+                <Button variant="ghost" size="sm" disabled={locked} onClick={() => fileInput.current?.click()} title={t.editor.import}>
+                  <Upload aria-hidden /> <span className="max-2xl:sr-only">{t.editor.import}</span>
+                </Button>
+                <input ref={fileInput} type="file" accept=".mine,.txt,text/plain" hidden onChange={(event) => importFile(event.target.files?.[0])} />
+                <Button variant="ghost" size="sm" onClick={exportFile} title={t.editor.export}>
+                  <Download aria-hidden /> <span className="max-2xl:sr-only">{t.editor.export}</span>
+                </Button>
+                <Button variant="outline" size="sm" aria-pressed={wrap} onClick={() => setWrap((value) => !value)} title={t.editor.wrap}>
+                  <Wrap aria-hidden /> <span className="max-2xl:sr-only">{t.editor.wrap}</span>
+                </Button>
+              </div>
+              <div className="shrink-0">
+                <label className="sr-only" htmlFor="example">{t.editor.loadExample}</label>
+                <NativeSelect id="example" size="sm" className="w-44" disabled={locked} value="" onChange={loadExample}>
+                  <NativeSelectOption value="" disabled>{t.editor.loadExample}</NativeSelectOption>
+                  {EXAMPLES.map((example) => (
+                    <NativeSelectOption key={example.filename} value={example.filename}>{t.editor.examples[example.filename] ?? example.name}</NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </div>
+            </div>
+            <PlaybackBar simulation={simulation} showFirstIssue={showFirstIssue} />
             </div>
             <div className="min-h-0 flex-1">
               <CodeEditor
@@ -156,10 +162,14 @@ export default function Workbench() {
               <span className="whitespace-nowrap">{t.editor.cursor(cursor.line, cursor.column)}</span>
               <span className="whitespace-nowrap">{t.editor.lineCount(lineCount)}</span>
               {locked && (
-                <span className="ml-auto flex items-center gap-1 text-foreground">
+                <span className="flex items-center gap-1 text-foreground">
                   <Lock size={12} aria-hidden /> {t.editor.locked}
                 </span>
               )}
+              <span className={`ml-auto flex shrink-0 items-center gap-1.5 ${issues.length ? "text-brick-text" : ""}`}>
+                {issues.length ? <Alert size={13} aria-hidden /> : <Check size={13} aria-hidden />}
+                {issues.length ? t.editor.problemCount(issues.length) : t.editor.noSyntaxErrors}
+              </span>
             </footer>
           </Card>
 
@@ -171,7 +181,7 @@ export default function Workbench() {
               </h2>
               {issues.length === 0 ? (
                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2 size={14} aria-hidden /> <span className="font-read">{t.editor.nothingToFix}</span>
+                  <Check size={14} aria-hidden /> <span className="font-read">{t.editor.nothingToFix}</span>
                 </p>
               ) : (
                 <ul className="space-y-1">
@@ -213,7 +223,7 @@ export default function Workbench() {
         </div>
 
         <aside className="min-w-0 lg:min-h-0" aria-label={t.sim.region}>
-          <Simulator simulation={simulation} firstIssue={issues[0] ?? null} onJump={(line, column) => editor.current?.focusLine(line, column)} />
+          <Simulator simulation={simulation} onJump={(line, column) => editor.current?.focusLine(line, column)} />
         </aside>
       </main>
     </div>

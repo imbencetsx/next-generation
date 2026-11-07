@@ -4,7 +4,7 @@
 
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth } from "convex/react";
-import { AlertCircle, LogIn, UserPlus } from "lucide-react";
+import { Alert, Login, UserPlus } from "@/components/icons";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import LoginScene from "@/components/auth/login-scene";
+import UsernameInput from "@/components/auth/username-input";
 import { useI18n } from "@/i18n/i18n-provider";
 import {
   AUTH_PROVIDER,
@@ -47,7 +48,7 @@ export default function LoginForm() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const username = normalizeUsername(form.get("username"));
+    const username = normalizeUsername(String(form.get("username") ?? "").replace(/^@+/, ""));
     const password = String(form.get("password") ?? "");
 
     if (flow === "signUp") {
@@ -85,14 +86,13 @@ export default function LoginForm() {
       <form className="flex flex-col gap-4" onSubmit={submit} aria-busy={pending}>
         <div className="flex flex-col gap-2">
           <Label htmlFor="username">{t.auth.username}</Label>
-          <Input
+          <UsernameInput
             id="username"
             name="username"
             required
             autoComplete="username"
             autoCapitalize="none"
             spellCheck={false}
-            maxLength={20}
             aria-describedby={signingUp ? "username-rule" : undefined}
             className="h-10 text-base"
           />
@@ -115,12 +115,12 @@ export default function LoginForm() {
 
         {error && (
           <p role="alert" className="pixel-frame flex items-start gap-2 bg-brick/15 px-3 py-2 font-read text-sm text-brick-text" data-tone="danger">
-            <AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden /> {t.auth.errors[error]}
+            <Alert size={16} className="mt-0.5 shrink-0" aria-hidden /> {t.auth.errors[error]}
           </p>
         )}
 
         <Button type="submit" size="lg" className="mt-2 h-10 w-full text-base" disabled={pending}>
-          {signingUp ? <UserPlus aria-hidden /> : <LogIn aria-hidden />}
+          {signingUp ? <UserPlus aria-hidden /> : <Login aria-hidden />}
           {pending ? (signingUp ? t.auth.creatingAccount : t.auth.signingIn) : signingUp ? t.auth.createAccount : t.auth.signIn}
         </Button>
       </form>

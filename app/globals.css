@@ -102,6 +102,13 @@
 
   /* Felső sáv: bal oldalt a pixel logó (public/logo.svg), alatta világos vonal. */
   .topbar { border-bottom: 1px solid var(--rule); background: var(--background); }
+  /* Az aránytartó háttér alul rögzül; keskeny képernyőn a szélek vágódnak le, nem a bánya alja. */
+  .login-background {
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background-image: url("/artwork/pixel_ore_background.png");
+    background-size: cover; background-position: center bottom; background-repeat: no-repeat;
+    image-rendering: pixelated;
+  }
   /* Panelcím: kisbetűs, csendes; a tartalom számít, nem a címke. */
   .panel-title { font-size: 14px; line-height: 1.2; color: var(--foreground); }
   .display { font-family: var(--font-tiny), monospace; font-weight: 400; line-height: 1.1; }
@@ -199,6 +206,33 @@
 .app-ui [data-slot="button"]:is([data-variant="ghost"], [data-variant="link"]):not(:disabled):active { transform: translateY(1px); }
 /* Bekapcsolt váltógomb (aria-pressed): fehér kerettel és világosabb háttérrel; az arany a fő műveleté. */
 .app-ui [data-slot="button"][aria-pressed="true"] { --pixel-frame: var(--pixel-frame-light); background: var(--accent); color: var(--foreground); }
+/* Lépcsős kör: a kiemelés és az árnyék csak az átellenes sarkokon jelenik meg. */
+@layer components {
+.pixel-avatar {
+  --avatar-cutout: polygon(
+    37.5% 0, 62.5% 0, 62.5% 6.25%, 75% 6.25%, 75% 12.5%, 81.25% 12.5%,
+    81.25% 18.75%, 87.5% 18.75%, 87.5% 25%, 93.75% 25%, 93.75% 37.5%,
+    100% 37.5%, 100% 62.5%, 93.75% 62.5%, 93.75% 75%, 87.5% 75%,
+    87.5% 81.25%, 81.25% 81.25%, 81.25% 87.5%, 75% 87.5%, 75% 93.75%,
+    62.5% 93.75%, 62.5% 100%, 37.5% 100%, 37.5% 93.75%, 25% 93.75%,
+    25% 87.5%, 18.75% 87.5%, 18.75% 81.25%, 12.5% 81.25%, 12.5% 75%,
+    6.25% 75%, 6.25% 62.5%, 0 62.5%, 0 37.5%, 6.25% 37.5%, 6.25% 25%,
+    12.5% 25%, 12.5% 18.75%, 18.75% 18.75%, 18.75% 12.5%, 25% 12.5%,
+    25% 6.25%, 37.5% 6.25%
+  );
+  position: relative; display: inline-block; flex-shrink: 0; vertical-align: middle;
+}
+.pixel-avatar-face {
+  position: absolute; inset: 0;
+  display: grid; place-items: center; overflow: hidden;
+  clip-path: var(--avatar-cutout); background: var(--accent);
+}
+.pixel-avatar-face img { image-rendering: pixelated; }
+.pixel-avatar-lighting { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.pixel-avatar-edge { fill: var(--foreground); fill-opacity: 0.16; }
+.pixel-avatar-light-edge { fill: var(--foreground); fill-opacity: 0.45; }
+.pixel-avatar-dark-edge { fill: black; fill-opacity: 0.55; }
+}
 @media (prefers-reduced-motion: reduce) {
   .app-ui [data-slot="button"] { transition: none; }
 }
@@ -294,25 +328,19 @@
 .pixel-appear { animation: pixel-appear 1ms step-end both; }
 @keyframes pixel-appear { from { opacity: 0; } to { opacity: 1; } }
 
-/* Arany: átlátszó hátterű rögök (gold_chips*.png) a mező földje fölött; a villanás képkockái lépcsőzetesen váltanak. */
+/* Arany: tíz 32×32-es képkocka, a föld kivágása után átlátszó háttéren. */
 .gold-shine { position: absolute; inset: 0; z-index: 1; }
-.gold-shine > i {
-  position: absolute; inset: 0; opacity: 0;
-  background-size: 100% 100%; image-rendering: pixelated;
-  animation: 3.2s step-end infinite; animation-delay: var(--shine-delay, 0s);
+.gold-sprite {
+  background-image: url(/sprites/gold_sparkle_chips.png);
+  background-size: 1000% 100%; background-position: 0 0; background-repeat: no-repeat;
+  image-rendering: pixelated;
 }
-.gold-shine > .chips { background-image: url(/sprites/gold_chips.png); opacity: 1; animation: none; }
-.gold-shine > .shine-down-half { background-image: url(/sprites/gold_chips_down_half.png); animation-name: shine-down-half; }
-.gold-shine > .shine-down { background-image: url(/sprites/gold_chips_down.png); animation-name: shine-down; }
-.gold-shine > .shine-up-half { background-image: url(/sprites/gold_chips_up_half.png); animation-name: shine-up-half; }
-.gold-shine > .shine-up { background-image: url(/sprites/gold_chips_up.png); animation-name: shine-up; }
-@keyframes shine-down-half { 0% { opacity: 0 } 40% { opacity: 1 } 45% { opacity: 0 } 50% { opacity: 1 } 55% { opacity: 0 } 100% { opacity: 0 } }
-@keyframes shine-down { 0% { opacity: 0 } 45% { opacity: 1 } 50% { opacity: 0 } 100% { opacity: 0 } }
-@keyframes shine-up-half { 0% { opacity: 0 } 85% { opacity: 1 } 90% { opacity: 0 } 95% { opacity: 1 } 100% { opacity: 0 } }
-@keyframes shine-up { 0% { opacity: 0 } 90% { opacity: 1 } 95% { opacity: 0 } 100% { opacity: 0 } }
+.gold-sparkle { animation: gold-sparkle 1.6s steps(10, end) infinite; animation-delay: var(--shine-delay, 0s); }
+/* A teljes lap szélességét lépjük végig; a tizedik ugrásnál indul újra a ciklus. */
+@keyframes gold-sparkle { to { background-position-x: 111.111111%; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .gold-shine > i { animation: none; }
+  .gold-sparkle { animation: none; }
   .pixel-robot { transition: none !important; }
   .pixel-robot-sprite { animation: none !important; }
   .pixel-cover { display: none; }

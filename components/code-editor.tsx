@@ -4,11 +4,11 @@
 
 import { useEffect, useRef } from "react";
 import { basicSetup } from "codemirror";
-import { EditorState, Compartment, StateEffect, StateField } from "@codemirror/state";
+import { EditorState, EditorSelection, Compartment, StateEffect, StateField, countColumn } from "@codemirror/state";
 import { Decoration, EditorView, keymap, type DecorationSet } from "@codemirror/view";
-import { indentWithTab } from "@codemirror/commands";
-import { autocompletion, type CompletionContext } from "@codemirror/autocomplete";
-import { StreamLanguage, HighlightStyle, syntaxHighlighting, indentUnit, indentService } from "@codemirror/language";
+import { indentMore, indentLess } from "@codemirror/commands";
+import { acceptCompletion, autocompletion, type CompletionContext } from "@codemirror/autocomplete";
+import { StreamLanguage, HighlightStyle, syntaxHighlighting, indentUnit, indentService, getIndentUnit } from "@codemirror/language";
 import { linter, lintGutter, forceLinting, type Diagnostic } from "@codemirror/lint";
 import { tags } from "@lezer/highlight";
 import { KEYWORDS, validateMineScript } from "@/lib/minescript";
@@ -110,8 +110,29 @@ function completeKeywords(context: CompletionContext) {
 
   return {
     from: word.from,
+    validFor: /^[a-zA-Z]*$/,
     options: KEYWORDS.map((label) => ({ label, type: "keyword" })),
   };
+}
+
+// A Tab előbb a kijelölt javaslatot fogadja el, különben szóközökkel behúz.
+export function completeOrIndent(view: EditorView) {
+  const { state } = view;
+  if (state.readOnly) return false;
+  if (acceptCompletion(view)) return true;
+  if (state.selection.ranges.some((range) => !range.empty)) return indentMore(view);
+
+  view.dispatch(state.update(state.changeByRange((range) => {
+    const line = state.doc.lineAt(range.head);
+    const column = countColumn(line.text.slice(0, range.head - line.from), state.tabSize);
+    const width = getIndentUnit(state);
+    const spaces = " ".repeat(width - column % width);
+    return {
+      changes: { from: range.head, insert: spaces },
+      range: EditorSelection.cursor(range.head + spaces.length),
+    };
+  }), { scrollIntoView: true, userEvent: "input" }));
+  return true;
 }
 
 function lintMineScript(editor: EditorView): Diagnostic[] {
@@ -164,13 +185,14 @@ export default function CodeEditor({ value, onChange, onCursor, editorRef, wrap,
         doc: initialValue.current,
         extensions: [
           basicSetup, language, syntaxHighlighting(highlight), theme,
-          indentUnit.of("  "), keymap.of([indentWithTab]),
+          indentUnit.of("  "),
+          keymap.of([{ key: "Tab", run: completeOrIndent, shift: indentLess }]),
           indentService.of((context, pos) => {
             const line = context.state.doc.lineAt(pos);
             const indent = line.text.match(/^ */)![0].length;
             return indent + (/^\s*(if |while |else$)/.test(line.text) ? 2 : 0);
           }),
-          autocompletion({ override: [completeKeywords] }),
+          autocompletion({ override: [completeKeywords], interactionDelay: 0 }),
           lintGutter(),
           linter(lintMineScript, { delay: 350 }),
           wrapCompartment.current.of([]),
