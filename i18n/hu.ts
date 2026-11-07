@@ -104,6 +104,7 @@ export const hu: Messages = {
     export: "Exportálás",
     docs: "Nyelv Dokumentáció",
     wrap: "Sortörés",
+    programName: "Program neve",
     noSyntaxErrors: "Nincs szintaktikai hiba",
     problemCount: (count: number) => `${count} hiba`,
     cursor: (line: number, column: number) => `${line}. sor, ${column}. oszlop`,
@@ -130,6 +131,39 @@ export const hu: Messages = {
       "first-steps.mine": "Első lépések",
       "variables.mine": "Változók és logika",
     },
+  },
+
+  mapEditor: {
+    title: "Térképszerkesztő",
+    source: "Térképfájl",
+    visual: "Vizuális szerkesztő",
+    filename: "Térképfájl neve",
+    rows: "Sorok",
+    cols: "Oszlopok",
+    resize: "Átméretezés",
+    dimensionsHint: "Mindkét méret 1 és 15 közötti egész szám lehet.",
+    resizeHint:
+      "Kicsinyítéskor a szélső mezők levágódnak. Szükség esetén a robot a megmaradó területre kerül, és a mezője kiürül.",
+    robotDirection: "Kezdőirány",
+    tools: "Rajzolóeszköz",
+    toolNames: { empty: "Üres kamra", gold: "Arany", wall: "Fal", robot: "Robot" },
+    valid: "Érvényes térkép",
+    invalid: "Hibás térkép",
+    lastValid: "Az utolsó érvényes térkép látható. A vizuális szerkesztéshez javítsd a szöveget.",
+    protectedRobot: "Előbb helyezd át a robotot, mielőtt falat vagy aranyat teszel a mezőjére.",
+    useMap: "Használat a szimulátorban",
+    workbench: "Kódszerkesztő",
+    fileRead: "Nem sikerült beolvasni a fájlt. A jelenlegi térképed változatlan maradt.",
+    fileLarge: "A fájl túl nagy egy legfeljebb 15 × 15 mezős térképhez. A jelenlegi térképed változatlan maradt.",
+    exportHint:
+      "Csak érvényes térkép exportálható vagy használható a szimulátorban. Az export térképfájlt ment az eszközödre.",
+    keyboardHint:
+      "Válassz eszközt, majd kattints egy mezőre. A nyilakkal mozoghatsz a mezők között, Enterrel vagy Szóközzel rajzolhatsz.",
+    formatHint:
+      "Első sor: sorok és oszlopok száma, köztük egy szóköz. Utána soronként a mezők: . üres, @ arany, # fal, ^ < v > robot. Pontosan egy robot szükséges.",
+    cell: (row: number, col: number, kind: string) => `${row}. sor, ${col}. oszlop: ${kind}`,
+    statistics: (gold: number, cells: number) => `${gold} arany · ${cells} mező`,
+    errorLocation: (line: number, column: number) => `${line}. sor, ${column}. oszlop`,
   },
 
   console: {
@@ -165,6 +199,6 @@ export const hu: Messages = {
       `Térkép, ${rows} sor és ${cols} oszlop. A robot a ${row}. sor ${col}. oszlopában áll, iránya ${direction}.`,
     facing: (direction: string) => `A robot iránya: ${direction}.`,
     fogCaption: "A tömör föld eltakarja a felfedezetlen mezőket.",
-    exploredCaption: "A kiásott föld jelöli a felfedezett mezőket.",
+    exploredCaption: "A kiásott föld és a világos tégla jelöli a felfedezett mezőket; a sötét tégla felfedezetlen fal.",
   },
 };

@@ -7,7 +7,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import CodeEditor, { type ActiveLine, type EditorHandle } from "@/components/code-editor";
-import { Alert, Book, Check, Lock } from "@/components/icons";
+import { Alert, Book, Check, Lock, Pencil } from "@/components/icons";
+import { formatMap } from "@/lib/map-editor";
 import Logo from "@/components/logo";
 import PlaybackBar from "@/components/playback-bar";
 import RunConsole from "@/components/run-console";
@@ -39,7 +40,7 @@ export default function Workbench() {
   const { t } = useI18n();
   // A dokumentáció „Megnyitás a szerkesztőben” linkje ezekben küldi a példát.
   const params = useSearchParams();
-  const file = useProgramFile(params.get("code"));
+  const file = useProgramFile(params.get("code"), params.get("filename"));
   const simulation = useSimulation(file.code, params.get("map"));
   const { snapshot, locked } = simulation;
 
@@ -74,6 +75,18 @@ export default function Workbench() {
           className={buttonVariants({ variant: "ghost" })}
           data-slot="button"
           data-variant="ghost"
+          href={{
+            pathname: ROUTES.mapEditor,
+            query: { map: formatMap(simulation.map), code: file.code, filename: file.filename },
+          }}
+        >
+          <Pencil aria-hidden />
+          <span className="max-sm:sr-only">{t.mapEditor.title}</span>
+        </Link>
+        <Link
+          className={buttonVariants({ variant: "ghost" })}
+          data-slot="button"
+          data-variant="ghost"
           href={ROUTES.docs}
         >
           <Book aria-hidden /> <span className="max-sm:sr-only">{t.editor.docs}</span>
@@ -87,7 +100,8 @@ export default function Workbench() {
             {/* A program és a futtatása egy helyen: fent a fájl, alatta a futás vezérlői. */}
             <div className="flex flex-col gap-2 border-b border-border px-2 py-2">
               <FileToolbar
-                filename={file.filename}
+                name={file.name}
+                onRename={file.rename}
                 locked={locked}
                 wrap={wrap}
                 onToggleWrap={() => setWrap((value) => !value)}

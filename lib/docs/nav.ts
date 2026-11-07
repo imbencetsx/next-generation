@@ -17,7 +17,7 @@ export const DOC_PAGES = [
   {
     slug: "terkepek",
     title: "Térképek",
-    description: "A térképfájl formátuma és szabályai, a beépített pályák és a tervezett térképszerkesztő.",
+    description: "A térképfájl formátuma és szabályai, a beépített pályák és a térképszerkesztő.",
   },
   {
     slug: "interpreter",

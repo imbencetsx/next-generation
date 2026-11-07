@@ -13,6 +13,7 @@ import { EditorView, keymap } from "@codemirror/view";
 import { activeLineField, setActiveLine, type ActiveLine } from "./active-line";
 import { completeOrIndent, INDENT, minescriptSupport } from "./minescript-mode";
 import { editorTheme } from "./theme";
+import { mapSupport } from "./map-mode";
 
 export type { ActiveLine } from "./active-line";
 
@@ -29,6 +30,7 @@ type Props = {
   activeLine?: ActiveLine;
   /** A szerkesztőterület akadálymentes neve (a felület nyelvén). */
   label: string;
+  mode?: "minescript" | "map";
 };
 
 export default function CodeEditor({
@@ -40,6 +42,7 @@ export default function CodeEditor({
   readOnly = false,
   activeLine = null,
   label,
+  mode = "minescript",
 }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
@@ -48,6 +51,7 @@ export default function CodeEditor({
   const callbacks = useRef({ onChange, onCursor });
   const wrapCompartment = useRef(new Compartment());
   const readOnlyCompartment = useRef(new Compartment());
+  const languageCompartment = useRef(new Compartment());
 
   useEffect(() => {
     callbacks.current = { onChange, onCursor };
@@ -72,7 +76,7 @@ export default function CodeEditor({
         doc: initialValue.current,
         extensions: [
           basicSetup,
-          minescriptSupport,
+          languageCompartment.current.of([]),
           editorTheme,
           indentUnit.of(INDENT),
           keymap.of([{ key: "Tab", run: completeOrIndent, shift: indentLess }]),
@@ -105,6 +109,12 @@ export default function CodeEditor({
       editorRef.current = null;
     };
   }, [editorRef]);
+
+  useEffect(() => {
+    view.current?.dispatch({
+      effects: languageCompartment.current.reconfigure(mode === "map" ? mapSupport : minescriptSupport),
+    });
+  }, [mode]);
 
   // Kívülről érkező szöveg (példa betöltése, import); a saját gépelésünk már egyezik, azt nem írjuk vissza.
   useEffect(() => {

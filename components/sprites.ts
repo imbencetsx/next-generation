@@ -9,7 +9,10 @@ export const TILE = 32;
 
 /** A mezők képei (public/sprites/<név>.png). */
 export const TILES = {
+  /** Felfedezett fal (a robot isThere-rel megvizsgálta). */
   wall: "wall",
+  /** Még fel nem fedezett fal: sötétebb tégla, hogy köd nélkül is elkülönüljön (kiírás 3.4). */
+  unexploredWall: "wall-unexplored",
   /** Felfedezett (kiásott) mező. */
   dug: "empty-dirt",
   /** Fel nem fedezett mező és köd. */
@@ -18,6 +21,16 @@ export const TILES = {
 export type TileName = (typeof TILES)[keyof typeof TILES];
 
 export const tileBackground = (name: TileName): CSSProperties => ({ backgroundImage: `url(/sprites/${name}.png)` });
+
+/**
+ * Egy térképmező képe a futás közben. A felfedezett mező kiásott föld vagy világos tégla, a felfedezetlen
+ * tömör föld vagy sötét tégla, így köd nélkül is látszik, mit fedezett fel a robot. Ködben a felfedezetlen
+ * mező tartalma nem látszik: tömör föld.
+ */
+export function mapTile(wall: boolean, explored: boolean, fog = false): TileName {
+  if (!explored) return fog ? TILES.solid : wall ? TILES.unexploredWall : TILES.solid;
+  return wall ? TILES.wall : TILES.dug;
+}
 
 // robot_sheet.png: 4×4 képkocka. Oszlopok: álló kép, majd három járásképkocka.
 // A sorok a képen: le (dél), balra (nyugat), jobbra (kelet), fel (észak).

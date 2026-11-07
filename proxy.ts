@@ -8,7 +8,7 @@ import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server
 import { restoreRedirect } from "@/lib/auth-redirect-fix";
 import { ROUTES } from "@/lib/routes";
 
-const isProtected = createRouteMatcher([`${ROUTES.workbench}(.*)`, `${ROUTES.profile}(.*)`]);
+const isProtected = createRouteMatcher([`${ROUTES.workbench}(.*)`, `${ROUTES.profile}(.*)`, `${ROUTES.mapEditor}(.*)`]);
 const isLogin = createRouteMatcher([ROUTES.login]);
 
 const convexAuthProxy = convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
@@ -33,5 +33,5 @@ export const config = {
   // A dokumentáció és a statikus fájlok kimaradnak; csak ezeknél kell a munkamenet.
   // Szó szerinti érték kell (a Next.js statikusan olvassa), ezért nem a ROUTES-ból jön;
   // a tests/tooling/routes.test.ts ellenőrzi, hogy a kettő egyezzen.
-  matcher: ["/workbench/:path*", "/profile/:path*", "/login", "/api/auth"],
+  matcher: ["/workbench/:path*", "/profile/:path*", "/map-editor/:path*", "/login", "/api/auth"],
 };

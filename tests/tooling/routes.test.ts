@@ -27,7 +27,13 @@ function proxyMatcher(): string[] {
 }
 
 test("proxy matcher covers every session-dependent route", () => {
-  expect(proxyMatcher()).toEqual([`${ROUTES.workbench}/:path*`, `${ROUTES.profile}/:path*`, ROUTES.login, "/api/auth"]);
+  expect(proxyMatcher()).toEqual([
+    `${ROUTES.workbench}/:path*`,
+    `${ROUTES.profile}/:path*`,
+    `${ROUTES.mapEditor}/:path*`,
+    ROUTES.login,
+    "/api/auth",
+  ]);
 });
 
 test("the docs stay outside the proxy so they can be prerendered", () => {

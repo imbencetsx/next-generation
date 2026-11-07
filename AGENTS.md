@@ -27,7 +27,7 @@ Submission must also include a short description (how to reach each feature, wha
 | Map model + map file parser + built-in maps | done | `lib/robot-map.ts` |
 | Simulator panel (playback, map, console, variables, fog) | basic | `components/simulator.tsx`, `components/use-simulation.ts` |
 | Documentation site at `/docs/[slug]` (Hungarian, dark, runnable examples) | done | `app/docs/`, `components/docs/`, `lib/docs/` |
-| Map editor, map export | planned | — |
+| Map editor (text + visual, new/import/export, presets, back to the simulator) | done | `app/map-editor/`, `components/map-editor/`, `lib/map-editor.ts`, `components/code-editor/map-mode.ts` |
 | Backend: Convex cloud (dev deployment from `.env.local`; production via `bun run build:prod`) | set up | `convex/` |
 | Auth: Convex Auth, username + password, open registration; httpOnly cookie sessions, `/workbench` and `/profile` gated server-side by `proxy.ts` | done | `convex/auth.ts`, `convex/users.ts`, `proxy.ts`, `app/login/`, `components/auth/` |
 | Persistence of maps/programs/runs, leaderboard with server re-run | planned | — |
@@ -58,6 +58,13 @@ Submission must also include a short description (how to reach each feature, wha
 app/page.tsx                 redirects / to /workbench (next.config.ts also redirects the old /test URL there)
 app/icon.svg, app/favicon.ico, app/apple-icon.png  favicon: the robot's front idle frame (robot_sheet row 1, col 1), transparent, centred on its visible 22×23 pixels (the sprite has near-invisible alpha ≤ 16 noise pixels; drop them before measuring); 32 px 1:1, 64 px 2×, Apple 6× (regenerate all three if the sprite changes)
 app/workbench/page.tsx       /workbench: editor + simulator workbench
+app/map-editor/page.tsx      /map-editor: map editor (signed-in; ?map=, ?code=, ?filename= carry the simulator's state both ways)
+lib/map-editor.ts            pure map-editing operations: createMap, formatMap (= parseMap inverse), resizeMap, paintCell, MapDocument (source + name), mapName/mapFilename
+components/map-editor/       index.tsx (layout, problems), file-toolbar.tsx, map-controls.tsx (brushes, size, direction), map-grid.tsx (keyboard grid), use-map-document.ts
+components/code-editor/map-mode.ts  CodeMirror support for map files (highlighting + parseMap lint); CodeEditor `mode="map"`
+components/download-text.ts  shared text-file download for program and map export
+components/file-name-field.tsx  shared file-name input (name + fixed extension) used by both editor toolbars
+lib/file-names.ts            editable file names: fileBaseName / fileNameWith (programName/.mine, mapName/.map build on it)
 lib/routes.ts                ROUTES and docPath(slug): every app path in one place (proxy.ts `config.matcher` repeats them literally; tests/tooling/routes.test.ts keeps them in sync)
 app/docs/                    docs site: layout (dark), /docs → /docs/attekintes, [slug] pages
 components/docs/pages/       one Hungarian content component per docs page
@@ -65,12 +72,12 @@ components/docs/example.tsx  runnable example card (runs the real engine, checks
 lib/docs/examples.ts         DOC_EXAMPLES catalogue: code + map + expected result for every docs example
 lib/docs/nav.ts              docs page list (slug, title, description) — drives nav and static params
 components/code-editor/      CodeMirror: index.tsx (React wrapper, read-only lock), minescript-mode.ts (highlighting, completion, Tab, indent, lint), theme.ts, active-line.ts (running/error line)
-components/workbench/        page shell: index.tsx (layout, status bar), file-toolbar.tsx (file name, New/Import/Export/Wrap, example select), problems-panel.tsx (syntax problems + reference), use-program-file.ts (code + file operations)
+components/workbench/        page shell: index.tsx (layout, status bar), file-toolbar.tsx (editable program name with a fixed .mine suffix, New/Import/Export/Wrap, example select), problems-panel.tsx (syntax problems + reference), use-program-file.ts (code, name, file operations; programName/programFilename in lib/minescript.ts)
 components/top-bar.tsx       shared top bar (logo left, actions right) and AccountActions (language + user menu)
 components/playback-bar.tsx  Run/Pause, Step, Reset, Speed, run status and the "fix N syntax errors" notice (in the editor header)
 components/simulator.tsx     map panel: map select/import/fog, gold/lines stats, runtime error box (renders PixelMap)
 components/pixel-map.tsx     pixel-art map: 32×32 sprites scaled to fill the panel (cell rounded down to whole device pixels, never overflows), gold shine, sliding robot
-public/sprites/              tiles: empty-dirt (dug chamber), full_dirt (undug/fog), gold + 4 shine frames and gold_chips* cut-outs (regenerate with scripts/cut-gold-chips.py), robot_sheet (4×4: idle + 3 walk frames; rows down/left/right/up), wall (brick)
+public/sprites/              tiles: empty-dirt (dug chamber), full_dirt (undug/fog), gold + 4 shine frames and gold_chips* cut-outs (regenerate with scripts/cut-gold-chips.py), robot_sheet (4×4: idle + 3 walk frames; rows down/left/right/up), wall (explored brick), wall-unexplored (dark brick); `mapTile()` in components/sprites.ts picks a cell's tile from wall/explored/fog
 components/use-simulation.ts map state, Machine instance, playback timer, named SPEEDS
 components/robot-motion.ts   Motion: how far the robot slides and when each cell is dug (animation timing only)
 convex/                      Convex backend; _generated/ is CLI output (do not edit)

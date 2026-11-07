@@ -1,7 +1,8 @@
 // Kis, statikus térkép a dokumentációhoz, a játék saját sprite-jaival (animáció nélkül).
-// Ugyanaz a jelölés, mint a szimulátorban: tégla a fal, kiásott föld a felfedezett mező, tömör föld a többi.
+// Ugyanaz a jelölés, mint a szimulátorban (mapTile): a felfedezett mező kiásott föld vagy világos tégla,
+// a felfedezetlen tömör föld vagy sötét tégla.
 
-import { robotSpriteStyle, tileBackground, TILES } from "@/components/sprites";
+import { mapTile, robotSpriteStyle, tileBackground } from "@/components/sprites";
 import { cellIndex, DIRECTIONS, type GameMap } from "@/lib/robot-map";
 
 const DIRECTION_HU: Record<string, string> = { north: "észak", west: "nyugat", south: "dél", east: "kelet" };
@@ -31,7 +32,7 @@ export function MiniMap({ map, robot = map.robot, gold = map.gold, explored, cap
       >
         {map.walls.map((wall, index) => {
           const seen = explored ? explored[index] : index === robotIndex;
-          const tile = wall ? TILES.wall : seen ? TILES.dug : TILES.solid;
+          const tile = mapTile(wall, seen);
           return (
             <div
               key={index}

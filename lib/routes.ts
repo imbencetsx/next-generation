@@ -6,6 +6,7 @@ export const ROUTES = {
   workbench: "/workbench",
   login: "/login",
   profile: "/profile",
+  mapEditor: "/map-editor",
   docs: "/docs",
 } as const;
 

@@ -103,6 +103,7 @@ export const en = {
     export: "Export",
     docs: "Language documentation",
     wrap: "Wrap",
+    programName: "Program name",
     noSyntaxErrors: "No syntax errors",
     problemCount: (count: number) => `${count} problem${count === 1 ? "" : "s"}`,
     cursor: (line: number, column: number) => `Ln ${line}, Col ${column}`,
@@ -129,6 +130,37 @@ export const en = {
       "first-steps.mine": "First steps",
       "variables.mine": "Variables & logic",
     } as Record<string, string>,
+  },
+
+  mapEditor: {
+    title: "Map editor",
+    source: "Map file",
+    visual: "Visual editor",
+    filename: "Map filename",
+    rows: "Rows",
+    cols: "Columns",
+    resize: "Resize",
+    dimensionsHint: "Each dimension must be a whole number between 1 and 15.",
+    resizeHint:
+      "Shrinking crops the outer cells. If necessary, the robot moves inside the remaining area and its cell is cleared.",
+    robotDirection: "Starting direction",
+    tools: "Paint tool",
+    toolNames: { empty: "Empty chamber", gold: "Gold", wall: "Wall", robot: "Robot" },
+    valid: "Valid map",
+    invalid: "Invalid map",
+    lastValid: "Showing the last valid map. Fix the text to continue visual editing.",
+    protectedRobot: "Move the robot first before placing a wall or gold on its cell.",
+    useMap: "Use in simulator",
+    workbench: "Code editor",
+    fileRead: "Could not read this file. Your current map is unchanged.",
+    fileLarge: "The file is too large for a map of up to 15 × 15 cells. Your current map is unchanged.",
+    exportHint: "Only valid maps can be exported or used in the simulator. Export saves a map file on your device.",
+    keyboardHint: "Choose a tool and click a cell. Use arrow keys to move between cells, then Enter or Space to paint.",
+    formatHint:
+      "First line: rows and columns, separated by one space. Then one row per line: . empty, @ gold, # wall, ^ < v > robot. Exactly one robot is required.",
+    cell: (row: number, col: number, kind: string) => `Row ${row}, column ${col}: ${kind}`,
+    statistics: (gold: number, cells: number) => `${gold} gold · ${cells} cells`,
+    errorLocation: (line: number, column: number) => `Line ${line}, column ${column}`,
   },
 
   console: {
@@ -170,7 +202,7 @@ export const en = {
       `Map with ${rows} rows and ${cols} columns. Robot at row ${row}, column ${col}, facing ${direction}.`,
     facing: (direction: string) => `Robot faces ${direction}.`,
     fogCaption: "Solid dirt hides everything unexplored.",
-    exploredCaption: "Dug-out dirt marks explored cells.",
+    exploredCaption: "Dug-out dirt and bright bricks mark explored cells; dark bricks are unexplored walls.",
   },
 };
 

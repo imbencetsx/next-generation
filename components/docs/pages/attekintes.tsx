@@ -122,7 +122,7 @@ export default function Attekintes() {
           <tr>
             <td>Térképszerkesztő, térképexport</td>
             <td>
-              <Status kind="planned" />
+              <Status kind="done" />
             </td>
             <td>
               <Link href="/docs/terkepek">Térképek</Link>

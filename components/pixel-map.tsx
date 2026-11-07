@@ -7,7 +7,7 @@
 // tömör föld, ami a robot érkezésekor tűnik el, legfelül az arany. A robot külön réteg a rács fölött.
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { robotSpriteStyle, TILE, tileBackground, TILES } from "@/components/sprites";
+import { mapTile, robotSpriteStyle, TILE, tileBackground, TILES } from "@/components/sprites";
 import type { Motion } from "@/components/robot-motion";
 import { cellAt, type GameMap } from "@/lib/robot-map";
 
@@ -120,8 +120,8 @@ type TileProps = {
 
 function MapTile({ x, y, wall, explored, gold, fog, revealAt, motionId }: TileProps) {
   const hidden = fog && !explored;
-  // A látott mező kiásott (sötét) föld, a többi tömör föld; az arany külön rétegként ül rajta.
-  const tile = hidden ? TILES.solid : wall ? TILES.wall : explored ? TILES.dug : TILES.solid;
+  // A mező képe a felfedezettségtől függ (mapTile); az arany külön rétegként ül rajta.
+  const tile = mapTile(wall, explored, fog);
   const revealing = revealAt !== undefined;
   // Ködben az arany csak akkor bukkan elő, amikor a robot odaér.
   const goldAppears = fog && revealing;

@@ -1,16 +1,20 @@
 "use client";
 
-// A szerkesztő fejlécének első sora: balra a fájlnév, középen a fájlműveletek, jobbra a példaválasztó.
+// A szerkesztő fejlécének első sora: balra a szerkeszthető programnév (a .mine kiterjesztés rögzített),
+// középen a fájlműveletek, jobbra a példaválasztó.
 
 import { useRef } from "react";
-import { Download, FileIcon, NewFile, Upload, Wrap } from "@/components/icons";
+import FileNameField from "@/components/file-name-field";
+import { Download, NewFile, Upload, Wrap } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { useI18n } from "@/i18n/i18n-provider";
-import { EXAMPLES } from "@/lib/minescript";
+import { EXAMPLES, PROGRAM_EXTENSION } from "@/lib/minescript";
 
 type Props = {
-  filename: string;
+  /** A programnév kiterjesztés nélkül. */
+  name: string;
+  onRename: (name: string) => void;
   /** Futás közben a program nem cserélhető le. */
   locked: boolean;
   wrap: boolean;
@@ -22,7 +26,8 @@ type Props = {
 };
 
 export default function FileToolbar({
-  filename,
+  name,
+  onRename,
   locked,
   wrap,
   onToggleWrap,
@@ -43,10 +48,13 @@ export default function FileToolbar({
 
   return (
     <div className="flex flex-wrap items-center justify-center gap-1.5 md:flex-nowrap">
-      <span className="flex min-w-0 shrink items-center gap-1.5 pl-1 font-mono text-xs md:max-w-48">
-        <FileIcon size={14} className="shrink-0 text-muted-foreground" aria-hidden />
-        <span className="truncate">{filename}</span>
-      </span>
+      <FileNameField
+        id="program-name"
+        label={t.editor.programName}
+        value={name}
+        extension={PROGRAM_EXTENSION}
+        onChange={onRename}
+      />
 
       <div className="flex flex-1 flex-wrap items-center justify-center gap-1.5">
         {/* Szűk képernyőn csak az ikon látszik; a felirat a képernyőolvasónak megmarad. */}

@@ -26,7 +26,7 @@ const ENGINE_CONSUMERS = [
   "tests/diagnostics",
 ];
 const FULL_SUITE = ["tests"];
-const APP_SUITE = ["convex", "components/profile"];
+const APP_SUITE = ["convex", "components/profile", "components/map-editor", "components/workbench"];
 
 type Rule = {
   matches: (path: string) => boolean;
@@ -59,6 +59,17 @@ const RULES: Rule[] = [
   },
   { matches: isOneOf("lib/interpreter.ts"), tests: ENGINE_CONSUMERS },
   { matches: isOneOf("lib/robot-map.ts"), tests: ["tests/maps", ...ENGINE_CONSUMERS] },
+  { matches: isOneOf("lib/map-editor.ts"), tests: GROUPS.maps, appTests: ["components/map-editor"] },
+  // A térképmezők képe (felfedezett / felfedezetlen / köd).
+  { matches: isOneOf("components/sprites.ts"), tests: ["tests/maps/tiles.test.ts"], ui: true },
+  // A közös fájlnév-szabály és -mező: mindkét szerkesztő fájlkezelése.
+  {
+    matches: isOneOf("lib/file-names.ts", "components/file-name-field.tsx", "components/download-text.ts"),
+    tests: ["tests/syntax/program-file.test.ts", "tests/maps/editor.test.ts"],
+    appTests: ["components/map-editor", "components/workbench"],
+    ui: true,
+  },
+  { matches: isUnder("components/map-editor/"), tests: GROUPS.maps, appTests: ["components/map-editor"], ui: true },
   // Dokumentáció: a példái futtatható szerződések.
   { matches: isUnder("lib/docs/", "components/docs/", "app/docs/"), tests: GROUPS.docs },
   // Motorra épülő felületi fájlok: a kapcsolódó motortesztek, és felületi ellenőrzés is kell.
@@ -70,6 +81,7 @@ const RULES: Rule[] = [
   {
     matches: (path) => isUnder("components/code-editor/", "components/workbench/")(path),
     tests: GROUPS.syntax,
+    appTests: ["components/map-editor", "components/workbench"],
     ui: true,
   },
   // Tesztek és teszteszközök; egy módosított tesztfájl pontosan önmagát választja.
@@ -93,8 +105,13 @@ const RULES: Rule[] = [
   { matches: isUnder("convex/_generated/"), tests: [], appTests: APP_SUITE },
   { matches: isUnder("convex/"), tests: [], appTests: ["convex"] },
   { matches: isUnder("components/profile/"), tests: [], appTests: ["components/profile"], ui: true },
-  // A szótár szövegeit a profil oldal renderelési tesztje ellenőrzi.
-  { matches: isUnder("i18n/"), tests: [], appTests: ["components/profile"], ui: true },
+  // A szótár szövegeit a profil, a térképszerkesztő és a munkafelület renderelési tesztjei ellenőrzik.
+  {
+    matches: isUnder("i18n/"),
+    tests: [],
+    appTests: ["components/profile", "components/map-editor", "components/workbench"],
+    ui: true,
+  },
   { matches: isOneOf("vitest.config.mts"), tests: [], appTests: APP_SUITE },
   // Az útvonalak és a proxy: a matcher-szinkron tesztje.
   {

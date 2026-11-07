@@ -31,7 +31,9 @@ export type GameMap = {
 /** Hibánál `line` a térképfájl 1-től számozott sora, `column` az oszlop, ha egy konkrét helyről van szó. */
 export type MapParseResult = { ok: true; map: GameMap } | { ok: false; error: string; line?: number; column?: number };
 
-const ROBOT_SYMBOLS: Record<string, Direction> = { "^": 0, "<": 1, "v": 2, ">": 3 };
+/** A robot jele irányonként, a DIRECTIONS sorrendjében (észak, nyugat, dél, kelet). */
+export const ROBOT_SYMBOLS = ["^", "<", "v", ">"] as const;
+const DIRECTION_OF_SYMBOL = new Map<string, Direction>(ROBOT_SYMBOLS.map((symbol, dir) => [symbol, dir as Direction]));
 const MAP_SYMBOL = /^[.@#^<>v]$/;
 
 /** Miért nem térképjel egy karakter (a hibaüzenetbe). */
@@ -141,7 +143,8 @@ function readGrid(rowTexts: string[], rows: number, cols: number): GameMap {
       }
       walls.push(symbol === "#");
       gold.push(symbol === "@");
-      if (!(symbol in ROBOT_SYMBOLS)) continue;
+      const dir = DIRECTION_OF_SYMBOL.get(symbol);
+      if (dir === undefined) continue;
 
       if (robot) {
         throw new MapFileError(
@@ -150,7 +153,7 @@ function readGrid(rowTexts: string[], rows: number, cols: number): GameMap {
           column,
         );
       }
-      robot = { x, y, dir: ROBOT_SYMBOLS[symbol], line, column };
+      robot = { x, y, dir, line, column };
     }
   }
 

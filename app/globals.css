@@ -91,6 +91,34 @@
 
 /* Komponensréteg: a Tailwind utility-osztályok felülírhatják. */
 @layer components {
+  .map-editor-cell {
+    display: block;
+    position: relative;
+    padding: 0;
+    border: 0;
+    cursor: crosshair;
+  }
+  .map-editor-cell::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .map-editor-cell:hover::after {
+    box-shadow: inset 0 0 0 1px var(--foreground);
+  }
+  .app-ui .map-editor-cell:focus-visible {
+    outline: none;
+  }
+  .map-editor-cell:focus-visible::after {
+    box-shadow: inset 0 0 0 2px var(--primary);
+  }
+  .map-editor-cell:disabled {
+    cursor: default;
+  }
+  .map-editor-cell:disabled::after {
+    box-shadow: none;
+  }
   .app-ui {
     background: var(--background);
     color: var(--foreground);
