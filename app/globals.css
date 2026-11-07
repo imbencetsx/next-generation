@@ -28,6 +28,13 @@
   --border: #2d2d2d;
   --input: #3b3b3b;
   --ring: #f0a700;
+  /* A ranglista érmei (1–3. hely): arany, ezüst, bronz. Csak ott használjuk. */
+  --medal-gold: #f0a700;
+  --medal-silver: #c3c6cc;
+  --medal-bronze: #b8733a;
+  --medal-ink: #1a1206;
+  /* A törlés gomb telített, sötét pirosa (a hibák téglaszíne marad a --destructive). */
+  --danger-button: #a3241a;
   --radius: 4px;
   --code: #171717;
   --code-highlight: #211e19;
@@ -153,25 +160,17 @@
     background: var(--background);
   }
   /* Az aránytartó háttér alul rögzül; keskeny képernyőn a szélek vágódnak le, nem a bánya alja. */
-  /* Teljes oldalas pixel art háttér (a tartalom mögött, rögzítve). A szülőnek „isolate” kell. */
-  .login-background,
-  .home-background {
+  /* A bejelentkezés teljes oldalas pixel art háttere (a tartalom mögött, rögzítve). A szülőnek „isolate” kell. */
+  .login-background {
     position: fixed;
     inset: 0;
     z-index: -1;
     pointer-events: none;
+    background-image: url("/artwork/pixel_ore_background.png");
     background-size: cover;
+    background-position: center bottom;
     background-repeat: no-repeat;
     image-rendering: pixelated;
-  }
-  .login-background {
-    background-image: url("/artwork/pixel_ore_background.png");
-    background-position: center bottom;
-  }
-  /* Kanyon naplementében (160×90 px); a szöveg mindig kártyán ül, így a kép teljes fényerővel látszhat. */
-  .home-background {
-    background-image: url("/artwork/mine_canyon_background.png");
-    background-position: center;
   }
   /* Panelcím: kisbetűs, csendes; a tartalom számít, nem a címke. */
   .panel-title {
@@ -199,6 +198,8 @@
   --pixel-frame-danger-soft: url("/artwork/borders/danger-soft.svg");
   --pixel-frame-light: url("/artwork/borders/light.svg");
 }
+/* A portálban a keret és az app-ui ugyanazon az elemen is lehet. */
+.app-ui.pixel-frame,
 .app-ui
   :is(
     [data-slot="card"],
@@ -250,6 +251,7 @@
   clip-path: var(--pixel-cutout);
 }
 /* A kártyák vastagabb (2px-es) kerettel, gyűrű nélkül. */
+.app-ui.pixel-frame,
 .app-ui :is([data-slot="card"], .pixel-frame) {
   --pixel-unit: 2px;
   --pixel-frame: var(--pixel-frame-neutral);

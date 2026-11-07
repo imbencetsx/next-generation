@@ -9,7 +9,7 @@ import { useI18n } from "@/i18n/i18n-provider";
 export type FeedbackState = {
   /** A „mismatch” csak a kliensen fordulhat elő (a két új jelszó eltér). */
   error?: ProfileErrorKey | "mismatch";
-  success?: "pictureSaved" | "pictureRemoved" | "usernameSaved" | "passwordSaved";
+  success?: "pictureSaved" | "pictureRemoved" | "usernameSaved" | "passwordSaved" | "languageSaved";
 };
 
 /** Az `id` az űrlap mezőinek aria-describedby hivatkozásához kell. */

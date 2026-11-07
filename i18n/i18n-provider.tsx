@@ -2,7 +2,7 @@
 
 // Nyelvi kontextus: a kezdő nyelvet a szerver adja (süti), váltáskor azonnal frissül és elmentjük.
 
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { LOCALE_COOKIE, type Locale } from "./locale";
 import { MESSAGES, type Messages } from "./messages";
 
@@ -10,8 +10,22 @@ type I18n = { locale: Locale; t: Messages; setLocale: (locale: Locale) => void }
 
 const I18nContext = createContext<I18n | null>(null);
 
-export function I18nProvider({ initialLocale, children }: { initialLocale: Locale; children: ReactNode }) {
-  const [locale, setLocaleState] = useState(initialLocale);
+export function I18nProvider({
+  initialLocale,
+  accountLocale,
+  children,
+}: {
+  initialLocale: Locale;
+  accountLocale?: Locale | null;
+  children: ReactNode;
+}) {
+  const [selectedLocale, setLocaleState] = useState(initialLocale);
+  const locale = accountLocale ?? selectedLocale;
+
+  // A fiók nyelve a következő szerverkéréshez is bekerül a sütibe.
+  useEffect(() => {
+    document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=31536000; samesite=lax`;
+  }, [locale]);
 
   function setLocale(next: Locale) {
     setLocaleState(next);

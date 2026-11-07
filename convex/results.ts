@@ -12,7 +12,7 @@ import { currentUserId } from "./users";
 
 const score = v.object({ gold: v.number(), steps: v.number() });
 
-/** Holtversenynél legfeljebb ennyi sort olvasunk végig (biztosíték sok azonos eredmény ellen). */
+/** Holtversenynél a helyek után legfeljebb ennyi sort olvasunk még végig (biztosíték sok azonos eredmény ellen). */
 const MAX_TIE_SCAN = 100;
 
 /** A játékos eddigi legjobb eredménye egy térképen, vagy null. */
@@ -81,18 +81,20 @@ export const myBest = query({
 });
 
 /**
- * Egy térkép ranglistájának eleje (kiírás 3.5): a legjobb LEADERBOARD_SIZE játékos, előbb több arany, azon belül
- * kevesebb lépés. Pontosan egyforma eredmény ugyanazt a helyezést kapja (pl. 1., 2., 2., 4.).
+ * Egy térkép ranglistája (kiírás 3.5): a legjobb `limit` (legfeljebb LEADERBOARD_SIZE) játékos, előbb több arany,
+ * azon belül kevesebb lépés. Pontosan egyforma eredmény ugyanazt a helyezést kapja (pl. 1., 2., 2., 4.), és
+ * közülük a korábban elért áll elöl.
  */
 export const leaderboard = query({
-  args: { mapId: v.id("maps") },
+  args: { mapId: v.id("maps"), limit: v.optional(v.number()) },
   returns: v.array(
     v.object({ place: v.number(), name: v.string(), gold: v.number(), steps: v.number(), isMe: v.boolean() }),
   ),
   handler: async (ctx, args) => {
     const viewerId = await currentUserId(ctx);
     if (!viewerId) return [];
-    // Csökkenő rangsorban olvasunk; az 5. hely holtversenyét is végigolvassuk, hogy közülük a korábban elért
+    const size = Math.min(LEADERBOARD_SIZE, Math.max(1, Math.floor(args.limit ?? LEADERBOARD_SIZE)));
+    // Csökkenő rangsorban olvasunk; az utolsó hely holtversenyét is végigolvassuk, hogy közülük a korábban elért
     // eredmény kerüljön előre (az index azonos rangnál a későbbit adná előbb).
     const candidates: Doc<"results">[] = [];
     const byRank = ctx.db
@@ -101,12 +103,12 @@ export const leaderboard = query({
       .order("desc");
     for await (const result of byRank) {
       const last = candidates.at(-1);
-      if (candidates.length >= LEADERBOARD_SIZE && result.rank !== last?.rank) break;
+      if (candidates.length >= size && result.rank !== last?.rank) break;
       candidates.push(result);
-      if (candidates.length >= MAX_TIE_SCAN) break;
+      if (candidates.length >= size + MAX_TIE_SCAN) break;
     }
     candidates.sort((a, b) => b.rank - a.rank || a._creationTime - b._creationTime);
-    const top = candidates.slice(0, LEADERBOARD_SIZE);
+    const top = candidates.slice(0, size);
     const players = await Promise.all(top.map((result) => ctx.db.get(result.userId)));
 
     return top.map((result, index) => {

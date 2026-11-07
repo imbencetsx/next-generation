@@ -26,7 +26,14 @@ const ENGINE_CONSUMERS = [
   "tests/diagnostics",
 ];
 const FULL_SUITE = ["tests"];
-const APP_SUITE = ["convex", "components/profile", "components/map-editor", "components/workbench", "components/home"];
+const APP_SUITE = [
+  "convex",
+  "components/profile",
+  "components/map-editor",
+  "components/workbench",
+  "components/home",
+  "components/map-page",
+];
 
 type Rule = {
   matches: (path: string) => boolean;
@@ -108,11 +115,18 @@ const RULES: Rule[] = [
   { matches: isUnder("convex/"), tests: [], appTests: ["convex"] },
   { matches: isUnder("components/profile/"), tests: [], appTests: ["components/profile"], ui: true },
   { matches: isUnder("components/home/"), tests: [], appTests: ["components/home"], ui: true },
+  { matches: isUnder("components/map-page/"), tests: [], appTests: ["components/map-page"], ui: true },
   // A szótár szövegeit a profil, a térképszerkesztő és a munkafelület renderelési tesztjei ellenőrzik.
   {
     matches: isUnder("i18n/"),
     tests: [],
-    appTests: ["components/profile", "components/map-editor", "components/workbench", "components/home"],
+    appTests: [
+      "components/profile",
+      "components/map-editor",
+      "components/workbench",
+      "components/home",
+      "components/map-page",
+    ],
     ui: true,
   },
   { matches: isOneOf("vitest.config.mts"), tests: [], appTests: APP_SUITE },

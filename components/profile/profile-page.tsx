@@ -11,6 +11,7 @@ import TopBar, { AccountActions } from "@/components/top-bar";
 import { buttonVariants } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import { useI18n } from "@/i18n/i18n-provider";
+import LanguageForm from "./language-form";
 import PasswordForm from "./password-form";
 import PictureForm from "./picture-form";
 import UsernameForm from "./username-form";
@@ -55,6 +56,7 @@ export default function ProfilePage() {
           <>
             <PictureForm name={viewer.name} imageUrl={viewer.imageUrl} />
             <UsernameForm name={viewer.name} />
+            <LanguageForm savedLocale={viewer.locale} />
             <PasswordForm name={viewer.name} />
           </>
         ) : (

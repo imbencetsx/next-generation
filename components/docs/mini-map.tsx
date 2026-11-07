@@ -4,7 +4,8 @@
 // a felfedezetlen tömör föld vagy sötét tégla.
 
 import { mapTile, robotSpriteStyle, tileBackground } from "@/components/sprites";
-import { cellIndex, DIRECTIONS, type GameMap } from "@/lib/robot-map";
+import GoldShine from "@/components/gold-shine";
+import { cellAt, cellIndex, DIRECTIONS, type GameMap } from "@/lib/robot-map";
 
 const DIRECTION_HU: Record<string, string> = { north: "észak", west: "nyugat", south: "dél", east: "kelet" };
 
@@ -18,9 +19,20 @@ type Props = {
   cell?: number;
   /** Akadálymentes leírás; ha hiányzik, a dokumentáció magyar leírása (méret, robot helye és iránya). */
   label?: string;
+  /** Csillogó arany, mint a szimulátorban (a kezdőlapon és a térkép oldalán); a dokumentációban álló kép. */
+  shine?: boolean;
 };
 
-export function MiniMap({ map, robot = map.robot, gold = map.gold, explored, caption, cell = 24, label }: Props) {
+export function MiniMap({
+  map,
+  robot = map.robot,
+  gold = map.gold,
+  explored,
+  caption,
+  cell = 24,
+  label,
+  shine = false,
+}: Props) {
   const robotIndex = cellIndex(map, robot.x, robot.y);
   const facing = DIRECTION_HU[DIRECTIONS[robot.dir].name];
   const description =
@@ -45,7 +57,9 @@ export function MiniMap({ map, robot = map.robot, gold = map.gold, explored, cap
               className="pixel-sprite relative"
               style={{ ...tileBackground(tile), width: cell, height: cell }}
             >
-              {!wall && gold[index] && <span className="gold-sprite absolute inset-0" />}
+              {!wall &&
+                gold[index] &&
+                (shine ? <GoldShine {...cellAt(map, index)} /> : <span className="gold-sprite absolute inset-0" />)}
               {index === robotIndex && (
                 <span className="pixel-robot-sprite absolute inset-0" style={robotSpriteStyle(robot.dir)} />
               )}

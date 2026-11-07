@@ -1,5 +1,6 @@
 // Szerveroldali védelem (Next.js 16-ban a korábbi middleware.ts neve proxy.ts).
-// A kezdőlapot, a munkafelületet, a térképszerkesztőt és a profil oldalt csak érvényes munkamenettel szolgáljuk ki. A Convex Auth itt kezeli a
+// A kezdőlapot, a munkafelületet, a térképszerkesztőt, a térképoldalakat és a profil oldalt csak érvényes
+// munkamenettel szolgáljuk ki. A Convex Auth itt kezeli a
 // httpOnly sütiket, a token frissítését és az /api/auth végpontot (bejelentkezés/kijelentkezés a Next
 // szerveren át, így a refresh token sosem jut el a böngésző JavaScriptjéhez).
 
@@ -13,6 +14,7 @@ const isProtected = createRouteMatcher([
   `${ROUTES.workbench}(.*)`,
   `${ROUTES.profile}(.*)`,
   `${ROUTES.mapEditor}(.*)`,
+  `${ROUTES.maps}(.*)`,
 ]);
 const isLogin = createRouteMatcher([ROUTES.login]);
 
@@ -38,5 +40,5 @@ export const config = {
   // A dokumentáció és a statikus fájlok kimaradnak; csak ezeknél kell a munkamenet.
   // Szó szerinti érték kell (a Next.js statikusan olvassa), ezért nem a ROUTES-ból jön;
   // a tests/tooling/routes.test.ts ellenőrzi, hogy a kettő egyezzen.
-  matcher: ["/", "/workbench/:path*", "/profile/:path*", "/map-editor/:path*", "/login", "/api/auth"],
+  matcher: ["/", "/workbench/:path*", "/profile/:path*", "/map-editor/:path*", "/maps/:path*", "/login", "/api/auth"],
 };

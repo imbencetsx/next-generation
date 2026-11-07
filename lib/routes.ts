@@ -9,6 +9,8 @@ export const ROUTES = {
   login: "/login",
   profile: "/profile",
   mapEditor: "/map-editor",
+  /** Egy közzétett térkép oldala a ranglistával: /maps/<azonosító> (mapPath). */
+  maps: "/maps",
   docs: "/docs",
 } as const;
 
@@ -21,6 +23,9 @@ export const withMap = (pathname: string, map: string, mapName: string, mapId?: 
   pathname,
   query: mapId ? { map, mapName, mapId } : { map, mapName },
 });
+
+/** Egy közzétett térkép oldala (adatai és ranglistája). */
+export const mapPath = (mapId: string) => `${ROUTES.maps}/${mapId}`;
 
 /** Egy dokumentációs oldal címe a slug alapján (lib/docs/nav.ts). */
 export const docPath = (slug: string) => `${ROUTES.docs}/${slug}`;

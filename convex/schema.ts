@@ -7,6 +7,8 @@ export default defineSchema({
   users: defineTable({
     ...authTables.users.validator.fields,
     avatarId: v.optional(v.id("_storage")),
+    /** A felület nyelve, ha a felhasználó beállította (a profil oldalon); különben a böngészőé dönt. */
+    locale: v.optional(v.union(v.literal("en"), v.literal("hu"))),
   })
     .index("email", ["email"])
     .index("phone", ["phone"]),

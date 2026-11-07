@@ -14,8 +14,9 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
-        destructive:
-          "bg-destructive/25 text-brick-text hover:bg-destructive/35 focus-visible:border-destructive/40 focus-visible:ring-destructive/20",
+        // Telített, sötét piros (--danger-button) világos felirattal (törlés): a piros pixel kerettel és a lenyomható peremmel
+        // ugyanolyan gomb, mint az arany fő gomb, csak veszélyes műveletre.
+        destructive: "bg-(--danger-button) text-foreground hover:bg-(--danger-button)/90",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

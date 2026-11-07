@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { EditorView } from "@codemirror/view";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { I18nProvider } from "@/i18n/i18n-provider";
@@ -145,24 +145,58 @@ describe("map editor / React and CodeMirror integration", () => {
     expect(programField.nextElementSibling?.textContent).toBe(".mine");
   });
 
-  test("publishes the valid map under the file name and shows the result", async () => {
+  test("previews and publishes the map with a separate name without renaming the file", async () => {
     convex.publish.mockResolvedValue("map-id");
     open();
     fireEvent.change(screen.getByLabelText("Map filename"), { target: { value: "tiny" } });
     fireEvent.click(screen.getByRole("button", { name: "Publish" }));
-    expect(await screen.findByText(/Published as “tiny”/)).toBeTruthy();
-    expect(convex.publish).toHaveBeenCalledWith({ name: "tiny", text: "1 2\n>." });
+    const dialog = await screen.findByRole("dialog", { name: "Publish map" });
+    expect(convex.publish).not.toHaveBeenCalled();
+    expect((within(dialog).getByLabelText("Map name") as HTMLInputElement).value).toBe("tiny");
+    fireEvent.change(within(dialog).getByLabelText("Map name"), { target: { value: "Hidden vault" } });
+    const preview = within(dialog).getByRole("article", { name: "Hidden vault" });
+    expect(within(preview).getByRole("img", { name: "Map “Hidden vault”, 1 rows by 2 columns" })).toBeTruthy();
+    expect(preview.textContent).toContain("by you");
+    expect(preview.textContent).toContain("1 × 2 cells, 0 gold");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Publish" }));
+    expect(await screen.findByText(/Published as “Hidden vault”/)).toBeTruthy();
+    expect(convex.publish).toHaveBeenCalledWith({ name: "Hidden vault", text: "1 2\n>." });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect((screen.getByLabelText("Map filename") as HTMLInputElement).value).toBe("tiny");
     expect(screen.getByRole("link", { name: "Open the home page" }).getAttribute("href")).toBe("/");
   });
 
-  test("an invalid map cannot be published, and a server error is shown in the user's language", async () => {
+  test("cancel and Escape dismiss the preview without publishing; an empty name cannot be submitted", async () => {
+    open();
+    const trigger = screen.getByRole("button", { name: "Publish" });
+    fireEvent.click(trigger);
+    let dialog = await screen.findByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("Map name"), { target: { value: "   " } });
+    expect(within(dialog).getByRole("button", { name: "Publish" }).hasAttribute("disabled")).toBe(true);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    fireEvent.click(trigger);
+    dialog = await screen.findByRole("dialog");
+    expect((within(dialog).getByLabelText("Map name") as HTMLInputElement).value.trim()).not.toBe("");
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(convex.publish).not.toHaveBeenCalled();
+  });
+
+  test("an invalid map cannot be published, and a server error stays in the dialog in the user's language", async () => {
     open("hu");
     setSource("1 2\n@@");
     expect(screen.getByRole("button", { name: "Közzététel" }).hasAttribute("disabled")).toBe(true);
     setSource("1 1\n>");
     convex.publish.mockRejectedValue(new Error('Uncaught ConvexError: {"code":"MAP_name"}'));
     fireEvent.click(screen.getByRole("button", { name: "Közzététel" }));
-    await waitFor(() => expect(screen.getByText("Adj a térképnek 1–60 karakteres nevet.")).toBeTruthy());
+    const dialog = await screen.findByRole("dialog", { name: "Térkép közzététele" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Közzététel" }));
+    expect(await within(dialog).findByRole("alert")).toHaveProperty(
+      "textContent",
+      "Adj a térképnek 1–60 karakteres nevet.",
+    );
+    expect(within(dialog).getByRole("button", { name: "Közzététel" }).hasAttribute("disabled")).toBe(false);
   });
 
   test("a map name from the link becomes the file name and travels back to the simulator", () => {

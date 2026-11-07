@@ -6,7 +6,6 @@ import schema from "./schema";
 
 const modules = import.meta.glob(["./**/*.ts", "!./**/*.test.ts"]);
 const CORRIDOR = "3 10\n##########\n>.@..@.@.#\n##########";
-const page = { numItems: 20, cursor: null };
 
 // A Corridor pálya aranyai a 3., 6. és 8. oszlopban vannak; a robot az 1. oszlopból kelet felé indul.
 const ONE_GOLD = "step forward 2\nmine here"; // 1 arany, 2 sor
@@ -70,7 +69,7 @@ describe("run results on published maps", () => {
     expect(await other.query(api.results.myBest, { mapId })).toEqual({ gold: 1, steps: 2 });
   });
 
-  test("the leaderboard shows the top 5 by gold, then fewer steps; equal results share a place", async () => {
+  test("the leaderboard ranks by gold, then fewer steps; equal results share a place, the earlier first", async () => {
     const { t, miner, mapId } = await setup();
     // Hét további játékos; a programjuk határozza meg az eredményt.
     const programs = [ONE_GOLD_SLOW, TWO_GOLD, ONE_GOLD, ONE_GOLD, "print 0", ERRORS_AFTER_GOLD, "print 0\nprint 0"];
@@ -89,8 +88,13 @@ describe("run results on published maps", () => {
       [2, "p3", 1, 2],
       [4, "p0", 1, 3],
       [4, "p5", 1, 3],
+      [6, "p4", 0, 1],
+      [7, "p6", 0, 2],
     ]);
     expect(board.every((row) => !row.isMe)).toBe(true);
+    // Kisebb limitnél a holtverseny a határon is a korábban elért eredményt tartja meg.
+    const top4 = await miner.query(api.results.leaderboard, { mapId, limit: 4 });
+    expect(top4.map((row) => row.name)).toEqual(["p1", "p2", "p3", "p0"]);
   });
 
   test("the caller's own row is marked, and signed-out callers get an empty list", async () => {

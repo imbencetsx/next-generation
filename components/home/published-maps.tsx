@@ -1,16 +1,15 @@
 "use client";
 
 // A közzétett térképek a kezdőlapon: mind vagy csak a sajátok, a legújabb elöl, lapozva. Két részből áll: a fejléc
-// (cím, szűrő, üres/betöltés üzenet) a kezdőlap közös dobozában van, a térképkártyák rácsa alatta.
+// (cím, szűrő, üres/betöltés üzenet) és alatta a térképek rácsa; a kettő ugyanazt a szűrőállapotot kapja.
 
 import { usePaginatedQuery } from "convex/react";
 import { useState } from "react";
 import LoadingStatus from "@/components/loading-status";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { api } from "@/convex/_generated/api";
 import { useI18n } from "@/i18n/i18n-provider";
-import MapCard from "./map-card";
+import MapEntry from "./map-entry";
 
 /** Egyszerre ennyi térképet töltünk be (a rácsban három oszlop fér el egymás mellett). */
 const PAGE_SIZE = 9;
@@ -31,10 +30,10 @@ export function PublishedMapsHeader({ maps }: Props) {
     <div className="space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
-          <h2 id="published-title" className="panel-title">
+          <h2 id="published-title" className="font-pixel text-2xl">
             {t.home.publishedTitle}
           </h2>
-          <p className="max-w-[72ch] font-read text-sm text-muted-foreground">{t.home.publishedIntro}</p>
+          <p className="max-w-[60ch] font-read text-muted-foreground">{t.home.publishedIntro}</p>
         </div>
         <div role="group" aria-label={t.home.filter} className="flex gap-1.5">
           <Button variant="outline" size="sm" aria-pressed={!mine} onClick={() => setMine(false)}>
@@ -59,10 +58,10 @@ export function PublishedMapsList({ maps }: Props) {
   return (
     <>
       {results.length > 0 && (
-        <ul aria-labelledby="published-title" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <ul aria-labelledby="published-title" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {results.map((map) => (
             <li key={map._id} className="flex">
-              <MapCard map={map} />
+              <MapEntry map={map} />
             </li>
           ))}
         </ul>
@@ -72,11 +71,7 @@ export function PublishedMapsList({ maps }: Props) {
           {t.home.loadMore}
         </Button>
       )}
-      {status === "LoadingMore" && (
-        <Card className="p-3">
-          <LoadingStatus message="loading" fullScreen={false} />
-        </Card>
-      )}
+      {status === "LoadingMore" && <LoadingStatus message="loading" fullScreen={false} />}
     </>
   );
 }

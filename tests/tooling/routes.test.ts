@@ -32,6 +32,7 @@ test("proxy matcher covers every session-dependent route", () => {
     `${ROUTES.workbench}/:path*`,
     `${ROUTES.profile}/:path*`,
     `${ROUTES.mapEditor}/:path*`,
+    `${ROUTES.maps}/:path*`,
     ROUTES.login,
     "/api/auth",
   ]);

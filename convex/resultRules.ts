@@ -5,8 +5,8 @@ import { codedError, errorKeyFrom, RESULT_ERROR_PREFIX } from "./errors";
 /** Ennél hosszabb programot nem rögzítünk (bőven elég 1000 feldolgozható sorhoz). */
 export const MAX_RECORDED_CODE_LENGTH = 20_000;
 
-/** A térképkártyák ranglistáján ennyi játékos látszik. */
-export const LEADERBOARD_SIZE = 5;
+/** A térkép ranglista-oldalán legfeljebb ennyi játékos látszik. */
+export const LEADERBOARD_SIZE = 50;
 
 export const RESULT_ERRORS = ["unauthenticated", "notFound", "syntax", "tooLong", "generic"] as const;
 export type ResultErrorKey = (typeof RESULT_ERRORS)[number];

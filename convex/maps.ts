@@ -71,6 +71,22 @@ export const list = query({
   },
 });
 
+/**
+ * Egy közzétett térkép a ranglista-oldalhoz. Az azonosító az URL-ből jön, ezért szövegként fogadjuk:
+ * érvénytelen vagy már nem létező térképnél null.
+ */
+export const get = query({
+  args: { mapId: v.string() },
+  returns: v.union(publishedMap, v.null()),
+  handler: async (ctx, args) => {
+    const viewerId = await currentUserId(ctx);
+    const mapId = ctx.db.normalizeId("maps", args.mapId);
+    if (!viewerId || !mapId) return null;
+    const map = await ctx.db.get(mapId);
+    return map && (await forViewer(ctx, map, viewerId));
+  },
+});
+
 /** Saját térkép törlése a hozzá tartozó eredményekkel együtt; más térképét nem lehet. */
 export const remove = mutation({
   args: { mapId: v.id("maps") },

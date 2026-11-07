@@ -64,3 +64,17 @@ export function robotSpriteStyle(dir: Direction): CSSProperties {
     "--robot-foot-walk-3": asPercentOfTile(walk3),
   } as CSSProperties;
 }
+
+// A csillogás mezőnként eltolva indul, hogy ne villanjon egyszerre minden arany. A fázist egy egyszerű
+// térbeli hash adja: két különböző prím szorzó miatt a szomszédos mezők (vízszintesen és függőlegesen is)
+// más fázisba kerülnek. 10 fázis van, egymástól 0,16 s-ra.
+const SHINE_HASH_X = 7;
+const SHINE_HASH_Y = 13;
+const SHINE_PHASES = 10;
+const SHINE_PHASE_SECONDS = 0.16;
+
+/** Negatív késleltetés: az animáció már a fázisa közepén jár, amikor a mező megjelenik. */
+export function shineDelay(x: number, y: number): number {
+  const phase = (x * SHINE_HASH_X + y * SHINE_HASH_Y) % SHINE_PHASES;
+  return -phase * SHINE_PHASE_SECONDS;
+}

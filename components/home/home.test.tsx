@@ -2,7 +2,8 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { I18nProvider } from "@/i18n/i18n-provider";
-import type { PublishedMap } from "./map-card";
+import type { PublishedMap } from "./map-entry";
+import { MESSAGES } from "@/i18n/messages";
 import HomePage from "./index";
 
 vi.mock("@/components/auth/user-menu", () => ({ default: () => null }));
@@ -15,6 +16,7 @@ const convex = vi.hoisted(() => ({
   remove: vi.fn(),
   /** A ranglista-lekérdezés válasza térképenként (undefined: még tölt). */
   leaderboards: {} as Record<string, unknown>,
+  viewer: { _id: "user1", name: "miner", imageUrl: null } as unknown,
 }));
 vi.mock("convex/react", () => ({
   usePaginatedQuery: (_query: unknown, args: unknown) => {
@@ -22,7 +24,9 @@ vi.mock("convex/react", () => ({
     return { results: convex.results, status: convex.status, loadMore: convex.loadMore };
   },
   useMutation: () => convex.remove,
-  useQuery: (_query: unknown, args: { mapId: string }) => convex.leaderboards[args.mapId] ?? [],
+  // A ranglista-lekérdezés térképazonosítót kap, a bejelentkezett játékos lekérdezése nem.
+  useQuery: (_query: unknown, args?: { mapId?: string }) =>
+    args?.mapId ? (convex.leaderboards[args.mapId] ?? []) : convex.viewer,
 }));
 
 function map(overrides: Partial<PublishedMap>): PublishedMap {
@@ -47,23 +51,60 @@ beforeEach(() => {
   convex.loadMore.mockReset();
   convex.remove.mockReset();
   convex.leaderboards = {};
+  convex.viewer = { _id: "user1", name: "miner", imageUrl: null };
 });
 afterEach(() => cleanup());
 
-function open(locale: "en" | "hu" = "en") {
+function open(locale: "en" | "hu" = "en", greeting = 0) {
   render(
     <I18nProvider initialLocale={locale}>
-      <HomePage />
+      <HomePage greeting={greeting} />
     </I18nProvider>,
   );
 }
 
 describe("home page", () => {
-  test("offers writing a program and making a map", () => {
+  for (const locale of ["en", "hu"] as const) {
+    test(`the new-file menu offers an empty program and a new map in ${locale}`, async () => {
+      open(locale);
+      const t = MESSAGES[locale];
+      const trigger = screen.getByRole("button", { name: t.home.newFile });
+      expect(trigger.querySelector("svg")).toBeTruthy();
+      expect(screen.queryByRole("link", { name: t.editor.docs })).toBeNull();
+      fireEvent.click(trigger);
+      const menu = await screen.findByRole("menu", { name: t.home.newFile });
+      const program = new URL(
+        within(menu).getByRole("menuitem", { name: t.home.newProgram }).getAttribute("href")!,
+        "http://x",
+      );
+      expect(program.pathname).toBe("/workbench");
+      expect(program.searchParams.get("code")).toBe("");
+      expect(program.searchParams.get("filename")).toBe("untitled");
+      expect(within(menu).getByRole("menuitem", { name: t.home.newMap }).getAttribute("href")).toBe("/map-editor");
+      fireEvent.keyDown(menu, { key: "Escape" });
+      await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+    });
+  }
+
+  test("the robot greets the player by name with the line the server picked, in either language", () => {
+    open("hu", 0);
+    expect(screen.getByRole("heading", { level: 1, name: "Üdv vissza, miner!" })).toBeTruthy();
+    cleanup();
+    open("en", 4);
+    expect(screen.getByRole("heading", { level: 1, name: "Pickaxe up, miner!" })).toBeTruthy();
+    // Az ideiglenesen eltávolított belépési pontok nincsenek a lapon.
+    expect(screen.queryByRole("link", { name: "Open the code editor" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Open the map editor" })).toBeNull();
+  });
+
+  test("before the player's name loads, the greeting stays empty instead of showing a broken line", () => {
+    convex.viewer = undefined;
     open();
-    expect(screen.getByRole("heading", { level: 1, name: "Mine for gold with code" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Open the code editor" }).getAttribute("href")).toBe("/workbench");
-    expect(screen.getByRole("link", { name: "Open the map editor" }).getAttribute("href")).toBe("/map-editor");
+    expect(screen.getByRole("heading", { level: 1 }).textContent?.trim()).toBe("");
+  });
+
+  test("both languages have the same greetings, so switching language keeps the same line", () => {
+    expect(MESSAGES.hu.home.greetings).toHaveLength(MESSAGES.en.home.greetings.length);
   });
 
   test("lists a published map with its preview, author and details, and links it to both editors", () => {
@@ -72,7 +113,7 @@ describe("home page", () => {
     const card = screen.getByRole("article", { name: "Corridor run" });
     expect(within(card).getByRole("img", { name: "Map “Corridor run”, 3 rows by 10 columns" })).toBeTruthy();
     expect(card.textContent).toContain("by other");
-    expect(card.textContent).toContain("3 × 10 · 3 gold");
+    expect(card.textContent).toContain("3 × 10 cells, 3 gold");
     const program = new URL(
       within(card).getByRole("link", { name: "Write a program" }).getAttribute("href")!,
       "http://x",
@@ -81,30 +122,27 @@ describe("home page", () => {
     expect(program.searchParams.get("map")).toBe(map({}).text);
     expect(program.searchParams.get("mapName")).toBe("Corridor run");
     expect(program.searchParams.get("mapId")).toBe("map1");
-    expect(card.textContent).toContain("No one has completed this map yet.");
     expect(card.textContent).not.toContain("Your best");
-    // A kártyán csak a programírás link van (és saját térképnél a törlés).
-    expect(within(card).getAllByRole("link")).toHaveLength(1);
-    expect(within(card).queryByRole("button", { name: "Delete" })).toBeNull();
+    // A kártyán a programírás és a ranglista link van (és saját térképnél a törlés).
+    expect(within(card).getAllByRole("link")).toHaveLength(2);
+    expect(within(card).queryByRole("button", { name: "Delete map" })).toBeNull();
   });
 
-  test("a map card shows the top 5 players with places, gold and steps, marking the player's own row", () => {
+  test("gold shines on the mine strip and in every map preview", () => {
     convex.results = [map({})];
-    convex.leaderboards = {
-      map1: [
-        { place: 1, name: "ada", gold: 3, steps: 60, isMe: false },
-        { place: 2, name: "miner", gold: 3, steps: 64, isMe: true },
-        { place: 2, name: "bob", gold: 3, steps: 64, isMe: false },
-      ],
-    };
+    open();
+    const card = screen.getByRole("article", { name: "Corridor run" });
+    // A Corridor pályán három arany van; mindegyik a szimulátoréval azonos csillogó sprite.
+    expect(card.querySelectorAll(".gold-sparkle")).toHaveLength(3);
+    expect(document.querySelectorAll(".gold-sparkle").length).toBeGreaterThan(3);
+  });
+
+  test("a map card's Leaderboard button opens the map's own page", () => {
+    convex.results = [map({})];
     open("hu");
     const card = screen.getByRole("article", { name: "Corridor run" });
-    const table = within(card).getByRole("table", { name: "Legjobb 5" });
-    const rows = within(table)
-      .getAllByRole("row")
-      .map((row) => row.textContent);
-    expect(rows).toEqual(["#JátékosAranyLépés", "1.ada360", "2.miner (te)364", "2.bob364"]);
-    expect(screen.getByRole("heading", { name: "Szabad program írása" })).toBeTruthy();
+    expect(within(card).getByRole("link", { name: "Ranglista" }).getAttribute("href")).toBe("/maps/map1");
+    expect(within(card).queryByRole("table")).toBeNull();
   });
 
   test("the Mine filter asks only for the player's own maps and has its own empty message", () => {
@@ -117,19 +155,43 @@ describe("home page", () => {
     expect(screen.getByText("You haven't published a map yet.")).toBeTruthy();
   });
 
-  test("an own map can be deleted after confirming", async () => {
+  test("an own map is deleted with an icon-only button, only after confirming in a dialog", async () => {
     convex.results = [map({ isMine: true })];
     convex.remove.mockResolvedValue(null);
     open();
     const card = screen.getByRole("article", { name: "Corridor run" });
     expect(card.textContent).toContain("by you");
-    fireEvent.click(within(card).getByRole("button", { name: "Delete" }));
+    const trash = within(card).getByRole("button", { name: "Delete map" });
+    // Csak ikon: a gomb neve az akadálymentes címkéből jön, látható szöveg nincs benne.
+    expect(trash.textContent).toBe("");
+    // Pixeles gomb marad (keret és perem a data-slot="button" jelre kerül), akkor is, ha a párbeszéd nyitja.
+    expect(trash.dataset.slot).toBe("button");
+    expect(trash.dataset.variant).toBe("destructive");
+
+    fireEvent.click(trash);
+    const dialog = await screen.findByRole("alertdialog", { name: "Delete “Corridor run”?" });
+    expect(dialog.textContent).toContain("This can't be undone.");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
     expect(convex.remove).not.toHaveBeenCalled();
-    fireEvent.click(within(card).getByRole("button", { name: "Cancel" }));
-    fireEvent.click(within(card).getByRole("button", { name: "Delete" }));
-    const confirm = within(card).getByRole("group", { name: "Delete this map for everyone?" });
-    fireEvent.click(within(confirm).getByRole("button", { name: "Delete" }));
+
+    fireEvent.click(trash);
+    const again = await screen.findByRole("alertdialog");
+    for (const name of ["Cancel", "Delete"]) {
+      expect(within(again).getByRole("button", { name }).dataset.slot).toBe("button");
+    }
+    fireEvent.click(within(again).getByRole("button", { name: "Delete" }));
     await waitFor(() => expect(convex.remove).toHaveBeenCalledWith({ mapId: "map1" }));
+  });
+
+  test("a failed delete is explained inside the dialog", async () => {
+    convex.results = [map({ isMine: true })];
+    convex.remove.mockRejectedValue(new Error('ConvexError: {"code":"MAP_forbidden"}'));
+    open("hu");
+    fireEvent.click(screen.getByRole("button", { name: "Térkép törlése" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Törlöd: „Corridor run”?" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Törlés" }));
+    expect(await within(dialog).findByText("Csak a saját térképedet törölheted.")).toBeTruthy();
   });
 
   test("more maps can be loaded, and the page is in Hungarian too", () => {
@@ -138,7 +200,7 @@ describe("home page", () => {
     open("hu");
     fireEvent.click(screen.getByRole("button", { name: "Továbbiak" }));
     expect(convex.loadMore).toHaveBeenCalledWith(9);
-    expect(screen.getByRole("heading", { level: 1, name: "Bányássz aranyat kóddal" })).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 1, name: "Üdv vissza, miner!" })).toBeTruthy();
     expect(screen.getByText("Közzétett térképek")).toBeTruthy();
   });
 });

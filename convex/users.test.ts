@@ -206,3 +206,15 @@ describe("profile picture storage", () => {
     expect(validAvatar(png())).toBe(true);
   });
 });
+
+describe("interface language", () => {
+  test("the language is saved to the account and reported by the viewer; signed-out callers cannot save", async () => {
+    const { t, user, other } = await setup();
+    expect((await user.query(api.users.viewer, {}))?.locale).toBeNull();
+    await user.mutation(api.users.setLocale, { locale: "hu" });
+    expect((await user.query(api.users.viewer, {}))?.locale).toBe("hu");
+    // Csak a saját fiókot érinti.
+    expect((await other.query(api.users.viewer, {}))?.locale).toBeNull();
+    await expect(t.mutation(api.users.setLocale, { locale: "en" })).rejects.toThrow("PROFILE_unauthenticated");
+  });
+});

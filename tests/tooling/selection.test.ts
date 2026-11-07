@@ -76,6 +76,7 @@ test("dictionary edits run the rendering test and ask for UI checks", () => {
   expect(selection.appTests).toEqual([
     "components/home",
     "components/map-editor",
+    "components/map-page",
     "components/profile",
     "components/workbench",
   ]);

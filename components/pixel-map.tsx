@@ -7,7 +7,7 @@
 // tömör föld, ami a robot érkezésekor tűnik el, legfelül az arany. A robot külön réteg a rács fölött.
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { mapTile, robotSpriteStyle, TILE, tileBackground, TILES } from "@/components/sprites";
+import { mapTile, robotSpriteStyle, shineDelay, TILE, tileBackground, TILES } from "@/components/sprites";
 import type { Motion } from "@/components/robot-motion";
 import { cellAt, type GameMap } from "@/lib/robot-map";
 
@@ -90,20 +90,6 @@ function useElementSize(element: React.RefObject<HTMLElement | null>): Size {
 function cellSize(size: Size, map: GameMap): number {
   const fit = size.width && size.height ? Math.min(size.width / map.cols, size.height / map.rows) : TILE;
   return Math.max(1, Math.floor(fit * size.dpr)) / size.dpr;
-}
-
-// A csillogás mezőnként eltolva indul, hogy ne villanjon egyszerre minden arany. A fázist egy egyszerű
-// térbeli hash adja: két különböző prím szorzó miatt a szomszédos mezők (vízszintesen és függőlegesen is)
-// más fázisba kerülnek. 10 fázis van, egymástól 0,16 s-ra.
-const SHINE_HASH_X = 7;
-const SHINE_HASH_Y = 13;
-const SHINE_PHASES = 10;
-const SHINE_PHASE_SECONDS = 0.16;
-
-/** Negatív késleltetés: az animáció már a fázisa közepén jár, amikor a mező megjelenik. */
-function shineDelay(x: number, y: number): number {
-  const phase = (x * SHINE_HASH_X + y * SHINE_HASH_Y) % SHINE_PHASES;
-  return -phase * SHINE_PHASE_SECONDS;
 }
 
 type TileProps = {

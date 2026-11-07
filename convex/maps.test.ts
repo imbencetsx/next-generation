@@ -64,4 +64,18 @@ describe("published maps", () => {
     expect((await other.query(api.maps.list, { paginationOpts: page, mine: false })).page).toEqual([]);
     await expect(miner.mutation(api.maps.remove, { mapId })).rejects.toThrow("MAP_notFound");
   });
+
+  test("one map can be fetched by its id from the URL; a bad or deleted id gives null", async () => {
+    const { t, miner, other } = await setup();
+    const mapId = await miner.mutation(api.maps.publish, { name: "single", text: "1 1\n>" });
+    expect(await other.query(api.maps.get, { mapId })).toMatchObject({
+      name: "single",
+      authorName: "miner",
+      isMine: false,
+    });
+    expect(await other.query(api.maps.get, { mapId: "not-an-id" })).toBeNull();
+    expect(await t.query(api.maps.get, { mapId })).toBeNull();
+    await miner.mutation(api.maps.remove, { mapId });
+    expect(await other.query(api.maps.get, { mapId })).toBeNull();
+  });
 });
