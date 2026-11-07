@@ -4,11 +4,11 @@
 // maradhat; az szándékosan csak magyar, ezért nincs szüksége a nyelvi szolgáltatóra.
 //
 // A nyelv sorrendje: a fiókhoz mentett nyelv (profil oldal), ennek híján a süti (bejelentkezés előtti választás),
-// végül a böngésző nyelve. Már a szerver így renderel, így nincs nyelvváltó villanás betöltéskor.
+// végül magyar. Már a szerver így renderel, így nincs nyelvváltó villanás betöltéskor.
 
 import { ConvexAuthNextjsServerProvider, convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { fetchQuery } from "convex/nextjs";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { connection } from "next/server";
 import { Suspense, type ReactNode } from "react";
 import ConvexClientProvider from "@/components/convex-client-provider";
@@ -31,9 +31,7 @@ async function accountLocale(): Promise<Locale | null> {
 // A szolgáltató Date.now()-t hív; a connection() jelzi, hogy ez kérésidőben fut, nem előrendereléskor.
 async function RequestScopedProviders({ children }: { children: ReactNode }) {
   await connection();
-  const locale =
-    (await accountLocale()) ??
-    resolveLocale((await cookies()).get(LOCALE_COOKIE)?.value, (await headers()).get("accept-language"));
+  const locale = (await accountLocale()) ?? resolveLocale((await cookies()).get(LOCALE_COOKIE)?.value);
   return (
     <ConvexAuthNextjsServerProvider>
       <ConvexClientProvider>
