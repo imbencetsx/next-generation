@@ -6,10 +6,11 @@
 import { Alert, Check, Idle, Pause, Play, Reset, Running, StepForward } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { SPEEDS, type Simulation } from "@/components/use-simulation";
+import { SPEEDS, type Simulation, type SpeedId } from "@/components/use-simulation";
 import { useI18n } from "@/i18n/i18n-provider";
 import type { Messages } from "@/i18n/messages";
 
+/** Az állapotsor felirata; futó gépnél megkülönbözteti a lejátszást, a szünetet és a még el nem indultat. */
 function statusLabel(simulation: Simulation, labels: Messages["sim"]["status"]) {
   const { status, steps } = simulation.snapshot;
   if (status === "running") {
@@ -33,20 +34,27 @@ export default function PlaybackBar({ simulation, showFirstIssue }: Props) {
   if (finished) runLabel = t.sim.runAgain;
   else if (simulation.started) runLabel = t.sim.resume;
 
+  // Indítás előtt az első hibára ugrunk: hibás programnál így rögtön látszik, mit kell javítani.
   function start(action: () => void) {
     showFirstIssue();
     action();
   }
 
-  const StatusIcon = snapshot.status === "error" ? Alert : snapshot.status === "done" ? Check : simulation.playing ? Running : Idle;
+  let StatusIcon = simulation.playing ? Running : Idle;
+  if (snapshot.status === "error") StatusIcon = Alert;
+  else if (snapshot.status === "done") StatusIcon = Check;
 
   return (
     <div role="group" aria-label={t.sim.playback}>
       <div className="flex flex-wrap items-center justify-center gap-1.5">
         {simulation.playing ? (
-          <Button variant="outline" onClick={simulation.pause}><Pause aria-hidden /> {t.sim.pause}</Button>
+          <Button variant="outline" onClick={simulation.pause}>
+            <Pause aria-hidden /> {t.sim.pause}
+          </Button>
         ) : (
-          <Button onClick={() => start(simulation.run)}><Play aria-hidden /> {runLabel}</Button>
+          <Button onClick={() => start(simulation.run)}>
+            <Play aria-hidden /> {runLabel}
+          </Button>
         )}
         <Button variant="outline" onClick={() => start(simulation.step)} disabled={simulation.playing}>
           <StepForward aria-hidden /> {t.sim.step}
@@ -56,13 +64,23 @@ export default function PlaybackBar({ simulation, showFirstIssue }: Props) {
         </Button>
         <label className="ml-1 flex items-center gap-2 text-sm text-muted-foreground">
           {t.sim.speed}
-          <NativeSelect value={simulation.speed} onChange={(event) => simulation.setSpeed(Number(event.target.value))}>
-            {SPEEDS.map((speed, index) => <NativeSelectOption key={speed.delay} value={index}>{t.sim.speeds[index]}</NativeSelectOption>)}
+          <NativeSelect
+            value={simulation.speed}
+            onChange={(event) => simulation.setSpeed(event.target.value as SpeedId)}
+          >
+            {SPEEDS.map(({ id }) => (
+              <NativeSelectOption key={id} value={id}>
+                {t.sim.speeds[id]}
+              </NativeSelectOption>
+            ))}
           </NativeSelect>
         </label>
       </div>
       {/* Az állapot mindig külön sorban, középen: nem ugrál a gombok közé, ha a felirat épp elfér. */}
-      <p role="status" className={`mt-2 flex items-center justify-center gap-1.5 px-1 text-sm ${snapshot.status === "error" ? "text-brick-text" : "text-foreground"}`}>
+      <p
+        role="status"
+        className={`mt-2 flex items-center justify-center gap-1.5 px-1 text-sm ${snapshot.status === "error" ? "text-brick-text" : "text-foreground"}`}
+      >
         <StatusIcon size={16} aria-hidden /> {statusLabel(simulation, t.sim.status)}
       </p>
       {simulation.blockedBy !== null && (

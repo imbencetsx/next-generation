@@ -1,38 +1,37 @@
-// Szerveroldali védelem: a /test oldalt csak érvényes munkamenettel szolgáljuk ki.
-// A Convex Auth itt kezeli a httpOnly sütiket, a token frissítését és az /api/auth végpontot
-// (bejelentkezés/kijelentkezés a Next szerveren át, így a refresh token sosem jut el a böngésző JS-éhez).
+// Szerveroldali védelem (Next.js 16-ban a korábbi middleware.ts neve proxy.ts).
+// A munkafelületet és a profil oldalt csak érvényes munkamenettel szolgáljuk ki. A Convex Auth itt kezeli a
+// httpOnly sütiket, a token frissítését és az /api/auth végpontot (bejelentkezés/kijelentkezés a Next
+// szerveren át, így a refresh token sosem jut el a böngésző JavaScriptjéhez).
 
 import { convexAuthNextjsMiddleware, createRouteMatcher } from "@convex-dev/auth/nextjs/server";
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
+import { restoreRedirect } from "@/lib/auth-redirect-fix";
+import { ROUTES } from "@/lib/routes";
 
-const isProtected = createRouteMatcher(["/test(.*)", "/profile(.*)"]);
-const isLogin = createRouteMatcher(["/login"]);
+const isProtected = createRouteMatcher([`${ROUTES.workbench}(.*)`, `${ROUTES.profile}(.*)`]);
+const isLogin = createRouteMatcher([ROUTES.login]);
 
 const convexAuthProxy = convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
+  // Kijelentkezve: a bejelentkezésre küldjük, és megjegyezzük, hová akart menni (?next=).
   if (isProtected(request) && !(await convexAuth.isAuthenticated())) {
-    const login = new URL("/login", request.url);
+    const login = new URL(ROUTES.login, request.url);
     login.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);
     return NextResponse.redirect(login);
   }
+  // Bejelentkezve nincs mit keresni a bejelentkező oldalon.
   if (isLogin(request) && (await convexAuth.isAuthenticated())) {
-    return NextResponse.redirect(new URL("/test", request.url));
+    return NextResponse.redirect(new URL(ROUTES.workbench, request.url));
   }
 });
 
 export default async function proxy(request: NextRequest, event: NextFetchEvent) {
   const response = await convexAuthProxy(request, event);
-  // @convex-dev/auth 0.0.96 hibája: ha közben sütit is frissít vagy töröl, az átirányításunkat
-  // NextResponse.next()-be csomagolja, így 200-as válasz menne ki a védett oldallal. Visszaállítjuk.
-  const location = response?.headers.get("location");
-  if (response && location && response.status < 300) {
-    const redirect = NextResponse.redirect(new URL(location, request.url));
-    for (const cookie of response.headers.getSetCookie()) redirect.headers.append("set-cookie", cookie);
-    return redirect;
-  }
-  return response;
+  return response ? restoreRedirect(response, request) : response;
 }
 
 export const config = {
   // A dokumentáció és a statikus fájlok kimaradnak; csak ezeknél kell a munkamenet.
-  matcher: ["/test/:path*", "/profile/:path*", "/login", "/api/auth"],
+  // Szó szerinti érték kell (a Next.js statikusan olvassa), ezért nem a ROUTES-ból jön;
+  // a tests/tooling/routes.test.ts ellenőrzi, hogy a kettő egyezzen.
+  matcher: ["/workbench/:path*", "/profile/:path*", "/login", "/api/auth"],
 };

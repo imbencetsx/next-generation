@@ -35,6 +35,8 @@ export const metadata: Metadata = {
   description: "Program a treasure-hunting robot in MineScript",
 };
 
+// A gyökér statikus marad (a dokumentáció előrenderelt), ezért itt nem olvassuk a nyelvi sütit.
+// A tényleges nyelvet az alkalmazás oldalain az I18nProvider, a dokumentációban a docs layout jelöli (lang).
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html

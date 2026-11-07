@@ -42,13 +42,16 @@ type Glyph = (props: SVGProps<SVGSVGElement>) => React.JSX.Element;
 
 const GRID_SIZES = [12, 16, 20, 24];
 // Döntetlennél a nagyobbat választjuk (14 → 16), hogy a kis ikonok ne zsugorodjanak olvashatatlanra.
-const snap = (size: number) => GRID_SIZES.reduce((best, step) => (Math.abs(step - size) <= Math.abs(best - size) ? step : best));
+const snap = (size: number) =>
+  GRID_SIZES.reduce((best, step) => (Math.abs(step - size) <= Math.abs(best - size) ? step : best));
 
 function pixelIcon(Glyph: Glyph, name: string) {
   function Icon({ size, ...props }: IconProps) {
     const px = size === undefined ? undefined : snap(size);
     // Méret nélkül a szülő (pl. gomb) CSS-e adja a méretet.
-    return <Glyph width={px ?? 20} height={px ?? 20} shapeRendering="crispEdges" aria-hidden focusable="false" {...props} />;
+    return (
+      <Glyph width={px ?? 20} height={px ?? 20} shapeRendering="crispEdges" aria-hidden focusable="false" {...props} />
+    );
   }
   Icon.displayName = name;
   return Icon;

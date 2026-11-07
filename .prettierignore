@@ -1,0 +1,10 @@
+# Generált vagy külső fájlok
+node_modules
+.next
+convex/_generated
+public
+bun.lock
+# A Markdown dokumentumok kézzel tördeltek
+*.md
+.agents
+.claude

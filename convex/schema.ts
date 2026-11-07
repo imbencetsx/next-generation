@@ -7,5 +7,7 @@ export default defineSchema({
   users: defineTable({
     ...authTables.users.validator.fields,
     avatarId: v.optional(v.id("_storage")),
-  }).index("email", ["email"]).index("phone", ["phone"]),
+  })
+    .index("email", ["email"])
+    .index("phone", ["phone"]),
 });

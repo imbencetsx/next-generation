@@ -10,7 +10,15 @@ const NOTE_STYLES = {
   warn: { label: "Figyelem", Icon: Warning, icon: "text-gold" },
 } as const;
 
-export function Note({ tone, title, children }: { tone: keyof typeof NOTE_STYLES; title?: string; children: ReactNode }) {
+export function Note({
+  tone,
+  title,
+  children,
+}: {
+  tone: keyof typeof NOTE_STYLES;
+  title?: string;
+  children: ReactNode;
+}) {
   const { label, Icon, icon } = NOTE_STYLES[tone];
   return (
     <aside className="pixel-frame my-6 bg-card px-5 py-4">
@@ -23,9 +31,21 @@ export function Note({ tone, title, children }: { tone: keyof typeof NOTE_STYLES
 }
 
 /** Szerveroldalon is használható jelvény: a shadcn Badge kinézete és pixelkerete, hook nélkül. */
-export function DocBadge({ variant = "outline", className = "", children }: { variant?: "outline" | "destructive"; className?: string; children: ReactNode }) {
+export function DocBadge({
+  variant = "outline",
+  className = "",
+  children,
+}: {
+  variant?: "outline" | "destructive";
+  className?: string;
+  children: ReactNode;
+}) {
   return (
-    <span data-slot="badge" data-variant={variant} className={`${badgeVariants({ variant })} font-pixel align-middle ${className}`}>
+    <span
+      data-slot="badge"
+      data-variant={variant}
+      className={`${badgeVariants({ variant })} font-pixel align-middle ${className}`}
+    >
       {children}
     </span>
   );

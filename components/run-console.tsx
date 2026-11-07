@@ -1,6 +1,6 @@
 "use client";
 
-// A print kimenete és a változók aktuális értéke.
+// A futás konzolja: a print kimenete és a változók aktuális értéke.
 
 import { useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
@@ -11,16 +11,31 @@ export default function RunConsole({ snapshot }: { snapshot: Snapshot }) {
   const { t } = useI18n();
   const consoleEnd = useRef<HTMLDivElement>(null);
 
+  // Új kimenetnél az aljára görgetünk, hogy a legutóbbi sor látsszon.
   useEffect(() => {
     consoleEnd.current?.scrollIntoView({ block: "nearest" });
   }, [snapshot.output.length]);
 
   return (
     <Card role="region" aria-labelledby="console-title" className="min-h-0 gap-2 p-3">
-      <h2 id="console-title" className="panel-title">{t.console.title}</h2>
-      <div role="log" aria-live="polite" className="pixel-frame min-h-16 flex-1 overflow-auto bg-code px-2.5 py-2 font-mono text-xs leading-relaxed">
+      <h2 id="console-title" className="panel-title">
+        {t.console.title}
+      </h2>
+      <div
+        role="log"
+        aria-live="polite"
+        className="pixel-frame min-h-16 flex-1 overflow-auto bg-code px-2.5 py-2 font-mono text-xs leading-relaxed"
+      >
         {snapshot.output.length === 0 && <span className="text-muted-foreground">{t.console.empty}</span>}
-        {snapshot.output.map((line, index) => <div key={index}><span className="text-muted-foreground" aria-hidden>&gt; </span>{line}</div>)}
+        {/* A kimenet csak bővül (a sorok sosem cserélődnek vagy törlődnek), ezért az index stabil kulcs. */}
+        {snapshot.output.map((line, index) => (
+          <div key={index}>
+            <span className="text-muted-foreground" aria-hidden>
+              &gt;{" "}
+            </span>
+            {line}
+          </div>
+        ))}
         <div ref={consoleEnd} />
       </div>
       <div className="max-h-24 shrink-0 overflow-auto">
@@ -30,7 +45,10 @@ export default function RunConsole({ snapshot }: { snapshot: Snapshot }) {
         ) : (
           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 font-mono text-xs">
             {snapshot.variables.map(([name, value]) => (
-              <div key={name} className="contents"><dt className="text-muted-foreground">{name}</dt><dd>{String(value)}</dd></div>
+              <div key={name} className="contents">
+                <dt className="text-muted-foreground">{name}</dt>
+                <dd>{String(value)}</dd>
+              </div>
             ))}
           </dl>
         )}

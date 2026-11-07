@@ -20,8 +20,8 @@ Submission must also include a short description (how to reach each feature, wha
 
 | Area | Status | Where |
 |---|---|---|
-| Code editor (CodeMirror 6, highlighting, lint, autocomplete, import/export, examples) | done | `components/code-editor.tsx`, `components/workbench.tsx` |
-| Syntax analysis: one-pass lexer, parser with error recovery, compiler to flat instructions | done | `lib/syntax.ts` (`validateMineScript` in `lib/minescript.ts` is a thin entry point) |
+| Code editor (CodeMirror 6, highlighting, lint, autocomplete, import/export, examples) | done | `components/code-editor/`, `components/workbench/` |
+| Syntax analysis: one-pass lexer, parser with error recovery, compiler to flat instructions | done | `lib/syntax/` (`validateMineScript` in `lib/minescript.ts` is a thin entry point) |
 | Interpreter: program-counter machine, one source line per step, step events | done | `lib/interpreter.ts` |
 | Diagnostics: coded syntax/runtime errors with exact column spans, hints, related lines | done | `lib/diagnostics.ts`, contract in `docs/diagnostics.md` |
 | Map model + map file parser + built-in maps | done | `lib/robot-map.ts` |
@@ -29,7 +29,7 @@ Submission must also include a short description (how to reach each feature, wha
 | Documentation site at `/docs/[slug]` (Hungarian, dark, runnable examples) | done | `app/docs/`, `components/docs/`, `lib/docs/` |
 | Map editor, map export | planned | — |
 | Backend: Convex cloud (dev deployment from `.env.local`; production via `bun run build:prod`) | set up | `convex/` |
-| Auth: Convex Auth, username + password, open registration; httpOnly cookie sessions, `/test` gated server-side by `proxy.ts` | done | `convex/auth.ts`, `convex/users.ts`, `proxy.ts`, `app/login/`, `components/auth/` |
+| Auth: Convex Auth, username + password, open registration; httpOnly cookie sessions, `/workbench` and `/profile` gated server-side by `proxy.ts` | done | `convex/auth.ts`, `convex/users.ts`, `proxy.ts`, `app/login/`, `components/auth/` |
 | Persistence of maps/programs/runs, leaderboard with server re-run | planned | — |
 | Fast conformance tests (Bun native runner) | done | `tests/`, `scripts/test-related.ts`, `docs/testing.md` |
 | Browser / React playback integration tests | planned | — |
@@ -39,36 +39,40 @@ Submission must also include a short description (how to reach each feature, wha
 ## 3. Stack, commands, conventions
 
 - Next.js **16.4.5** (App Router, `cacheComponents: true`), React 19.3, TypeScript (strict), Tailwind CSS 4, Bun 1.3. Editor: CodeMirror 6. Icons: lucide-react. Backend/DB: **Convex** (hosted on Convex's free cloud tier; `bun run convex:dev` syncs `convex/` and writes `.env.local`). Read `convex/_generated/ai/guidelines.md` before writing Convex code.
-- Use **bun**: `bun dev`, `bun run build`, `bun run lint`, `bunx tsc --noEmit`. Run lint + typecheck + build before handing work back.
+- Use **bun**: `bun dev`, `bun run build`, `bun run lint`, `bun run format`, `bunx tsc --noEmit`. Run format + lint + typecheck + build before handing work back.
+- **Formatting** is Prettier (`.prettierrc.json`, print width 120; `bun run format` writes, `bun run format:check` verifies). ESLint adds `curly: multi-line`, so an `if` whose body wraps gets braces. Keep components small: one component per concern, extract a sub-component or helper instead of packing JSX or logic onto one line. Name magic numbers (`MAX_LINES`, `CELL_KIND`, `TILES`, `SPEEDS`, …).
 - This is *not* the Next.js in your training data — read `node_modules/next/dist/docs/` first (see block at the end). With `cacheComponents`, `dynamicParams` does not exist; use `generateStaticParams` + `notFound()`. `params`/`searchParams` are Promises. `useSearchParams` needs a `<Suspense>` boundary.
 - ESLint enforces React-compiler rules: no ref access during render (`react-hooks/refs`), no `setState` inside effects. Put ref reads in event handlers/effects.
-- Language of text: the **app UI is English and Hungarian** (one language button in the top bar, also on `/login`: globe + current code, a click toggles HU/EN, its accessible name is in the target language; choice stored in the `lang` cookie, default from `Accept-Language`). Every UI string lives in `i18n/messages.ts` (`en` is the source, `hu` must have the same keys, the type enforces it); read them with `useI18n().t`, never hardcode UI text in components. Engine diagnostics and map-parse errors from `lib/` stay English with their codes. The **docs site is Hungarian** (`lang="hu"` on its root); code identifiers and this file are English. Application comments are Hungarian: keep them brief and natural, explain non-obvious decisions, and use short file or section headers where they help navigation. Avoid repetitive comments and narrating obvious code. Test comments may remain English. Interpreter error messages are English and carry the official error code.
+- Language of text: the **app UI is English and Hungarian** (one language button in the top bar, also on `/login`: globe + current code, a click toggles HU/EN, its accessible name is in the target language; choice stored in the `lang` cookie, default from `Accept-Language`). Every UI string lives in `i18n/en.ts` (the source; its shape is the `Messages` type) and `i18n/hu.ts` (must have the same keys, the type enforces it); `i18n/messages.ts` combines them; read them with `useI18n().t`, never hardcode UI text in components. Engine diagnostics and map-parse errors from `lib/` stay English with their codes. The **docs site is Hungarian** (`lang="hu"` on its root); code identifiers and this file are English. Application comments are Hungarian: keep them brief and natural, explain non-obvious decisions, and use short file or section headers where they help navigation. Avoid repetitive comments and narrating obvious code. Tests and scripts follow the same rule (Hungarian comments); test names (`test('…')`) stay English like other identifiers. Interpreter error messages are English and carry the official error code.
 - Commit messages for **this repository only** must be in Hungarian: write subjects and bodies in concise, natural Hungarian with correct accents. Preserve code identifiers, file paths, command names, and Conventional Commit prefixes such as `feat:`, `fix:`, and `docs:` unchanged. This convention applies to agent-written and T3 Code-generated commit messages; it does not change other projects or the languages used elsewhere in this repository.
 - Keep the engine (`lib/`) free of React, DOM, DB and timers so it can run in the browser, in tests and on the server (leaderboard re-run in a Convex function) identically.
 - **Icons:** pixel icons only (`pixelarticons`, MIT), imported from `components/icons.tsx` under app-specific names (`Play`, `StepForward`, `Reset`, `Alert`, `Check`, `Cross`, …). The wrapper snaps sizes to the 24-px grid (12/16/20/24) and renders `crispEdges`; buttons size icons to 20 px (16 px in `sm`). `lucide-react` is not installed: shadcn's generator still writes lucide imports (`components.json` iconLibrary), so after `shadcn add` switch them to `@/components/icons`. Add a missing icon to `components/icons.tsx` (browse `node_modules/pixelarticons/react/`).
 - **UI components:** shadcn with base-ui (`components.json`, style `base-nova`). Add more with `bunx --bun shadcn@latest add <name>`; the generator may write `from "cn"`, which must be `@/lib/utils`. `Button` sets `data-variant`, which the pixel frames key on.
 - **Pixel frames (from larp):** inside `.app-ui`, elements with `data-slot` card/button/badge/input/native-select (or `.pixel-frame`) get a nine-slice SVG border and a stepped clip-path, and buttons get a pressable lip (`app/globals.css`, "pixel keretek"). Do not add `rounded-*` or `ring-*` to them. Focus is drawn inside the frame (an outside outline would be clipped).
-- **App look (/test, /login)** follows the user's larp project: dark only, Pixelify Sans for UI chrome (buttons, labels, titles; `.app-ui`), Tiny5 for display text (`.display`), Google Sans (`font-read`) for everything people type or read at length (inputs and selects automatically; messages, hints, descriptions via `font-read`), never pixel type for those; the logo is pixel art in `public/logo.svg` (52×28, shown by `components/logo.tsx` at 1.5× (exact 3 device pixels per art pixel on Retina), left of the top bar; the art is trimmed to its pixel bounds so it sits centred in the SVG), Geist Mono for code, small uppercase `.eyebrow` labels, shadcn `Card` panels, `Button` variants (default = gold primary, outline, ghost), `Input`, `NativeSelect`. Two colours only: white `#EAE7DD` for text, structure and selected states (pressed toggles use the light frame), and gold `#F0A700` (from `gold_chips.png`) reserved for the one primary action per area, focus, the running line and code keywords. Brick `#8C342B` (`wall.png`) appears only for errors (`--brick-text` `#E8806F` for error text). Dark charcoal `#141414` background, `#1B1B1B` cards, a light `--rule` line under the top bar. Panel titles are short sentence-case `.panel-title`, not all-caps labels. Use the Tailwind tokens (`bg-card`, `text-foreground`, `text-muted-foreground`, `bg-primary`, `text-brick-text`, `bg-brick`, …), not new hex values; the pixel frame SVGs in `public/artwork/borders/` use the same colours. Component classes live in `@layer components` so utilities can override them. Pixelify's ligatures are disabled (its "fi" looks like "A"), and it draws `_` like `..`, so spell it out in UI text. The docs site uses the same system (`.app-ui docs`): pixel top bar with the logo, numbered chapter nav (selected = light frame), Tiny5 page titles, Pixelify headings, Google Sans body text capped at 72ch, `Card` examples with gold run button, sprite-based `MiniMap`, `DocBadge` (server-safe badge) and `Note` with icon + title. Sprite constants shared by server and client live in `components/sprites.ts` (a server component cannot read values from a `"use client"` module).
+- **App look (/workbench, /login, /profile)** follows the user's larp project: dark only, Pixelify Sans for UI chrome (buttons, labels, titles; `.app-ui`), Tiny5 for display text (`.display`), Google Sans (`font-read`) for everything people type or read at length (inputs and selects automatically; messages, hints, descriptions via `font-read`), never pixel type for those; the logo is pixel art in `public/logo.svg` (52×28, shown by `components/logo.tsx` at 1.5× (exact 3 device pixels per art pixel on Retina), left of the top bar; the art is trimmed to its pixel bounds so it sits centred in the SVG), Geist Mono for code, small uppercase `.eyebrow` labels, shadcn `Card` panels, `Button` variants (default = gold primary, outline, ghost), `Input`, `NativeSelect`. Two colours only: white `#EAE7DD` for text, structure and selected states (pressed toggles use the light frame), and gold `#F0A700` (from `gold_chips.png`) reserved for the one primary action per area, focus, the running line and code keywords. Brick `#8C342B` (`wall.png`) appears only for errors (`--brick-text` `#E8806F` for error text). Dark charcoal `#141414` background, `#1B1B1B` cards, a light `--rule` line under the top bar. Panel titles are short sentence-case `.panel-title`, not all-caps labels. Use the Tailwind tokens (`bg-card`, `text-foreground`, `text-muted-foreground`, `bg-primary`, `text-brick-text`, `bg-brick`, …), not new hex values; the pixel frame SVGs in `public/artwork/borders/` use the same colours. Component classes live in `@layer components` so utilities can override them. Pixelify's ligatures are disabled (its "fi" looks like "A"), and it draws `_` like `..`, so spell it out in UI text. The docs site uses the same system (`.app-ui docs`): pixel top bar with the logo, numbered chapter nav (selected = light frame), Tiny5 page titles, Pixelify headings, Google Sans body text capped at 72ch, `Card` examples with gold run button, sprite-based `MiniMap`, `DocBadge` (server-safe badge) and `Note` with icon + title. Sprite constants shared by server and client live in `components/sprites.ts` (a server component cannot read values from a `"use client"` module).
 - Accessibility is graded: keyboard-operable controls, visible focus, never color alone (icons/text too), `prefers-reduced-motion`, screen-reader status text.
 
 ### Repo map
 
 ```
-app/page.tsx                 redirects / to /test
+app/page.tsx                 redirects / to /workbench (next.config.ts also redirects the old /test URL there)
 app/icon.svg, app/favicon.ico, app/apple-icon.png  favicon: the robot's front idle frame (robot_sheet row 1, col 1), transparent, centred on its visible 22×23 pixels (the sprite has near-invisible alpha ≤ 16 noise pixels; drop them before measuring); 32 px 1:1, 64 px 2×, Apple 6× (regenerate all three if the sprite changes)
-app/test/page.tsx            /test: editor + simulator workbench
+app/workbench/page.tsx       /workbench: editor + simulator workbench
+lib/routes.ts                ROUTES and docPath(slug): every app path in one place (proxy.ts `config.matcher` repeats them literally; tests/tooling/routes.test.ts keeps them in sync)
 app/docs/                    docs site: layout (dark), /docs → /docs/attekintes, [slug] pages
 components/docs/pages/       one Hungarian content component per docs page
 components/docs/example.tsx  runnable example card (runs the real engine, checks the expected result)
 lib/docs/examples.ts         DOC_EXAMPLES catalogue: code + map + expected result for every docs example
 lib/docs/nav.ts              docs page list (slug, title, description) — drives nav and static params
-components/code-editor.tsx   CodeMirror wrapper: MineScript mode, lint, active/error line, read-only lock
-components/workbench.tsx     page shell: top bar (logo, docs, language, user), editor card (header row 1: file name pinned left, New/Import/Export/Wrap centred, example select pinned right; row 2: PlaybackBar centred; syntax status in the footer), problems, reference, simulator
+components/code-editor/      CodeMirror: index.tsx (React wrapper, read-only lock), minescript-mode.ts (highlighting, completion, Tab, indent, lint), theme.ts, active-line.ts (running/error line)
+components/workbench/        page shell: index.tsx (layout, status bar), file-toolbar.tsx (file name, New/Import/Export/Wrap, example select), problems-panel.tsx (syntax problems + reference), use-program-file.ts (code + file operations)
+components/top-bar.tsx       shared top bar (logo left, actions right) and AccountActions (language + user menu)
 components/playback-bar.tsx  Run/Pause, Step, Reset, Speed, run status and the "fix N syntax errors" notice (in the editor header)
 components/simulator.tsx     map panel: map select/import/fog, gold/lines stats, runtime error box (renders PixelMap)
 components/pixel-map.tsx     pixel-art map: 32×32 sprites scaled to fill the panel (cell rounded down to whole device pixels, never overflows), gold shine, sliding robot
 public/sprites/              tiles: empty-dirt (dug chamber), full_dirt (undug/fog), gold + 4 shine frames and gold_chips* cut-outs (regenerate with scripts/cut-gold-chips.py), robot_sheet (4×4: idle + 3 walk frames; rows down/left/right/up), wall (brick)
-components/use-simulation.ts map state, Machine instance, playback timer
+components/use-simulation.ts map state, Machine instance, playback timer, named SPEEDS
+components/robot-motion.ts   Motion: how far the robot slides and when each cell is dug (animation timing only)
 convex/                      Convex backend; _generated/ is CLI output (do not edit)
 convex/auth.ts               Convex Auth with a custom username/password credentials provider (id "username", Scrypt)
 convex/auth.config.ts        JWT issuer config — without it every user looks signed out
@@ -78,19 +82,31 @@ scripts/setup-auth.ts        sets JWT_PRIVATE_KEY / JWKS / SITE_URL on a Convex 
 .env.example                 every env var the app needs, with where it comes from
 components/ui/               shadcn (base-ui, base-nova) components: button, card, input, label, native-select, badge
 public/artwork/borders/      12×12 nine-slice pixel frames (palette colours) used by the shadcn components
-proxy.ts                     Next 16 proxy: Convex Auth cookies + /api/auth route; redirects signed-out /test → /login?next=…
+proxy.ts                     Next 16 proxy: Convex Auth cookies + /api/auth route; redirects signed-out /workbench and /profile → /login?next=…
                              (also works around a @convex-dev/auth 0.0.96 bug that turned our redirects into 200s)
-app/test/layout.tsx, app/login/layout.tsx  wrap only these routes in AuthProviders (cookie session, Suspense); /docs stays static
-components/auth/             auth-providers (server; reads session + language cookies), login-form, login-scene (speech bubble), require-auth (client fallback), user-menu
-i18n/                        locale.ts (EN/HU, cookie), messages.ts (all UI strings), i18n-provider.tsx (useI18n); components/language-switch.tsx
+app/workbench, app/login, app/profile layout.tsx  wrap only these routes in AppProviders (components/app-providers.tsx: cookie session, Convex client, i18n, Suspense); /docs stays static
+components/auth/             login-form, login-scene (speech bubble), require-auth (client fallback), user-menu
+components/profile/          /profile page: profile-page.tsx (layout) + picture-form, username-form, password-form, feedback; prepare-picture.ts (pixel avatar in the browser)
+convex/errors.ts             coded errors for the client: ConvexError({ code: "PROFILE_taken" }); errorKeyFrom reads error.data.code (or the code inside the message for /api/auth, which forwards only text); the UI translates the key
+convex/credentials.ts        username/password rules, AUTH_ERRORS and authError / authErrorKey
+convex/png.ts                PNG header size check (no decoding)
+convex/profileRules.ts       avatar limits and PROFILE_* errors (`throw profileError("taken")`), shared with the client
+i18n/                        locale.ts (EN/HU, cookie), en.ts + hu.ts (all UI strings), messages.ts (combines them), i18n-provider.tsx (useI18n); components/language-switch.tsx
 components/convex-client-provider.tsx  ConvexAuthNextjsProvider; tokens come from httpOnly cookies via /api/auth
-lib/syntax.ts                the only parser: line scan, tokens, block structure + recovery, compile to flat instructions
-lib/diagnostics.ts           Diagnostic / SyntaxCode / ErrorCode types and message helpers
-lib/minescript.ts            EXAMPLES, re-exports KEYWORDS/isIdentifier, validateMineScript (= syntax issues)
+lib/syntax/                  the only parser, one pass: vocabulary.ts (keywords, operators, token patterns shared with the editor, names, alias hints), scanner.ts (line → tokens), character-hints.ts (invalid-character messages), line-context.ts (per-line state, first error), line-parser.ts (tokens → statement),
+                             values.ts (simpleval), expressions.ts (right side of set),
+                             analyze.ts (analyzeSource: line loop, recovery), else-branch.ts (else pairing and diagnostics), block-stack.ts (indentation → open blocks), compiler.ts (flat instructions), program.ts / tree.ts (types)
+lib/diagnostics.ts           Diagnostic, SYNTAX_CODES / ERROR_CODES (types derive from them), message helpers (quote, plural, cellName)
+lib/limits.ts                the PDF's numeric limits: MAX_MAP_SIZE, MAX_NUMBER_LITERAL, MAX_LINES
+lib/suggest.ts               editDistance / closest for "did you mean" hints
+lib/examples.ts              EXAMPLES: the editor's sample programs (filename = i18n key)
+lib/minescript.ts            PROGRAM_EXTENSION, re-exports EXAMPLES, KEYWORDS/isIdentifier, validateMineScript (= syntax issues)
 lib/interpreter.ts           parseProgram, Machine (pc over flat instructions, one line per step), StepEvent, idleSnapshot
-lib/robot-map.ts             GameMap, DIRECTIONS, parseMap, MAP_PRESETS
+lib/robot-map.ts             GameMap, DIRECTIONS, parseMap (header → row count → grid), cellIndex/cellAt, MAP_PRESETS
 tests/                       categorized PDF-backed conformance and simulation contracts
-scripts/test-related.ts      targeted dependency-aware test runner (explicit task paths)
+scripts/test-related.ts      targeted dependency-aware test runner (explicit task paths); engine tests via bun test, Convex/profile tests via vitest
+scripts/test-groups.ts       the explicit file → tests mapping (unknown files fail closed)
+lib/auth-redirect-fix.ts     proxy workaround for a @convex-dev/auth 0.0.96 redirect bug (says when it can go)
 docs/minescript-language.md  standalone language reference for agent ingestion
 docs/diagnostics.md          diagnostics contract: every error code, its span and required content
 docs/testing.md              test groups, commands, source mapping, performance discipline
@@ -358,12 +374,12 @@ print i
 - Hungarian, always dark, statically prerendered, styled like the app (see §3 App look). Pages: `attekintes`, `nyelv`, `robot`, `terkepek`, `interpreter`, `hibak`, `dontesek`. Add a page by adding it to `lib/docs/nav.ts` and to the `CONTENT` map in `app/docs/[slug]/page.tsx`.
 - **Every MineScript example in the docs comes from `DOC_EXAMPLES`** and is shown with `<Example id="…" />`. Each entry states its expected result (`ok` with output/steps/gold, `syntax` with line, or `runtime` with error code and line). The reader can run it; a green check means the engine agrees with the docs.
 - When you add or change an example, or change engine behaviour, run every `DOC_EXAMPLES` entry through `runExample` + `matchesExpectation` and make sure all pass. A failing example means either the docs or the engine is wrong — find out which; don't just edit the expectation.
-- "Megnyitás a szerkesztőben" opens `/test?code=…&map=…`; the workbench reads these via `useSearchParams` (that is why `app/test/page.tsx` wraps it in `<Suspense>`).
+- "Megnyitás a szerkesztőben" opens `/workbench?code=…&map=…`; the workbench reads these via `useSearchParams` (that is why `app/workbench/page.tsx` wraps it in `<Suspense>`).
 - Keep `/docs/dontesek` and §6 of this file in sync.
 
 ## 9. Testing policy — targeted, fast, specification-driven
 
-- Start with `docs/minescript-language.md` for the full language contract and `docs/testing.md` for the test catalogue. Tests use **Bun's native runner**, not Vitest; no Next server, DOM, database, timers, or browser is required for engine tests.
+- Start with `docs/minescript-language.md` for the full language contract and `docs/testing.md` for the test catalogue. `bun run test` runs both suites: the engine suite (`bun run test:engine`) uses **Bun's native runner**, not Vitest, and the app suite (`bun run test:app`, Vitest) covers Convex functions and profile rendering; no Next server, DOM, database, timers, or browser is required for engine tests.
 - **Run relevant tests, not every test by habit.** Use `bun run test:related -- <task-file> [task-file…]` to include transitive consumers. Pass files from the current task, not unrelated dirty files. Unknown dependencies must be mapped or tested explicitly; never silently skip them.
 - Focused groups: `test:syntax`, `test:maps`, `test:parser`, `test:semantics`, `test:control`, `test:robot`, `test:limits`, `test:state`, `test:scenarios`, `test:docs`, `test:tooling`. Prefix with `bun run`. Narrow a specific file with `bun test ./tests/interpreter/errors.test.ts -t 'pattern'` when iterating.
 - Validator changes affect syntax **and** interpreter/scenario/docs tests. Map model changes affect map tests **and** interpreter/scenario/docs consumers. Interpreter changes affect interpreter/scenario/docs tests. Docs fixtures affect `test:docs`. The selector encodes this dependency closure.
@@ -384,10 +400,10 @@ print i
 - Don't reject type errors at parse time; types are run-time only.
 - Don't count animation frames or cells moved as steps; count lines in the engine, never in the UI.
 - Don't put game rules in React components; the UI only renders engine snapshots.
-- Don't write a second parser or validator. All source analysis goes through `analyzeSource` in `lib/syntax.ts`; the validator and the runnable program come from the same pass.
+- Don't write a second parser or validator. All source analysis goes through `analyzeSource` in `lib/syntax/`; the validator and the runnable program come from the same pass.
 - Don't report a problem as a bare string: use a coded `Diagnostic` with an exact span (and a hint when a fix is known), as defined in `docs/diagnostics.md`.
 - Don't trust client-sent gold/steps for the leaderboard (planned): the server re-runs the program with the same engine on the stored map version.
-- Don't sign up through `createAccount` without checking the name first (see `accountExists` in `convex/auth.ts`): for an existing account it signs in on a correct password, which makes sign-up a lockout-free password oracle.
+- Don't sign up through `createAccount` without checking the name first (see the `isUsernameTaken` check in `convex/auth.ts`): for an existing account it signs in on a correct password, which makes sign-up a lockout-free password oracle.
 - Don't accept a user id as a Convex function argument. Get the caller with `currentUserId(ctx)` from `convex/users.ts` and throw/return null when it is null.
 - Auth secrets (`JWT_PRIVATE_KEY`, `JWKS`, `SITE_URL`) live on each Convex deployment, never in the repo or `.env*`. Set them with `bun run auth:setup` (it refuses to replace existing keys without `--rotate`); never use the interactive `@convex-dev/auth` wizard. Don't hardcode accounts or passwords (no seed users in code).
 - Don't overwrite a valid map or program with a failed import.

@@ -33,7 +33,7 @@ The PDF remains authoritative. Do not change expectations merely to match curren
 
 ## Engine structure and diagnostics
 
-- `lib/syntax.ts` is the only parser. One pass scans lines, tokenizes, builds blocks
+- `lib/syntax/` is the only parser (`analyzeSource`). One pass scans lines, tokenizes, builds blocks
   (recovering from errors so one mistake does not cascade), and — only when there is
   no syntax error — compiles the blocks into a flat instruction list.
 - `lib/interpreter.ts` runs that list with a program counter. `if`/`while` carry
