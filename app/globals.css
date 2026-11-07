@@ -294,25 +294,19 @@
 .pixel-appear { animation: pixel-appear 1ms step-end both; }
 @keyframes pixel-appear { from { opacity: 0; } to { opacity: 1; } }
 
-/* Arany: átlátszó hátterű rögök (gold_chips*.png) a mező földje fölött; a villanás képkockái lépcsőzetesen váltanak. */
+/* Arany: tíz 32×32-es képkocka, a föld kivágása után átlátszó háttéren. */
 .gold-shine { position: absolute; inset: 0; z-index: 1; }
-.gold-shine > i {
-  position: absolute; inset: 0; opacity: 0;
-  background-size: 100% 100%; image-rendering: pixelated;
-  animation: 3.2s step-end infinite; animation-delay: var(--shine-delay, 0s);
+.gold-sprite {
+  background-image: url(/sprites/gold_sparkle_chips.png);
+  background-size: 1000% 100%; background-position: 0 0; background-repeat: no-repeat;
+  image-rendering: pixelated;
 }
-.gold-shine > .chips { background-image: url(/sprites/gold_chips.png); opacity: 1; animation: none; }
-.gold-shine > .shine-down-half { background-image: url(/sprites/gold_chips_down_half.png); animation-name: shine-down-half; }
-.gold-shine > .shine-down { background-image: url(/sprites/gold_chips_down.png); animation-name: shine-down; }
-.gold-shine > .shine-up-half { background-image: url(/sprites/gold_chips_up_half.png); animation-name: shine-up-half; }
-.gold-shine > .shine-up { background-image: url(/sprites/gold_chips_up.png); animation-name: shine-up; }
-@keyframes shine-down-half { 0% { opacity: 0 } 40% { opacity: 1 } 45% { opacity: 0 } 50% { opacity: 1 } 55% { opacity: 0 } 100% { opacity: 0 } }
-@keyframes shine-down { 0% { opacity: 0 } 45% { opacity: 1 } 50% { opacity: 0 } 100% { opacity: 0 } }
-@keyframes shine-up-half { 0% { opacity: 0 } 85% { opacity: 1 } 90% { opacity: 0 } 95% { opacity: 1 } 100% { opacity: 0 } }
-@keyframes shine-up { 0% { opacity: 0 } 90% { opacity: 1 } 95% { opacity: 0 } 100% { opacity: 0 } }
+.gold-sparkle { animation: gold-sparkle 1.6s steps(10, end) infinite; animation-delay: var(--shine-delay, 0s); }
+/* A teljes lap szélességét lépjük végig; a tizedik ugrásnál indul újra a ciklus. */
+@keyframes gold-sparkle { to { background-position-x: 111.111111%; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .gold-shine > i { animation: none; }
+  .gold-sparkle { animation: none; }
   .pixel-robot { transition: none !important; }
   .pixel-robot-sprite { animation: none !important; }
   .pixel-cover { display: none; }

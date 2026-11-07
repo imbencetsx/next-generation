@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
-import { BookOpenText, CheckCircle2, Clock3, FlaskConical, Scale, TriangleAlert } from "lucide-react";
+import { Book, Check, Clock, Scale, TestTube, Warning } from "@/components/icons";
 import { badgeVariants } from "@/components/ui/badge";
 
 // Megjegyzésdobozok: a fajtát ikon és cím jelzi (nem csak szín). Az arany csak a figyelmeztetés ikonján jelenik meg.
 const NOTE_STYLES = {
-  spec: { label: "A kiírás szerint", Icon: BookOpenText, icon: "" },
+  spec: { label: "A kiírás szerint", Icon: Book, icon: "" },
   decision: { label: "Projektdöntés", Icon: Scale, icon: "" },
-  future: { label: "Tervezett", Icon: Clock3, icon: "text-muted-foreground" },
-  warn: { label: "Figyelem", Icon: TriangleAlert, icon: "text-gold" },
+  future: { label: "Tervezett", Icon: Clock, icon: "text-muted-foreground" },
+  warn: { label: "Figyelem", Icon: Warning, icon: "text-gold" },
 } as const;
 
 export function Note({ tone, title, children }: { tone: keyof typeof NOTE_STYLES; title?: string; children: ReactNode }) {
@@ -33,9 +33,9 @@ export function DocBadge({ variant = "outline", className = "", children }: { va
 
 export function Status({ kind }: { kind: "done" | "prototype" | "planned" }) {
   const map = {
-    done: { label: "Kész", Icon: CheckCircle2, className: "" },
-    prototype: { label: "Prototípus", Icon: FlaskConical, className: "text-gold" },
-    planned: { label: "Tervezett", Icon: Clock3, className: "text-muted-foreground" },
+    done: { label: "Kész", Icon: Check, className: "" },
+    prototype: { label: "Prototípus", Icon: TestTube, className: "text-gold" },
+    planned: { label: "Tervezett", Icon: Clock, className: "text-muted-foreground" },
   } as const;
   const { label, Icon, className } = map[kind];
   return (

@@ -37,7 +37,7 @@ export function MiniMap({ map, robot = map.robot, gold = map.gold, explored, cap
           const tile = wall ? "wall" : seen ? "empty-dirt" : "full_dirt";
           return (
             <div key={index} aria-hidden className="pixel-sprite relative" style={{ ...sprite(tile), width: cell, height: cell }}>
-              {!wall && gold[index] && <span className="pixel-sprite absolute inset-0" style={sprite("gold_chips")} />}
+              {!wall && gold[index] && <span className="gold-sprite absolute inset-0" />}
               {index === robotIndex && (
                 <span
                   className="pixel-robot-sprite absolute inset-0"

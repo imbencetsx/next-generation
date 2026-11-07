@@ -9,7 +9,6 @@ import { ROBOT_FOOT_PADDING, ROBOT_ROW, TILE } from "@/components/sprites";
 import type { GameMap } from "@/lib/robot-map";
 
 const WALK_FRAMES = 3;
-const SHINE_FRAMES = ["down-half", "down", "up-half", "up"] as const;
 // Mezőnként ennyi ugrással lép a robot (32 px-es sprite-nál 8 pixelenként), hogy ne simán csússzon.
 const FRAMES_PER_CELL = 4;
 
@@ -81,12 +80,11 @@ export default function PixelMap({ map, robot, explored, gold, fog, motion, labe
                   key={fog && reveal !== undefined ? `gold-${motion!.id}` : "gold"}
                   className={`gold-shine${fog && reveal !== undefined ? " pixel-appear" : ""}`}
                   style={{
-                    "--shine-delay": `${-((x * 7 + y * 13) % 10) * 0.32}s`,
+                    "--shine-delay": `${-((x * 7 + y * 13) % 10) * 0.16}s`,
                     ...(fog && reveal !== undefined ? { animationDelay: `${reveal}ms` } : {}),
                   } as CSSProperties}
                 >
-                  <i className="chips" />
-                  {SHINE_FRAMES.map((name) => <i key={name} className={`shine-${name}`} />)}
+                  <i className="gold-sprite gold-sparkle absolute inset-0" />
                 </span>
               )}
             </div>

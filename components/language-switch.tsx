@@ -3,7 +3,7 @@
 // Nyelvváltó: egyetlen gomb, kattintásra magyar és angol között vált. A látható felirat a mostani nyelv kódja;
 // az akadálymentes név és a súgószöveg a CÉL nyelven mondja ki a műveletet (lang attribútummal).
 
-import { Globe } from "lucide-react";
+import { Globe } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n/i18n-provider";
 

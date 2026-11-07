@@ -2,7 +2,7 @@
 
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery } from "convex/react";
-import { LogOut } from "lucide-react";
+import { Logout } from "@/components/icons";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
@@ -30,7 +30,7 @@ export default function UserMenu() {
         <span className="max-sm:sr-only">{viewer?.name ?? "…"}</span>
       </span>
       <Button variant="ghost" size="icon" onClick={leave} aria-label={t.auth.signOut} title={t.auth.signOut}>
-        <LogOut aria-hidden />
+        <Logout aria-hidden />
       </Button>
     </div>
   );

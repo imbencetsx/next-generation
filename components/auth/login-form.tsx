@@ -4,7 +4,7 @@
 
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth } from "convex/react";
-import { AlertCircle, LogIn, UserPlus } from "lucide-react";
+import { Alert, Login, UserPlus } from "@/components/icons";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
@@ -115,12 +115,12 @@ export default function LoginForm() {
 
         {error && (
           <p role="alert" className="pixel-frame flex items-start gap-2 bg-brick/15 px-3 py-2 font-read text-sm text-brick-text" data-tone="danger">
-            <AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden /> {t.auth.errors[error]}
+            <Alert size={16} className="mt-0.5 shrink-0" aria-hidden /> {t.auth.errors[error]}
           </p>
         )}
 
         <Button type="submit" size="lg" className="mt-2 h-10 w-full text-base" disabled={pending}>
-          {signingUp ? <UserPlus aria-hidden /> : <LogIn aria-hidden />}
+          {signingUp ? <UserPlus aria-hidden /> : <Login aria-hidden />}
           {pending ? (signingUp ? t.auth.creatingAccount : t.auth.signingIn) : signingUp ? t.auth.createAccount : t.auth.signIn}
         </Button>
       </form>

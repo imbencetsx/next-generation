@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Example from "@/components/docs/example";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { Check, Cross } from "@/components/icons";
 import { DocBadge, Note, Status } from "@/components/docs/ui";
 
 const PIPELINE = [
@@ -33,7 +33,7 @@ export default function Attekintes() {
         <li><strong>Szerkesztés</strong> — átírhatod a kódot, és megnézheted, mi változik.</li>
         <li><strong>Megnyitás a szerkesztőben</strong> — átviszi a kódot és a térképet a teljes szerkesztőbe, ahol lassítva, animálva is lefuttathatod.</li>
       </ul>
-      <p>A <DocBadge><CheckCircle2 aria-hidden /> Helyes</DocBadge> példák hiba nélkül futnak, a <DocBadge variant="destructive"><XCircle aria-hidden /> Hibás</DocBadge> példák szándékosan szabályt sértenek.</p>
+      <p>A <DocBadge><Check aria-hidden /> Helyes</DocBadge> példák hiba nélkül futnak, a <DocBadge variant="destructive"><Cross aria-hidden /> Hibás</DocBadge> példák szándékosan szabályt sértenek.</p>
 
       <Example id="pdf-program" />
 

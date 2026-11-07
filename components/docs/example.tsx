@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CheckCircle2, ExternalLink, Pencil, Play, RotateCcw, XCircle } from "lucide-react";
+import { Check, Cross, ExternalLink, Pencil, Play, Reset } from "@/components/icons";
 import { CodeView } from "@/components/docs/code-view";
 import { MiniMap } from "@/components/docs/mini-map";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +38,7 @@ export default function Example({ id }: { id: DocExampleId }) {
       <Card className="gap-0 p-4 font-read">
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <Badge variant={good ? "outline" : "destructive"} className="font-pixel">
-            {good ? <CheckCircle2 aria-hidden /> : <XCircle aria-hidden />} {good ? "Helyes" : "Hibás"}
+            {good ? <Check aria-hidden /> : <Cross aria-hidden />} {good ? "Helyes" : "Hibás"}
           </Badge>
           <figcaption id={`ex-${id}`} className="font-pixel text-[15px]">{example.title}</figcaption>
         </div>
@@ -78,7 +78,7 @@ export default function Example({ id }: { id: DocExampleId }) {
           </Button>
           {modified && (
             <Button variant="outline" onClick={() => update(example.code)}>
-              <RotateCcw aria-hidden /> Visszaállítás
+              <Reset aria-hidden /> Visszaállítás
             </Button>
           )}
           <Link
@@ -102,8 +102,8 @@ export default function Example({ id }: { id: DocExampleId }) {
 function Result({ outcome, passed }: { outcome: Outcome; passed: boolean | null }) {
   return (
     <div className="pixel-frame mt-4 bg-code p-3 text-[15px]">
-      {passed === true && <p className="mb-2 flex items-center gap-1.5 font-pixel"><CheckCircle2 size={16} aria-hidden /> Egyezik a várt eredménnyel</p>}
-      {passed === false && <p className="mb-2 flex items-center gap-1.5 font-pixel text-brick-text"><XCircle size={16} aria-hidden /> Eltér a várt eredménytől</p>}
+      {passed === true && <p className="mb-2 flex items-center gap-1.5 font-pixel"><Check size={16} aria-hidden /> Egyezik a várt eredménnyel</p>}
+      {passed === false && <p className="mb-2 flex items-center gap-1.5 font-pixel text-brick-text"><Cross size={16} aria-hidden /> Eltér a várt eredménytől</p>}
       {passed === null && <p className="mb-2 font-pixel text-muted-foreground">A módosított kód eredménye</p>}
 
       {outcome.kind === "syntax" ? (
@@ -131,7 +131,7 @@ function Result({ outcome, passed }: { outcome: Outcome; passed: boolean | null 
               )}
             </p>
           ) : (
-            <p className="flex items-center gap-1.5"><CheckCircle2 size={16} aria-hidden /> Hiba nélkül lefutott.</p>
+            <p className="flex items-center gap-1.5"><Check size={16} aria-hidden /> Hiba nélkül lefutott.</p>
           )}
           <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1">
             <div className="flex items-baseline gap-1.5"><dt className="text-muted-foreground">Feldolgozott sorok</dt><dd className="display text-lg">{outcome.snapshot.steps}<span className="font-pixel text-xs text-muted-foreground">/1000</span></dd></div>

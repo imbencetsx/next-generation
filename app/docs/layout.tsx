@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Code2 } from "lucide-react";
+import { Code } from "@/components/icons";
 import DocsSidebar from "@/components/docs/sidebar";
 import Logo from "@/components/logo";
 import { buttonVariants } from "@/components/ui/button";
@@ -16,7 +16,7 @@ export default function DocsLayout({ children }: LayoutProps<"/docs">) {
             <span className="font-pixel text-[15px] text-muted-foreground max-sm:sr-only">Dokumentáció</span>
           </Link>
           <Link href="/test" className={`${buttonVariants({ variant: "outline" })} ml-auto`} data-slot="button" data-variant="outline">
-            <Code2 aria-hidden /> Szerkesztő
+            <Code aria-hidden /> Szerkesztő
           </Link>
         </div>
       </header>

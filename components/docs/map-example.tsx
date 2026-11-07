@@ -3,7 +3,7 @@
 // Térképfájl-példa: a beolvasó (parseMap) dönti el, érvényes-e; a várt eredménnyel összevetjük.
 
 import { useState } from "react";
-import { CheckCircle2, ScanSearch, XCircle } from "lucide-react";
+import { Check, Cross, Search } from "@/components/icons";
 import { MiniMap } from "@/components/docs/mini-map";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ export default function MapExample({ title, text, valid }: { title: string; text
       <Card className="gap-0 p-4 font-read">
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <Badge variant={valid ? "outline" : "destructive"} className="font-pixel">
-            {valid ? <CheckCircle2 aria-hidden /> : <XCircle aria-hidden />} {valid ? "Érvényes" : "Érvénytelen"}
+            {valid ? <Check aria-hidden /> : <Cross aria-hidden />} {valid ? "Érvényes" : "Érvénytelen"}
           </Badge>
           <figcaption className="font-pixel text-[15px]">{title}</figcaption>
         </div>
@@ -37,13 +37,13 @@ export default function MapExample({ title, text, valid }: { title: string; text
           <div aria-live="polite" className="min-w-0 flex-1 text-[15px]">
             {result?.ok && <MiniMap map={result.map} caption="Betöltve" />}
             {result && !result.ok && <p className="text-brick-text">{result.error}</p>}
-            {passed === true && <p className="mt-2 flex items-center gap-1.5 font-pixel"><CheckCircle2 size={16} aria-hidden /> Egyezik a várt eredménnyel</p>}
-            {passed === false && <p className="mt-2 flex items-center gap-1.5 font-pixel text-brick-text"><XCircle size={16} aria-hidden /> Eltér a várt eredménytől</p>}
+            {passed === true && <p className="mt-2 flex items-center gap-1.5 font-pixel"><Check size={16} aria-hidden /> Egyezik a várt eredménnyel</p>}
+            {passed === false && <p className="mt-2 flex items-center gap-1.5 font-pixel text-brick-text"><Cross size={16} aria-hidden /> Eltér a várt eredménytől</p>}
           </div>
         </div>
         <div className="mt-3">
           <Button onClick={() => setResult(parseMap(value))}>
-            <ScanSearch aria-hidden /> Ellenőrzés
+            <Search aria-hidden /> Ellenőrzés
           </Button>
         </div>
       </Card>
