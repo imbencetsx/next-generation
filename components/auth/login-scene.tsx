@@ -28,11 +28,7 @@ export default function LoginScene({ message }: { message: string }) {
         <div key={index} className="pixel-sprite relative size-12 sm:size-14" style={{ backgroundImage: `url(/sprites/${tile}.png)` }}>
           {index === GOLD_AT && (
             <span className="gold-shine">
-              <i className="chips" />
-              <i className="shine-down-half" />
-              <i className="shine-down" />
-              <i className="shine-up-half" />
-              <i className="shine-up" />
+              <i className="gold-sprite gold-sparkle absolute inset-0" />
             </span>
           )}
           {index === ROBOT_AT && (
