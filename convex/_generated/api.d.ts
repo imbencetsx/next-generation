@@ -13,6 +13,7 @@ import type * as credentials from "../credentials.js";
 import type * as errors from "../errors.js";
 import type * as http from "../http.js";
 import type * as likes from "../likes.js";
+import type * as mapModeration from "../mapModeration.js";
 import type * as mapRules from "../mapRules.js";
 import type * as maps from "../maps.js";
 import type * as png from "../png.js";
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   errors: typeof errors;
   http: typeof http;
   likes: typeof likes;
+  mapModeration: typeof mapModeration;
   mapRules: typeof mapRules;
   maps: typeof maps;
   png: typeof png;
@@ -68,4 +70,6 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
+};

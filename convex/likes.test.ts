@@ -2,6 +2,7 @@
 import { convexTest } from "convex-test";
 import { describe, expect, test } from "vitest";
 import { api } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import schema from "./schema";
 
 const modules = import.meta.glob(["./**/*.ts", "!./**/*.test.ts"]);
@@ -21,7 +22,16 @@ async function setup() {
     return ids;
   });
   const [miner, other, third] = sessions.map((subject) => t.withIdentity({ subject }));
-  const mapId = await miner.mutation(api.maps.publish, { name: "corridor", text: "1 2\n>." });
+  const mapId = await t.run((ctx) =>
+    ctx.db.insert("maps", {
+      ownerId: sessions[0].split("|")[0] as Id<"users">,
+      name: "corridor",
+      text: "1 2\n>.",
+      rows: 1,
+      cols: 2,
+      goldCount: 0,
+    }),
+  );
   return { t, miner, other, third, mapId };
 }
 

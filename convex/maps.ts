@@ -6,10 +6,13 @@ import { paginationOptsValidator, paginationResultValidator } from "convex/serve
 import { v } from "convex/values";
 import { formatMap } from "../lib/map-editor";
 import { parseMap } from "../lib/robot-map";
-import type { Doc } from "./_generated/dataModel";
-import { mutation, query, type QueryCtx } from "./_generated/server";
+import type { Doc, Id } from "./_generated/dataModel";
+import { action, internalMutation, mutation, query, env, type QueryCtx } from "./_generated/server";
 import { mapError, publishedMapName } from "./mapRules";
 import { deleteLikes, hasLiked } from "./likes";
+import { RateLimiter, MINUTE } from "@convex-dev/rate-limiter";
+import { components, internal } from "./_generated/api";
+import { checkMapNameWithAI, hasBlockedMapName } from "./mapModeration";
 import { currentUserId } from "./users";
 
 /** Egy térkép a listában: a tárolt adatok, a szerző neve, és hogy a hívóé-e. */
@@ -43,18 +46,56 @@ async function forViewer(ctx: QueryCtx, map: Doc<"maps">, viewerId: Doc<"users">
   };
 }
 
-export const publish = mutation({
-  args: { name: v.string(), text: v.string() },
+const MAX_PUBLISH_NAME_INPUT_LENGTH = 256;
+const MAX_PUBLISH_SOURCE_LENGTH = 16 * 1024;
+const publishArgs = { name: v.string(), text: v.string() };
+const publishingLimits = new RateLimiter(components.rateLimiter, {
+  publishMap: { kind: "token bucket", rate: 6, period: MINUTE, capacity: 3 },
+});
+
+/** Az elutasított próbálkozások is fogyasztanak keretet; az action hibája ezt nem görgeti vissza. */
+export const reservePublishAttempt = internalMutation({
+  args: {},
+  returns: v.boolean(),
+  handler: async (ctx) => {
+    const userId = await currentUserId(ctx);
+    if (!userId || !(await ctx.db.get(userId))) throw mapError("unauthenticated");
+    return (await publishingLimits.limit(ctx, "publishMap", { key: userId })).ok;
+  },
+});
+
+function validatedPublication(args: { name: string; text: string }) {
+  if (args.name.length > MAX_PUBLISH_NAME_INPUT_LENGTH) throw mapError("name");
+  if (args.text.length > MAX_PUBLISH_SOURCE_LENGTH) throw mapError("invalid");
+  const name = publishedMapName(args.name);
+  if (!name) throw mapError("name");
+  const parsed = parseMap(args.text);
+  if (!parsed.ok) throw mapError("invalid");
+  if (hasBlockedMapName(name)) throw mapError("moderated");
+  return { name, map: parsed.map };
+}
+
+export const publish = action({
+  args: publishArgs,
+  returns: v.id("maps"),
+  handler: async (ctx, args): Promise<Id<"maps">> => {
+    const allowed = await ctx.runMutation(internal.maps.reservePublishAttempt, {});
+    if (!allowed) throw mapError("rateLimited");
+    const { name, map } = validatedPublication(args);
+    const text = formatMap(map);
+    await checkMapNameWithAI(name, env.OPENAI_API_KEY);
+    return await ctx.runMutation(internal.maps.commitPublication, { name, text });
+  },
+});
+
+/** Kizárólag a moderáló action hívhatja; a mentéskor a munkamenetet is újra ellenőrizzük. */
+export const commitPublication = internalMutation({
+  args: publishArgs,
   returns: v.id("maps"),
   handler: async (ctx, args) => {
     const ownerId = await currentUserId(ctx);
-    if (!ownerId) throw mapError("unauthenticated");
-    const name = publishedMapName(args.name);
-    if (!name) throw mapError("name");
-    const parsed = parseMap(args.text);
-    if (!parsed.ok) throw mapError("invalid");
-
-    const { map } = parsed;
+    if (!ownerId || !(await ctx.db.get(ownerId))) throw mapError("unauthenticated");
+    const { name, map } = validatedPublication(args);
     return await ctx.db.insert("maps", {
       ownerId,
       name,

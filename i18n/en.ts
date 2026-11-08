@@ -275,6 +275,7 @@ export const en = {
     publishName: "Map name",
     publishNameHint: "1–60 characters. This name is shown to other players; your filename stays the same.",
     publishPreview: "Card preview",
+    checkingName: "Checking name…",
     publishing: "Publishing…",
     published: (name: string) => `Published as “${name}”. Everyone can now find it on the home page.`,
     publishHint:
@@ -360,6 +361,11 @@ export const en = {
 
   maps: {
     errors: {
+      moderated: "This map name is not appropriate. Choose another name.",
+      moderationUnavailable:
+        "We could not check the name right now. Your map has not been published. Please try again.",
+      rateLimited: "Too many publishing attempts. Wait a moment and try again.",
+
       unauthenticated: "Your session has expired. Sign in again.",
       invalid: "This map is not valid, so it cannot be published.",
       name: "Give the map a name of 1 to 60 characters.",
