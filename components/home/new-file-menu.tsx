@@ -1,6 +1,7 @@
 "use client";
 
 import { Menu } from "@base-ui/react/menu";
+import { useState } from "react";
 import Link from "next/link";
 import { Code, MapIcon, NewFile } from "@/components/icons";
 import { Button } from "@/components/ui/button";
@@ -12,9 +13,14 @@ const ITEM_CLASS =
   "flex items-center gap-3 px-3 py-2 text-sm outline-none data-highlighted:bg-foreground data-highlighted:text-background [&_svg]:size-5";
 
 export default function NewFileMenu() {
+  const [draftId, setDraftId] = useState("");
   const { t, locale } = useI18n();
   return (
-    <Menu.Root>
+    <Menu.Root
+      onOpenChange={(open) => {
+        if (open) setDraftId(crypto.randomUUID());
+      }}
+    >
       <Menu.Trigger render={<Button variant="ghost" />}>
         <NewFile aria-hidden />
         {t.home.newFile}
@@ -27,14 +33,25 @@ export default function NewFileMenu() {
             aria-label={t.home.newFile}
           >
             <Menu.LinkItem
-              render={<Link href={{ pathname: ROUTES.workbench, query: { code: "", filename: DEFAULT_FILE_NAME } }} />}
+              render={
+                <Link
+                  href={{
+                    pathname: ROUTES.workbench,
+                    query: { code: "", filename: DEFAULT_FILE_NAME, draft: draftId },
+                  }}
+                />
+              }
               closeOnClick
               className={ITEM_CLASS}
             >
               <Code aria-hidden />
               {t.home.newProgram}
             </Menu.LinkItem>
-            <Menu.LinkItem render={<Link href={ROUTES.mapEditor} />} closeOnClick className={ITEM_CLASS}>
+            <Menu.LinkItem
+              render={<Link href={{ pathname: ROUTES.mapEditor, query: { draft: draftId } }} />}
+              closeOnClick
+              className={ITEM_CLASS}
+            >
               <MapIcon aria-hidden />
               {t.home.newMap}
             </Menu.LinkItem>

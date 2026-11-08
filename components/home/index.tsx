@@ -16,7 +16,7 @@ export default function HomePage({ greeting = 0 }: { greeting?: number }) {
     <div className="app-ui min-h-dvh">
       <TopBar brand={<Logo />}>
         <NewFileMenu />
-        <AccountActions />
+        <AccountActions withSeparator />
       </TopBar>
 
       <main>

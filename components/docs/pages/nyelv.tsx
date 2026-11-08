@@ -37,6 +37,10 @@ export default function Nyelv() {
         egymásba ágyazott kifejezés, és minden érték egyetlen token. Ez a fejezet a kiírás 2. fejezetét dolgozza fel.
       </p>
 
+      <p className="font-read">
+        Az if, else és while törzse üres is lehet (D2). A <code>while true</code> üres törzzsel is szabályos, de az 1000
+        feldolgozott soros korlátnál leáll.
+      </p>
       <h2 id="utasitasok">Utasítások</h2>
       <table>
         <thead>
@@ -128,7 +132,8 @@ export default function Nyelv() {
           <code>ISTHERE</code> is tilos.
         </li>
         <li>
-          <strong>Számliterál:</strong> a kódba írt egész számok 0 és 100 közöttiek. Számolt érték lehet ezen kívül is.
+          <strong>Számliterál:</strong> csak a kódba közvetlenül beírt egész számok vannak 0 és 100 közé korlátozva.
+          Számolás eredménye lehet például 101, −1 vagy 150 is.
         </li>
         <li>
           <strong>Logikai literál:</strong> <code>true</code>, <code>false</code>.

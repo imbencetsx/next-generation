@@ -79,12 +79,25 @@ const RULES: Rule[] = [
     ui: true,
   },
   { matches: isUnder("components/map-editor/"), tests: GROUPS.maps, appTests: ["components/map-editor"], ui: true },
+  // A közös piszkozat- és hibakezelés mindkét szerkesztőt érinti.
+  {
+    matches: isOneOf(
+      "components/use-draft-state.ts",
+      "components/use-replace-confirmation.tsx",
+      "components/diagnostic-details.tsx",
+      "components/run-error-box.tsx",
+    ),
+    tests: [],
+    appTests: ["components/workbench", "components/map-editor"],
+    ui: true,
+  },
   // Dokumentáció: a példái futtatható szerződések.
   { matches: isUnder("lib/docs/", "components/docs/", "app/docs/"), tests: GROUPS.docs },
   // Motorra épülő felületi fájlok: a kapcsolódó motortesztek, és felületi ellenőrzés is kell.
   {
     matches: isOneOf("components/use-simulation.ts", "components/robot-motion.ts", "components/simulator.tsx"),
     tests: GROUPS.robot,
+    appTests: ["components/workbench"],
     ui: true,
   },
   {

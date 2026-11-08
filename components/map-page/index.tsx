@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { MiniMap } from "@/components/docs/mini-map";
-import { Book, ChevronLeft, Code } from "@/components/icons";
+import { ChevronLeft, Code } from "@/components/icons";
 import LoadingStatus from "@/components/loading-status";
 import Logo from "@/components/logo";
 import TopBar, { AccountActions } from "@/components/top-bar";
@@ -36,15 +36,6 @@ export default function MapPage({ mapId }: { mapId: string }) {
           </Link>
         }
       >
-        <Link
-          href={ROUTES.docs}
-          data-slot="button"
-          data-variant="ghost"
-          className={buttonVariants({ variant: "ghost" })}
-        >
-          <Book aria-hidden />
-          <span className="max-sm:sr-only">{t.editor.docs}</span>
-        </Link>
         <AccountActions />
       </TopBar>
 

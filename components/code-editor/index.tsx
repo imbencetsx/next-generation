@@ -3,6 +3,7 @@
 // A CodeMirror szerkesztő React-burka. A szerkesztőpéldány egyszer jön létre; a React-tulajdonságok
 // változásait (szöveg, sortörés, írásvédelem, kiemelt sor) tranzakciókkal adjuk át neki.
 
+import { useI18n } from "@/i18n/i18n-provider";
 import { useEffect, useRef } from "react";
 import { basicSetup } from "codemirror";
 import { indentLess } from "@codemirror/commands";
@@ -11,9 +12,9 @@ import { lintGutter, forceLinting } from "@codemirror/lint";
 import { Compartment, EditorState, type StateEffect } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
 import { activeLineField, setActiveLine, type ActiveLine } from "./active-line";
-import { completeOrIndent, INDENT, minescriptSupport } from "./minescript-mode";
+import { completeOrIndent, INDENT, createMineScriptSupport } from "./minescript-mode";
 import { editorTheme } from "./theme";
-import { mapSupport } from "./map-mode";
+import { createMapSupport } from "./map-mode";
 
 export type { ActiveLine } from "./active-line";
 
@@ -44,6 +45,7 @@ export default function CodeEditor({
   label,
   mode = "minescript",
 }: Props) {
+  const { locale } = useI18n();
   const container = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const initialValue = useRef(value);
@@ -112,9 +114,11 @@ export default function CodeEditor({
 
   useEffect(() => {
     view.current?.dispatch({
-      effects: languageCompartment.current.reconfigure(mode === "map" ? mapSupport : minescriptSupport),
+      effects: languageCompartment.current.reconfigure(
+        mode === "map" ? createMapSupport(locale) : createMineScriptSupport(locale),
+      ),
     });
-  }, [mode]);
+  }, [mode, locale]);
 
   // Kívülről érkező szöveg (példa betöltése, import); a saját gépelésünk már egyezik, azt nem írjuk vissza.
   useEffect(() => {

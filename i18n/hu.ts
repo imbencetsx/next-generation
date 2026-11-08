@@ -101,7 +101,134 @@ export const hu: Messages = {
     },
   },
 
+  mapDiagnostics: {
+    header: "Az első sorban a sorok és oszlopok száma álljon, pontosan egy szóközzel: például 3 15.",
+    dimensions: (rows: string, cols: string) =>
+      `Mindkét méretnek 1 és 15 közé kell esnie (megadva: ${rows} sor, ${cols} oszlop).`,
+    rows: (expected: string, found: string) => `A fejléc ${expected} térképsort ír elő, de a fájlban ${found} van.`,
+    columns: (line: string, expected: string, found: string) =>
+      `A(z) ${line}. sorban ${found} karakter van a fejlécben megadott ${expected} helyett.`,
+    robot: "A térképen nincs robot. Helyezz el pontosan egyet: > < ^ vagy v.",
+    secondRobot: "A térképen egynél több robot van. Pontosan egy robotot hagyj meg.",
+    symbol: "Érvénytelen térképjel. Csak ezek használhatók: . @ # > < ^ v",
+  },
+
+  diagnostics: {
+    S_EMPTY_LINE: ["A program belsejében nem lehet üres sor.", "Töröld az üres sort."],
+    S_TAB: ["A tabulátor nem megengedett.", "A behúzáshoz szóközöket, a szavak között pontosan egy szóközt használj."],
+    S_SPACING: [
+      "A szavak között pontosan egy szóköz állhat.",
+      "Töröld a fölösleges szóközöket; a sor eleji behúzás megmaradhat.",
+    ],
+    S_TRAILING_SPACE: ["A sor végén fölösleges szóköz van.", "Töröld a sor végi szóközöket."],
+    S_INVALID_CHARACTER: [
+      "Ez a karakter nem használható MineScriptben.",
+      "Ne használj ékezetes betűt, aláhúzásjelet, zárójelet vagy más nyelvekből átvett írásjelet.",
+    ],
+    S_UNKNOWN_INSTRUCTION: [
+      "Ismeretlen vagy itt nem használható utasítás.",
+      "Utasítások: set, step, turn, mine, print, if, else, while. A kis- és nagybetűk számítanak.",
+    ],
+    S_EXPECTED_KEYWORD: [
+      "Hiányzó vagy elírt kötelező kulcsszó.",
+      "Helyes alakok: step forward 1; turn by 1; mine here; set count to 0. A kis- és nagybetűk számítanak.",
+    ],
+    S_MISSING_VALUE: [
+      "Az utasításból hiányzik egy érték vagy változónév.",
+      "Add meg a szükséges változót, számot vagy logikai értéket.",
+    ],
+    S_EXTRA_TOKENS: [
+      "Túl sok szó van ebben az utasításban.",
+      "Egy sorba egy utasítást írj, csak a szükséges argumentumokkal.",
+    ],
+    S_COMPLEX_VALUE: [
+      "Itt csak egyetlen egyszerű érték állhat.",
+      "A műveletet külön set sorban számold ki, majd a változót használd.",
+    ],
+    S_NUMBER_RANGE: [
+      "A kódba írt számliterál csak 0 és 100 közötti egész szám lehet.",
+      "Nagyobb vagy negatív értéket művelettel számolj ki egy set utasításban.",
+    ],
+    S_INVALID_VALUE: [
+      "Ez nem érvényes egyszerű érték.",
+      "Változónevet, true/false értéket vagy 0–100 közötti számliterált használj.",
+    ],
+    S_RESERVED_NAME: [
+      "Foglalt kulcsszó nem lehet változónév, más betűmérettel sem.",
+      "Válassz másik nevet, például count vagy ready.",
+    ],
+    S_INVALID_NAME: [
+      "Érvénytelen változónév.",
+      "A név betűvel kezdődjön, és csak a–z, A–Z betűket és számjegyeket tartalmazzon.",
+    ],
+    S_INVALID_EXPRESSION: [
+      "Érvénytelen kifejezés a set jobb oldalán.",
+      "Egy egyszerű érték, egy isThere hívás vagy legfeljebb egy művelet írható ide.",
+    ],
+    S_UNKNOWN_OPERATOR: [
+      "Ismeretlen műveleti jel.",
+      "Műveletek: + - * = <> < <= > >= and or not. Több műveletet külön set sorokba írj.",
+    ],
+    S_UNEXPECTED_INDENT: [
+      "Ez a sor nem kezdődhet új vagy mélyebb behúzással.",
+      "Csak if, else vagy while nyithat blokkot. Az első sor az első oszlopban kezdődjön.",
+    ],
+    S_INDENT_MISMATCH: [
+      "A behúzás nem illeszkedik egy nyitott blokk szintjéhez sem.",
+      "Egy blokk sorait azonos számú szóközzel húzd be; kilépéskor egy külső blokk szintjére térj vissza.",
+    ],
+    S_ELSE_WITHOUT_IF: [
+      "Az else előtt nincs hozzá tartozó if blokk.",
+      "Az else közvetlenül az if törzse után, az if sorával azonos behúzással álljon.",
+    ],
+    S_ELSE_MISALIGNED: [
+      "Az else behúzása nem egyezik a hozzá tartozó if sorával.",
+      "Az else sort pontosan az if sorával egy szintre igazítsd.",
+    ],
+    S_DUPLICATE_ELSE: [
+      "Ehhez az if utasításhoz már tartozik else ág.",
+      "Egy if csak egy else ágat kaphat. A fölösleges else sort töröld, vagy írj elé új if utasítást.",
+    ],
+    E_TYPE_MISMATCH: [
+      "A változó típusa nem egyezik az új érték típusával.",
+      "Az első értékadás rögzíti a típust. A másik típusú értékhez hozz létre másik változót.",
+    ],
+    E_UNINITIALIZED: [
+      "A változót az első értékadása előtt használod.",
+      "Előbb adj értéket set utasítással. A változónevekben a kis- és nagybetűk számítanak.",
+    ],
+    E_NON_BOOL_CONDITION: [
+      "Az if vagy while feltétele nem logikai érték.",
+      "A feltétel true, false vagy logikai változó legyen. A szükséges összehasonlítást külön set sorban végezd el.",
+    ],
+    E_BAD_OPERAND: [
+      "A művelet egyik értéke nem megfelelő típusú.",
+      "Számoláshoz számok, logikai művelethez logikai értékek kellenek. Egyenlőségvizsgálatnál a két típusnak egyeznie kell.",
+    ],
+    E_BEDROCK_HIT: [
+      "A robot falba ütközött vagy elérte a térkép szélét.",
+      "Lépés előtt vizsgáld meg a következő mezőt: set wall to isThere 1. A robot a már megtett szabad mezőkön át eljutott az akadály elé.",
+    ],
+    E_NO_GOLD: [
+      "A robot mezőjén nincs bányászható arany.",
+      "A már kibányászott arany nem termelődik újra. Vizsgáld meg az előtted lévő mezőt: set gold to isThere 2, majd lépj rá és bányássz.",
+    ],
+    E_BAD_ARG: [
+      "Az utasítás argumentuma rossz típusú vagy tartományon kívüli.",
+      "A step forward és turn by nemnegatív egész számot vár. Az isThere csak 0 (üres), 1 (fal) vagy 2 (arany) értéket fogad el.",
+    ],
+    INSTRUCTION_COUNT_LIMIT_EXCEEDED: [
+      "A program elérte az 1000 feldolgozott soros korlátot.",
+      "Az 1001. sor már nem hajtható végre. Ellenőrizd, hogy a while feltétele idővel false legyen; egy üres while true is eléri a korlátot.",
+    ],
+  },
+
   editor: {
+    technicalDetails: "Technikai részletek (angolul)",
+    replaceTitle: "Lecseréled a munkádat?",
+    replaceDescription: "A jelenlegi piszkozatod módosult. Ha külön példányban megőriznéd, előbb exportáld.",
+    replaceConfirm: "Piszkozat lecserélése",
+
     region: "Kódszerkesztő",
     sourceLabel: "MineScript forráskód",
     loadExample: "Példa betöltése…",
@@ -117,7 +244,7 @@ export const hu: Messages = {
     lineCount: (count: number) => `${count} sor`,
     locked: "Futás közben nem szerkeszthető. A szerkesztéshez állítsd vissza.",
     problems: "Hibák",
-    nothingToFix: "Nincs mit javítani, a program helyes.",
+    nothingToFix: "Nincs szintaktikai hiba.",
     hint: "Tipp:",
     relatedLine: (line: number) => `${line}. sor:`,
     reference: "Nyelv Dokumentáció",
@@ -131,7 +258,7 @@ export const hu: Messages = {
       while: "Ciklus (2 szóköz behúzás)",
     },
     referenceNote:
-      "Érték lehet változó, true/false vagy 0–100 közötti egész szám. Műveletek: + - * = <> < <= > >= and or. isThere: 0 üres, 1 fal, 2 arany.",
+      "Érték lehet változó, true/false vagy a kódba írt 0–100 közötti egész szám. Számolás eredménye lehet negatív vagy 100-nál nagyobb is. Az if/else/while törzse üres is lehet (D2). Az üres while true az 1000 soros korlátnál áll le. Műveletek: + - * = <> < <= > >= and or. isThere: 0 üres, 1 fal, 2 arany.",
     examples: {
       "collect-gold.mine": "Aranygyűjtés",
       "first-steps.mine": "Első lépések",

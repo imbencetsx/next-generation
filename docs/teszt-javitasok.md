@@ -1,0 +1,11 @@
+# A 2026. november 8-i tesztjegyzőkönyv javításai
+
+1. **Üres blokkok:** a D2 döntés változatlan, a felhasználó ezt november 8-án megerősítette. Az üres `if`, `else` és `while` szabályos. Az üres `while true` az 1000 feldolgozott soros korlátnál leáll. A nyelvi dokumentáció és a szerkesztő gyorsreferenciája ezt külön jelzi.
+2. **Elírt mozgási kulcsszó:** a `step forwrd 1` javítása `step forward 1`. Ha maga a kulcsszó hiányzik (`step count`), a `count` argumentum megmarad.
+3. **Munka védelme:** a program és a térkép piszkozata a böngésző helyi tárhelyére kerül, és azonos dokumentum újratöltésekor visszaáll. Új fájl, példa vagy import csak megerősítés után cseréli le a módosított munkát. Az újfájl-menü külön dokumentumazonosítót ad, hogy valóban új fájlt nyisson. Ha a tárhely nem írható, lapelhagyáskor a böngésző figyelmeztet. Ez helyi piszkozatmentés, nem fiókok közötti vagy eszközök közötti szinkronizáció; tartós másolathoz exportálj.
+4. **Hibák nyelve:** magyar felületen minden hibakódhoz magyar magyarázat és javítási tipp tartozik, a CodeMirrorban is. A konkrét beírható javítás kódként megmarad. A motor teljes angol diagnosztikája a Technikai részletek alatt elérhető. A térképfájlok hibái is magyarul jelennek meg.
+5. **Futásidejű hibák:** a Hibák panelben jelennek meg, a megfelelő hibakóddal és sorra ugrással. A panel ilyenkor nem állítja, hogy nincs hiba. A rendben lévő szintaxis visszajelzése már csak a szintaxisról szól. A program módosítása törli a korábbi futás eredményét és hibajelölését.
+6. **Számok tartománya:** a gyorsreferencia és a dokumentáció megkülönbözteti a 0–100 közötti számliterálokat a számolt értékektől (például 101, −1, 150).
+7. **Apróságok:** a futási hiba nem tolja le a térképet; a Turbó időzítője 10 ms helyett 1 ms-ot kér (a tényleges sebességet a böngésző korlátozhatja); az üres fájlnév a mező elhagyásakor `untitled` lesz; az egyéni térkép neve nem téveszthető össze egy beépített pálya fordítási kulcsával. A nulla aranyas térkép a specifikáció szerint továbbra is érvényes.
+
+Az ellenőrzések kiterjednek a piszkozat visszaállítására, a csere megszakítására, a tiltott tárhelyre, a magyar hibamegjelenítésre, az egyéni térkép nevére, valamint a lejátszás szüneteltetésére, léptetésére és pontos sorkorlátjára. A tesztek nem használnak valódi várakozást vagy hálózatot.

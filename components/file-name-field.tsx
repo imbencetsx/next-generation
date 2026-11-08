@@ -30,6 +30,7 @@ export default function FileNameField({ id, label, value, extension, onChange }:
         id={id}
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        onBlur={() => onChange(value.trim() || DEFAULT_FILE_NAME)}
         placeholder={DEFAULT_FILE_NAME}
         maxLength={MAX_FILE_NAME_LENGTH}
         spellCheck={false}

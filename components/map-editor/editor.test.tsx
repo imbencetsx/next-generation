@@ -14,6 +14,7 @@ const convex = vi.hoisted(() => ({ publish: vi.fn() }));
 vi.mock("convex/react", () => ({ useMutation: () => convex.publish }));
 
 beforeEach(() => {
+  localStorage.clear();
   navigation.query = new URLSearchParams({ map: "1 2\n>.", code: "print true", filename: "test.mine" }).toString();
   convex.publish.mockReset();
   vi.stubGlobal(
@@ -104,6 +105,7 @@ describe("map editor / React and CodeMirror integration", () => {
     fireEvent.keyDown(start, { key: "ArrowRight" });
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Row 1, column 2: Empty chamber" }));
     fireEvent.click(screen.getByRole("button", { name: "New" }));
+    fireEvent.click(screen.getByRole("button", { name: "Replace draft" }));
     expect(editor().state.doc.toString().split("\n")[0]).toBe("8 8");
     expect(screen.getAllByRole("gridcell")).toHaveLength(64);
     expect(screen.getByRole("button", { name: "Export" }).hasAttribute("disabled")).toBe(false);
@@ -161,7 +163,7 @@ describe("map editor / React and CodeMirror integration", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Publish" }));
     expect(await screen.findByText(/Published as “Hidden vault”/)).toBeTruthy();
     expect(convex.publish).toHaveBeenCalledWith({ name: "Hidden vault", text: "1 2\n>." });
-    expect(screen.queryByRole("dialog")).toBeNull();
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect((screen.getByLabelText("Map filename") as HTMLInputElement).value).toBe("tiny");
     expect(screen.getByRole("link", { name: "Open the home page" }).getAttribute("href")).toBe("/");
   });
@@ -206,4 +208,16 @@ describe("map editor / React and CodeMirror integration", () => {
     const link = screen.getByRole("link", { name: "Use in simulator" }).getAttribute("href")!;
     expect(new URL(link, "http://localhost").searchParams.get("mapName")).toBe("Cave of Gold");
   });
+});
+
+test("map source and filename survive remounting, including invalid drafts", () => {
+  open();
+  fireEvent.change(screen.getByLabelText("Map filename"), { target: { value: "my-draft" } });
+  setSource("1 2\n@@");
+  cleanup();
+  open();
+  expect((screen.getByLabelText("Map filename") as HTMLInputElement).value).toBe("my-draft");
+  expect(editor().state.doc.toString()).toBe("1 2\n@@");
+  expect(screen.getAllByRole("gridcell")).toHaveLength(2);
+  expect(screen.getByRole("button", { name: "Export" }).hasAttribute("disabled")).toBe(true);
 });

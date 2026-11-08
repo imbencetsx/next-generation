@@ -23,9 +23,9 @@ export default function TopBar({ brand, children }: Props) {
 }
 
 /** Bejelentkezett oldalak jobb széle: felhasználói menü. */
-export function AccountActions() {
+export function AccountActions({ withSeparator = false }: { withSeparator?: boolean }) {
   return (
-    <div className="ml-2 flex items-center border-l border-border pl-4">
+    <div className={withSeparator ? "ml-2 flex items-center border-l border-border pl-4" : "flex items-center"}>
       <UserMenu />
     </div>
   );

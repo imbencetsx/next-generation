@@ -11,24 +11,23 @@ import { Card } from "@/components/ui/card";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import type { Simulation } from "@/components/use-simulation";
 import { useI18n } from "@/i18n/i18n-provider";
-import { MAX_LINES, type RunError } from "@/lib/interpreter";
+import { localizedMapError } from "@/i18n/map-errors";
+import { MAX_LINES } from "@/lib/interpreter";
 import { MAP_PRESETS } from "@/lib/robot-map";
 
 type Props = {
   simulation: Simulation;
-  onJump: (line: number, column?: number) => void;
   /** A térkép alatt megjelenő kiegészítés (pl. közzétett térképen a rögzített eredmény). */
   footer?: ReactNode;
 };
 
-export default function Simulator({ simulation, onJump, footer }: Props) {
-  const { t } = useI18n();
+export default function Simulator({ simulation, footer }: Props) {
+  const { t, locale } = useI18n();
   const { snapshot, map } = simulation;
   const [fog, setFog] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const totalGold = map.gold.filter(Boolean).length;
   const direction = t.sim.directions[snapshot.robot.dir];
-  const error = snapshot.error;
 
   function importMap(event: ChangeEvent<HTMLInputElement>) {
     simulation.importMap(event.target.files?.[0]);
@@ -36,7 +35,7 @@ export default function Simulator({ simulation, onJump, footer }: Props) {
   }
 
   const presetNames = MAP_PRESETS.map((preset) => preset.name);
-  const isPreset = presetNames.includes(simulation.mapName);
+  const isPreset = simulation.presetName !== null;
   // A beépített térképek nevét lefordítjuk; az importált fájl neve marad.
   const mapLabel = (name: string) => t.sim.maps[name] ?? name;
 
@@ -44,11 +43,9 @@ export default function Simulator({ simulation, onJump, footer }: Props) {
     <div className="flex h-full min-h-[70vh] flex-col gap-3 lg:min-h-0">
       {simulation.mapError && (
         <p role="alert" className="flex items-center gap-2 font-read text-sm text-brick-text">
-          <Alert size={14} aria-hidden /> {simulation.mapError}
+          <Alert size={14} aria-hidden /> {localizedMapError(simulation.mapError, locale)}
         </p>
       )}
-
-      {error && <RunErrorBox error={error} onJump={onJump} />}
 
       <Card role="region" aria-label={t.sim.map} className="relative min-h-0 flex-1 gap-0 py-0">
         <div className="flex flex-wrap items-center gap-1.5 border-b border-border p-2">
@@ -57,14 +54,14 @@ export default function Simulator({ simulation, onJump, footer }: Props) {
           </label>
           <NativeSelect
             id="map-select"
-            value={simulation.mapName}
+            value={simulation.presetName ?? "custom"}
             disabled={simulation.locked}
             onChange={(event) => simulation.selectMap(event.target.value)}
           >
             {/* Importált vagy megosztott térkép: a neve megjelenik, de újra kiválasztani nem lehet. */}
             {!isPreset && (
-              <NativeSelectOption value={simulation.mapName} disabled>
-                {mapLabel(simulation.mapName)}
+              <NativeSelectOption value="custom" disabled>
+                {simulation.defaultMapName ? t.sim.maps["Shared map"] : simulation.mapName}
               </NativeSelectOption>
             )}
             {presetNames.map((name) => (
@@ -109,44 +106,6 @@ export default function Simulator({ simulation, onJump, footer }: Props) {
         </p>
         {footer}
       </Card>
-    </div>
-  );
-}
-
-/** A futásidejű hiba: kód és hely, üzenet, javaslat, valamint ugrás a hibás és a kapcsolódó sorokra. */
-function RunErrorBox({ error, onJump }: { error: RunError; onJump: Props["onJump"] }) {
-  const { t } = useI18n();
-  return (
-    <div role="alert" className="pixel-frame bg-brick/15 p-3 text-sm" data-tone="danger">
-      <p className="flex items-center gap-2 font-mono text-xs text-brick-text">
-        <Alert size={14} aria-hidden />
-        {t.sim.errorAt(error.code, error.line, error.column)}
-      </p>
-      <p className="mt-1 font-read">{error.message}</p>
-      {error.hint && (
-        <p className="mt-1 whitespace-pre-line font-read text-[13px] text-muted-foreground">
-          <span className="text-foreground">{t.editor.hint}</span> {error.hint}
-        </p>
-      )}
-      <div className="mt-1.5 flex flex-wrap gap-x-3">
-        <button
-          type="button"
-          className="text-xs underline underline-offset-4"
-          onClick={() => onJump(error.line, error.column)}
-        >
-          {t.sim.goToLine(error.line)}
-        </button>
-        {error.related?.map((item) => (
-          <button
-            type="button"
-            key={item.line + item.message}
-            className="text-xs underline underline-offset-4"
-            onClick={() => onJump(item.line)}
-          >
-            {t.editor.relatedLine(item.line)} {item.message}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

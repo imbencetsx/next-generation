@@ -100,7 +100,110 @@ export const en = {
     },
   },
 
+  mapDiagnostics: {
+    header: "The first line must give rows and columns separated by one space, e.g. 3 15.",
+    dimensions: (rows: string, cols: string) =>
+      `Both dimensions must be between 1 and 15 (got ${rows} rows and ${cols} columns).`,
+    rows: (expected: string, found: string) => `The header declares ${expected} map rows, but the file has ${found}.`,
+    columns: (line: string, expected: string, found: string) =>
+      `Line ${line} contains ${found} characters; the header requires ${expected}.`,
+    robot: "The map has no robot. Place exactly one: > < ^ or v.",
+    secondRobot: "The map has more than one robot. Keep exactly one.",
+    symbol: "Invalid map symbol. Allowed symbols: . @ # > < ^ v",
+  },
+
+  diagnostics: {
+    S_EMPTY_LINE: ["Empty lines are not allowed inside a program.", "Delete the empty line."],
+    S_TAB: ["Tabs are not allowed.", "Use spaces for indentation and exactly one space between tokens."],
+    S_SPACING: ["Use exactly one space between tokens.", "Remove extra spaces between tokens."],
+    S_TRAILING_SPACE: ["This line has trailing spaces.", "Remove spaces at the end of the line."],
+    S_INVALID_CHARACTER: [
+      "This character is not allowed in MineScript.",
+      "Use ASCII letters, digits, spaces and the supported operators.",
+    ],
+    S_UNKNOWN_INSTRUCTION: [
+      "Unknown instruction.",
+      "Instructions are set, step, turn, mine, print, if, else and while. Keywords are case-sensitive.",
+    ],
+    S_EXPECTED_KEYWORD: [
+      "A required keyword is missing or misspelled.",
+      "Use step forward, turn by, mine here or set name to value.",
+    ],
+    S_MISSING_VALUE: [
+      "A required value or variable name is missing.",
+      "Supply the required variable, number or boolean.",
+    ],
+    S_EXTRA_TOKENS: [
+      "Too many tokens in this instruction.",
+      "Write one instruction per line with only its required arguments.",
+    ],
+    S_COMPLEX_VALUE: [
+      "Only one simple value is allowed here.",
+      "Compute the expression in a separate set instruction first.",
+    ],
+    S_NUMBER_RANGE: [
+      "Number literals must be integers from 0 to 100.",
+      "Compute negative or larger values with a set instruction.",
+    ],
+    S_INVALID_VALUE: ["Invalid simple value.", "Use a variable, true/false or an integer literal from 0 to 100."],
+    S_RESERVED_NAME: [
+      "Keywords cannot be variable names in any letter case.",
+      "Choose another name, such as count or ready.",
+    ],
+    S_INVALID_NAME: ["Invalid variable name.", "Start with a letter; use only a–z, A–Z and digits."],
+    S_INVALID_EXPRESSION: [
+      "Invalid expression on the right side of set.",
+      "Use one value, one isThere call or at most one operator.",
+    ],
+    S_UNKNOWN_OPERATOR: ["Unknown operator.", "Operators are + - * = <> < <= > >= and or not."],
+    S_UNEXPECTED_INDENT: [
+      "Unexpected indentation.",
+      "Only if, else and while open blocks; the first line starts in column 1.",
+    ],
+    S_INDENT_MISMATCH: ["Indentation does not match an open block.", "Use consistent indentation within a block."],
+    S_ELSE_WITHOUT_IF: [
+      "There is no matching if for this else.",
+      "Place else directly after the if block at the same indentation as if.",
+    ],
+    S_ELSE_MISALIGNED: ["The else is not aligned with its if.", "Align else with its if line."],
+    S_DUPLICATE_ELSE: ["This if already has an else.", "An if can have only one else branch."],
+    E_TYPE_MISMATCH: [
+      "The new value has a different type from the variable.",
+      "The first assignment locks the variable type; use a different variable.",
+    ],
+    E_UNINITIALIZED: [
+      "A variable was read before its first assignment.",
+      "Assign it with set first; variable names are case-sensitive.",
+    ],
+    E_NON_BOOL_CONDITION: ["The if or while condition must be boolean.", "Use true, false or a boolean variable."],
+    E_BAD_OPERAND: [
+      "An operand has the wrong type.",
+      "Use integers for arithmetic and booleans for logic; equality requires matching types.",
+    ],
+    E_BEDROCK_HIT: [
+      "The robot hit a wall or the edge of the map.",
+      "Check the cell ahead with set wall to isThere 1 before moving.",
+    ],
+    E_NO_GOLD: [
+      "There is no gold on the robot cell.",
+      "Gold can only be mined once. Check the next cell with set gold to isThere 2.",
+    ],
+    E_BAD_ARG: [
+      "An argument has the wrong type or is out of range.",
+      "step forward and turn by require non-negative integers; isThere accepts 0, 1 or 2.",
+    ],
+    INSTRUCTION_COUNT_LIMIT_EXCEEDED: [
+      "The program reached 1000 processed lines.",
+      "The 1001st line cannot run; ensure while conditions eventually become false.",
+    ],
+  },
+
   editor: {
+    technicalDetails: "Technical details (English)",
+    replaceTitle: "Replace your work?",
+    replaceDescription: "Your current draft has changes. Export it first if you want to keep a separate copy.",
+    replaceConfirm: "Replace draft",
+
     region: "Code editor",
     sourceLabel: "MineScript source code",
     loadExample: "Load example…",
@@ -116,7 +219,7 @@ export const en = {
     lineCount: (count: number) => `${count} line${count === 1 ? "" : "s"}`,
     locked: "Locked while running. Reset to edit.",
     problems: "Problems",
-    nothingToFix: "Nothing to fix. The program is valid.",
+    nothingToFix: "No syntax errors.",
     hint: "Hint:",
     relatedLine: (line: number) => `Line ${line}:`,
     reference: "Language documentation",
@@ -130,7 +233,7 @@ export const en = {
       while: "Loop block (indent 2 spaces)",
     },
     referenceNote:
-      "Values are variables, true/false, or integers 0–100. Operators: + - * = <> < <= > >= and or. isThere: 0 empty, 1 wall, 2 gold.",
+      "Values are variables, true/false, or integer literals 0–100. Computed integers may be negative or greater than 100. if/else/while bodies may be empty (D2). An empty while true reaches the 1000-line limit. Operators: + - * = <> < <= > >= and or. isThere: 0 empty, 1 wall, 2 gold.",
     examples: {
       "collect-gold.mine": "Collect gold",
       "first-steps.mine": "First steps",

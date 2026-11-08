@@ -1,6 +1,8 @@
 // A térképfájlok nyelvi támogatása a CodeMirrorhoz: jelenkénti színezés és élő hibajelzés.
 // Az érvényességet ugyanaz a térképolvasó (parseMap) dönti el, amelyik a szimulátor importját is ellenőrzi.
 
+import type { Locale } from "@/i18n/locale";
+import { localizedMapError } from "@/i18n/map-errors";
 import { HighlightStyle, StreamLanguage, syntaxHighlighting } from "@codemirror/language";
 import { linter, type Diagnostic } from "@codemirror/lint";
 import type { EditorView } from "@codemirror/view";
@@ -28,15 +30,25 @@ const highlight = HighlightStyle.define([
   { tag: tags.invalid, color: "var(--brick-text)" },
 ]);
 
-function lintMap(view: EditorView): Diagnostic[] {
+function lintMap(view: EditorView, locale: Locale): Diagnostic[] {
   const doc = view.state.doc;
   const result = parseMap(doc.toString());
   if (result.ok) return [];
   const line = doc.line(Math.min(Math.max(1, result.line ?? 1), doc.lines));
   const from = Math.min(line.to, line.from + (result.column ?? 1) - 1);
   return [
-    { from, to: result.column ? Math.min(line.to, from + 1) : line.to, severity: "error", message: result.error },
+    {
+      from,
+      to: result.column ? Math.min(line.to, from + 1) : line.to,
+      severity: "error",
+      message: localizedMapError(result.error, locale),
+    },
   ];
 }
 
-export const mapSupport = [language, syntaxHighlighting(highlight), linter(lintMap, { delay: 200 })];
+export const createMapSupport = (locale: Locale) => [
+  language,
+  syntaxHighlighting(highlight),
+  linter((view) => lintMap(view, locale), { delay: 200 }),
+];
+export const mapSupport = createMapSupport("en");

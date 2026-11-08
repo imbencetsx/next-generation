@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import CodeEditor, { type EditorHandle } from "@/components/code-editor";
-import { Alert, Book, Check, Code } from "@/components/icons";
+import { Alert, Check } from "@/components/icons";
 import Logo from "@/components/logo";
 import TopBar, { AccountActions } from "@/components/top-bar";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -22,21 +22,22 @@ import MapControls from "./map-controls";
 import MapGrid from "./map-grid";
 import PublishMap from "./publish-map";
 import { useMapDocument, type FileError } from "./use-map-document";
+import { localizedMapError } from "@/i18n/map-errors";
+import type { Locale } from "@/i18n/locale";
 import type { Messages } from "@/i18n/messages";
 
 /** Az import hibája a felület nyelvén; érvénytelen térképnél a térképolvasó (angol, pontos) üzenete. */
-function fileErrorMessage(error: FileError, labels: Messages["mapEditor"]): string {
-  if (error.kind === "invalid") return error.message;
+function fileErrorMessage(error: FileError, labels: Messages["mapEditor"], locale: Locale): string {
+  if (error.kind === "invalid") return localizedMapError(error.message, locale);
   return error.kind === "read" ? labels.fileRead : labels.fileLarge;
 }
 
 export default function MapEditor() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const params = useSearchParams();
-  const file = useMapDocument(params.get("map"), params.get("mapName"));
+  const file = useMapDocument(params.get("map"), params.get("mapName"), params.get("draft") ?? "");
   const { preview, validation, source } = file.document;
   const editor = useRef<EditorHandle | null>(null);
-  const [wrap, setWrap] = useState(false);
   const [cursor, setCursor] = useState({ line: 1, column: 1 });
   const [tool, setTool] = useState<MapTool>("wall");
   const [notice, setNotice] = useState(false);
@@ -62,26 +63,9 @@ export default function MapEditor() {
           </Link>
         }
       >
-        <Link
-          href={{ pathname: ROUTES.workbench, query: returnQuery }}
-          data-slot="button"
-          data-variant="ghost"
-          className={buttonVariants({ variant: "ghost" })}
-        >
-          <Code />
-          <span className="max-sm:sr-only">{t.mapEditor.workbench}</span>
-        </Link>
-        <Link
-          href={ROUTES.docs}
-          data-slot="button"
-          data-variant="ghost"
-          className={buttonVariants({ variant: "ghost" })}
-        >
-          <Book />
-          <span className="max-sm:sr-only">{t.editor.docs}</span>
-        </Link>
         <AccountActions />
       </TopBar>
+      {file.confirmation}
       <main className="grid min-h-0 flex-1 gap-3 overflow-y-auto p-3 lg:grid-cols-2">
         <section className="flex min-w-0 flex-col gap-3 lg:min-h-0">
           <Card className="min-h-[360px] min-w-0 flex-1 gap-0 py-0" role="region" aria-labelledby="map-source-title">
@@ -89,15 +73,15 @@ export default function MapEditor() {
             <h1 id="map-source-title" className="sr-only">
               {t.mapEditor.title}
             </h1>
-            <FileToolbar file={file} wrap={wrap} onWrap={() => setWrap((value) => !value)} />
+            <FileToolbar file={file} />
             <div className="min-h-0 flex-1">
               <CodeEditor
+                wrap={false}
                 mode="map"
                 value={source}
                 onChange={file.changeSource}
                 onCursor={(line, column) => setCursor({ line, column })}
                 editorRef={editor}
-                wrap={wrap}
                 label={t.mapEditor.source}
               />
             </div>
@@ -124,12 +108,12 @@ export default function MapEditor() {
                 >
                   {t.mapEditor.errorLocation(validation.line ?? 1, validation.column ?? 1)}
                 </Button>
-                <p>{validation.error}</p>
+                <p>{localizedMapError(validation.error, locale)}</p>
               </div>
             )}
             {file.fileError && (
               <p role="alert" className="font-read text-sm text-brick-text">
-                {fileErrorMessage(file.fileError, t.mapEditor)}
+                {fileErrorMessage(file.fileError, t.mapEditor, locale)}
               </p>
             )}
             {validation.ok && !file.fileError && (

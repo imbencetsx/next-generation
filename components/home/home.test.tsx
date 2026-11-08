@@ -80,7 +80,9 @@ describe("home page", () => {
       expect(program.pathname).toBe("/workbench");
       expect(program.searchParams.get("code")).toBe("");
       expect(program.searchParams.get("filename")).toBe("untitled");
-      expect(within(menu).getByRole("menuitem", { name: t.home.newMap }).getAttribute("href")).toBe("/map-editor");
+      expect(
+        new URL(within(menu).getByRole("menuitem", { name: t.home.newMap }).getAttribute("href")!, "http://x").pathname,
+      ).toBe("/map-editor");
       fireEvent.keyDown(menu, { key: "Escape" });
       await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
     });

@@ -5,7 +5,7 @@
 
 import { useRef } from "react";
 import FileNameField from "@/components/file-name-field";
-import { Download, NewFile, Upload, Wrap } from "@/components/icons";
+import { Download, NewFile, Upload } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { useI18n } from "@/i18n/i18n-provider";
@@ -17,25 +17,13 @@ type Props = {
   onRename: (name: string) => void;
   /** Futás közben a program nem cserélhető le. */
   locked: boolean;
-  wrap: boolean;
-  onToggleWrap: () => void;
   onNew: () => void;
   onImport: (file: File) => void;
   onExport: () => void;
   onLoadExample: (filename: string) => void;
 };
 
-export default function FileToolbar({
-  name,
-  onRename,
-  locked,
-  wrap,
-  onToggleWrap,
-  onNew,
-  onImport,
-  onExport,
-  onLoadExample,
-}: Props) {
+export default function FileToolbar({ name, onRename, locked, onNew, onImport, onExport, onLoadExample }: Props) {
   const { t } = useI18n();
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -79,9 +67,6 @@ export default function FileToolbar({
         />
         <Button variant="ghost" size="sm" onClick={onExport} title={t.editor.export}>
           <Download aria-hidden /> <span className="max-2xl:sr-only">{t.editor.export}</span>
-        </Button>
-        <Button variant="outline" size="sm" aria-pressed={wrap} onClick={onToggleWrap} title={t.editor.wrap}>
-          <Wrap aria-hidden /> <span className="max-2xl:sr-only">{t.editor.wrap}</span>
         </Button>
       </div>
 

@@ -7,14 +7,12 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import CodeEditor, { type ActiveLine, type EditorHandle } from "@/components/code-editor";
-import { Alert, Book, Check, Lock, Pencil } from "@/components/icons";
-import { formatMap } from "@/lib/map-editor";
+import { Alert, Check, Lock } from "@/components/icons";
 import Logo from "@/components/logo";
 import PlaybackBar from "@/components/playback-bar";
 import RunConsole from "@/components/run-console";
 import Simulator from "@/components/simulator";
 import TopBar, { AccountActions } from "@/components/top-bar";
-import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSimulation } from "@/components/use-simulation";
 import { useI18n } from "@/i18n/i18n-provider";
@@ -42,7 +40,11 @@ export default function Workbench() {
   const { t } = useI18n();
   // A dokumentáció „Megnyitás a szerkesztőben” linkje ezekben küldi a példát.
   const params = useSearchParams();
-  const file = useProgramFile(params.get("code"), params.get("filename"));
+  const file = useProgramFile(
+    params.get("code"),
+    params.get("filename"),
+    params.get("draft") ?? params.get("mapId") ?? params.get("map") ?? "",
+  );
   // Közzétett térképen (a kezdőlapról, ?mapId=) minden végigért futás eredménye rögzül.
   const recorder = useResultRecorder();
   const simulation = useSimulation(file.code, {
@@ -55,7 +57,6 @@ export default function Workbench() {
   });
   const { snapshot, locked } = simulation;
 
-  const [wrap, setWrap] = useState(false);
   const [cursor, setCursor] = useState({ line: 1, column: 1 });
   const editor = useRef<EditorHandle | null>(null);
   const issues = useMemo(() => validateMineScript(file.code), [file.code]);
@@ -68,9 +69,14 @@ export default function Workbench() {
     if (issues[0]) jumpTo(issues[0].line, issues[0].column);
   }
 
+  function changeCode(next: string) {
+    if (next === file.code) return;
+    file.setCode(next);
+    if (simulation.started && !simulation.locked) simulation.reset();
+  }
+
   function newFile() {
-    file.newFile();
-    simulation.reset();
+    file.newFile(simulation.reset);
   }
 
   return (
@@ -84,34 +90,10 @@ export default function Workbench() {
           </h1>
         }
       >
-        <Link
-          className={buttonVariants({ variant: "ghost" })}
-          data-slot="button"
-          data-variant="ghost"
-          href={{
-            pathname: ROUTES.mapEditor,
-            query: {
-              map: formatMap(simulation.map),
-              mapName: simulation.mapName,
-              code: file.code,
-              filename: file.filename,
-            },
-          }}
-        >
-          <Pencil aria-hidden />
-          <span className="max-sm:sr-only">{t.mapEditor.title}</span>
-        </Link>
-        <Link
-          className={buttonVariants({ variant: "ghost" })}
-          data-slot="button"
-          data-variant="ghost"
-          href={ROUTES.docs}
-        >
-          <Book aria-hidden /> <span className="max-sm:sr-only">{t.editor.docs}</span>
-        </Link>
         <AccountActions />
       </TopBar>
 
+      {file.confirmation}
       <main className="grid min-h-0 flex-1 gap-3 overflow-y-auto p-3 lg:grid-cols-2 lg:overflow-hidden">
         <div className="flex min-w-0 flex-col gap-3 lg:min-h-0">
           <Card role="region" aria-label={t.editor.region} className="min-h-[320px] min-w-0 flex-1 gap-0 py-0">
@@ -121,23 +103,21 @@ export default function Workbench() {
                 name={file.name}
                 onRename={file.rename}
                 locked={locked}
-                wrap={wrap}
-                onToggleWrap={() => setWrap((value) => !value)}
                 onNew={newFile}
-                onImport={file.importFile}
+                onImport={(nextFile) => file.importFile(nextFile, simulation.reset)}
                 onExport={file.exportFile}
-                onLoadExample={file.loadExample}
+                onLoadExample={(filename) => file.loadExample(filename, simulation.reset)}
               />
               <PlaybackBar simulation={simulation} showFirstIssue={showFirstIssue} />
             </div>
 
             <div className="min-h-0 flex-1">
               <CodeEditor
+                wrap={false}
                 value={file.code}
-                onChange={file.setCode}
+                onChange={changeCode}
                 onCursor={(line, column) => setCursor({ line, column })}
                 editorRef={editor}
-                wrap={wrap}
                 readOnly={locked}
                 activeLine={activeLineFor(snapshot)}
                 label={t.editor.sourceLabel}
@@ -148,7 +128,7 @@ export default function Workbench() {
           </Card>
 
           <div className="grid shrink-0 gap-3 md:h-56 md:grid-cols-2">
-            <ProblemsPanel issues={issues} onJump={jumpTo} />
+            <ProblemsPanel issues={issues} runtimeError={snapshot.error} onJump={jumpTo} />
             <RunConsole snapshot={snapshot} />
           </div>
         </div>
@@ -156,7 +136,6 @@ export default function Workbench() {
         <aside className="min-w-0 lg:min-h-0" aria-label={t.sim.region}>
           <Simulator
             simulation={simulation}
-            onJump={jumpTo}
             footer={
               simulation.publishedMapId && (
                 <PublishedMapResult mapId={simulation.publishedMapId} record={recorder.state} />

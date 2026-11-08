@@ -14,7 +14,7 @@ export const SPEEDS = [
   { id: "slow", delay: 600 },
   { id: "normal", delay: 250 },
   { id: "fast", delay: 80 },
-  { id: "turbo", delay: 10 },
+  { id: "turbo", delay: 1 },
 ] as const;
 export type SpeedId = (typeof SPEEDS)[number]["id"];
 
@@ -45,9 +45,23 @@ function reportIfEnded(
 function initialMap({ mapText = null, mapName = null, mapId = null }: SimulationOptions) {
   if (mapText !== null) {
     const result = parseMap(mapText);
-    if (result.ok) return { map: result.map, name: mapName?.trim() || SHARED_MAP_NAME, publishedId: mapId };
+    if (result.ok) {
+      return {
+        map: result.map,
+        name: mapName?.trim() || SHARED_MAP_NAME,
+        publishedId: mapId,
+        presetName: null,
+        defaultMapName: !mapName?.trim(),
+      };
+    }
   }
-  return { map: presetMap(0), name: MAP_PRESETS[0].name, publishedId: null };
+  return {
+    map: presetMap(0),
+    name: MAP_PRESETS[0].name,
+    publishedId: null,
+    presetName: MAP_PRESETS[0].name,
+    defaultMapName: false,
+  };
 }
 
 /** @param code A szerkesztőben lévő program; minden új futás ebből indul. */
@@ -60,6 +74,8 @@ export function useSimulation(code: string, options: SimulationOptions = {}) {
   const [initial] = useState(() => initialMap(options));
   const [map, setMap] = useState(initial.map);
   const [mapName, setMapName] = useState(initial.name);
+  const [defaultMapName, setDefaultMapName] = useState(initial.defaultMapName);
+  const [presetName, setPresetName] = useState<string | null>(initial.presetName);
   /** A közzétett térkép azonosítója, amíg az van betöltve; más térkép választásakor null. */
   const [publishedMapId, setPublishedMapId] = useState(initial.publishedId);
   const [mapError, setMapError] = useState<string | null>(null);
@@ -146,6 +162,8 @@ export function useSimulation(code: string, options: SimulationOptions = {}) {
     reset();
     setMap(presetMap(index));
     setMapName(name);
+    setPresetName(name);
+    setDefaultMapName(false);
     setPublishedMapId(null);
     setMapError(null);
   }
@@ -156,13 +174,15 @@ export function useSimulation(code: string, options: SimulationOptions = {}) {
     // Hibás import esetén a jelenlegi térkép és futás maradjon meg.
     const result = parseMap(await file.text());
     if (!result.ok) {
-      setMapError(`${file.name}: ${result.error}`);
+      setMapError(result.error);
       return;
     }
 
     reset();
     setMap(result.map);
     setMapName(file.name);
+    setPresetName(null);
+    setDefaultMapName(false);
     setPublishedMapId(null);
     setMapError(null);
   }
@@ -170,6 +190,8 @@ export function useSimulation(code: string, options: SimulationOptions = {}) {
   return {
     map,
     mapName,
+    presetName,
+    defaultMapName,
     publishedMapId,
     mapError,
     blockedBy,

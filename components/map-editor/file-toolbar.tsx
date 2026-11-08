@@ -5,7 +5,7 @@
 
 import { useRef } from "react";
 import FileNameField from "@/components/file-name-field";
-import { Download, NewFile, Upload, Wrap } from "@/components/icons";
+import { Download, NewFile, Upload } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { useI18n } from "@/i18n/i18n-provider";
@@ -13,9 +13,9 @@ import { MAP_EXTENSION } from "@/lib/map-editor";
 import { MAP_PRESETS } from "@/lib/robot-map";
 import type { useMapDocument } from "./use-map-document";
 
-type Props = { file: ReturnType<typeof useMapDocument>; wrap: boolean; onWrap: () => void };
+type Props = { file: ReturnType<typeof useMapDocument> };
 
-export default function FileToolbar({ file, wrap, onWrap }: Props) {
+export default function FileToolbar({ file }: Props) {
   const { t } = useI18n();
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -60,9 +60,6 @@ export default function FileToolbar({ file, wrap, onWrap }: Props) {
           aria-describedby="map-export-hint"
         >
           <Download aria-hidden /> <span className="max-2xl:sr-only">{t.editor.export}</span>
-        </Button>
-        <Button variant="outline" size="sm" aria-pressed={wrap} onClick={onWrap} title={t.editor.wrap}>
-          <Wrap aria-hidden /> <span className="max-2xl:sr-only">{t.editor.wrap}</span>
         </Button>
       </div>
 

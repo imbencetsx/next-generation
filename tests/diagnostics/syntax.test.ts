@@ -248,3 +248,14 @@ describe("diagnostics syntax / easy, boundary and interacting cases", () => {
     test(`valid ${JSON.stringify(source)}`, () => check(source, []));
   }
 });
+
+// Elírt kulcsszót cserélünk, a hiányzó kulcsszó után álló értéket viszont megőrizzük.
+test("motion keyword suggestions preserve exactly one argument", () => {
+  for (const [source, hint] of [
+    ["step forwrd 1", "Write: step forward 1"],
+    ["turn buy count", "Write: turn by count"],
+    ["step count", "Write: step forward count"],
+  ]) {
+    expect(validateMineScript(source)[0].hint).toBe(hint);
+  }
+});
