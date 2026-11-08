@@ -9,6 +9,7 @@ import { parseMap } from "../lib/robot-map";
 import type { Doc } from "./_generated/dataModel";
 import { mutation, query, type QueryCtx } from "./_generated/server";
 import { mapError, publishedMapName } from "./mapRules";
+import { deleteLikes, hasLiked } from "./likes";
 import { currentUserId } from "./users";
 
 /** Egy térkép a listában: a tárolt adatok, a szerző neve, és hogy a hívóé-e. */
@@ -22,13 +23,24 @@ const publishedMap = v.object({
   goldCount: v.number(),
   authorName: v.string(),
   isMine: v.boolean(),
+  likeCount: v.number(),
+  likedByMe: v.boolean(),
 });
 
-/** A listaelem: a térkép, a szerző neve, és hogy a hívóé-e. A ranglistát külön lekérdezés adja (results.ts). */
+/**
+ * A listaelem: a térkép, a szerző neve, hogy a hívóé-e, és a kedvelések (hányan, és a hívó is kedveli-e).
+ * A ranglistát külön lekérdezés adja (results.ts), a kedvelők névsorát a likes.ts.
+ */
 async function forViewer(ctx: QueryCtx, map: Doc<"maps">, viewerId: Doc<"users">["_id"]) {
   const author = await ctx.db.get(map.ownerId);
-  const { ownerId, ...fields } = map;
-  return { ...fields, authorName: author?.name ?? "player", isMine: ownerId === viewerId };
+  const { ownerId, likeCount, ...fields } = map;
+  return {
+    ...fields,
+    authorName: author?.name ?? "player",
+    isMine: ownerId === viewerId,
+    likeCount: likeCount ?? 0,
+    likedByMe: await hasLiked(ctx, map._id, viewerId),
+  };
 }
 
 export const publish = mutation({
@@ -87,7 +99,7 @@ export const get = query({
   },
 });
 
-/** Saját térkép törlése a hozzá tartozó eredményekkel együtt; más térképét nem lehet. */
+/** Saját térkép törlése a hozzá tartozó eredményekkel és kedvelésekkel együtt; más térképét nem lehet. */
 export const remove = mutation({
   args: { mapId: v.id("maps") },
   returns: v.null(),
@@ -103,6 +115,7 @@ export const remove = mutation({
       .withIndex("by_mapId_and_rank", (q) => q.eq("mapId", args.mapId))) {
       await ctx.db.delete(result._id);
     }
+    await deleteLikes(ctx, args.mapId);
     await ctx.db.delete(args.mapId);
     return null;
   },

@@ -11,6 +11,7 @@ vi.mock("@/components/auth/user-menu", () => ({ default: () => null }));
 const convex = vi.hoisted(() => ({ answers: {} as Record<string, unknown> }));
 vi.mock("convex/react", () => ({
   useQuery: (query: FunctionReference<"query">) => convex.answers[getFunctionName(query)],
+  useMutation: () => vi.fn(),
 }));
 
 const CORRIDOR = "3 10\n##########\n>.@..@.@.#\n##########";
@@ -24,6 +25,8 @@ const MAP = {
   goldCount: 3,
   authorName: "other",
   isMine: false,
+  likeCount: 0,
+  likedByMe: false,
 };
 
 beforeEach(() => {
@@ -87,6 +90,19 @@ describe("map page", () => {
     // Csak a saját sor kiemelt.
     expect(rows.map((row) => row.className.includes("bg-accent"))).toEqual([false, true, false, false]);
     expect(screen.getByText(/Azonos aranynál a kevesebb lépés nyer/)).toBeTruthy();
+  });
+
+  test("the heart is on every map page, but only the author sees who liked the map", () => {
+    open();
+    expect(screen.getByRole("button", { name: "Like “Corridor run”, 0 likes" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Liked by" })).toBeNull();
+    cleanup();
+
+    convex.answers["maps:get"] = { ...MAP, isMine: true, likeCount: 1 };
+    convex.answers["likes:likers"] = [{ name: "digger", likedAt: Date.UTC(2026, 10, 8), isMe: false }];
+    open();
+    expect(screen.getByRole("heading", { level: 2, name: "Liked by" })).toBeTruthy();
+    expect(screen.getByRole("list", { name: "Liked by" }).textContent).toContain("digger");
   });
 
   test("an empty leaderboard invites the player instead of showing an empty table", () => {

@@ -12,6 +12,7 @@ import type * as auth from "../auth.js";
 import type * as credentials from "../credentials.js";
 import type * as errors from "../errors.js";
 import type * as http from "../http.js";
+import type * as likes from "../likes.js";
 import type * as mapRules from "../mapRules.js";
 import type * as maps from "../maps.js";
 import type * as png from "../png.js";
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   credentials: typeof credentials;
   errors: typeof errors;
   http: typeof http;
+  likes: typeof likes;
   mapRules: typeof mapRules;
   maps: typeof maps;
   png: typeof png;

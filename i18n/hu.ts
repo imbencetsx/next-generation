@@ -348,6 +348,14 @@ export const hu: Messages = {
     deleteText: "A térkép minden játékosnál eltűnik, a ranglistájával együtt. Ez nem vonható vissza.",
     confirm: "Törlés",
     cancel: "Mégse",
+    like: (name: string) => `„${name}” kedvelése`,
+    likeCount: (count: number) => `${count} kedvelés`,
+    likeFailed: "Nem sikerült menteni a kedvelést. Próbáld újra.",
+    likers: "Kedvelők",
+    likersOf: (name: string) => `Kik kedvelték: „${name}”`,
+    likersEmpty: "Ezt a térképet még senki nem kedvelte.",
+    likersMore: (count: number) => `…és még ${count} játékos`,
+    close: "Bezárás",
   },
 
   mapPage: {
