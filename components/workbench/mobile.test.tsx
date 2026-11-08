@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 // Kis képernyőn a munkafelület fülekre bomlik; a matchMedia-t telefonméretre állítjuk.
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { I18nProvider } from "@/i18n/i18n-provider";
 import Workbench from "./index";
@@ -62,11 +62,16 @@ describe("workbench on a small screen", () => {
     expect(code.getAttribute("aria-selected")).toBe("true");
   });
 
-  test("the run controls stay above the tabs, and running a valid program switches to the map", () => {
+  test("the run controls stay above the tabs, and importing a map enables running and switches to the map", async () => {
     open();
     // Egyetlen vezérlősor van, a dokkban: a lépés és a visszaállítás ikongomb.
     expect(screen.getAllByRole("group", { name: "Playback" })).toHaveLength(1);
     expect(screen.getByRole("button", { name: "Step" }).textContent).toBe("");
+    expect(screen.getByRole("button", { name: "Run" }).hasAttribute("disabled")).toBe(true);
+    fireEvent.change(document.querySelector<HTMLInputElement>('input[type="file"][accept^=".txt"]')!, {
+      target: { files: [new File(["1 1\n>"], "tiny.map")] },
+    });
+    await waitFor(() => expect(screen.getByRole("button", { name: "Run" }).hasAttribute("disabled")).toBe(false));
     fireEvent.click(screen.getByRole("button", { name: "Run" }));
     expect(screen.getByRole("tab", { name: "Map" }).getAttribute("aria-selected")).toBe("true");
   });

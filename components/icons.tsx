@@ -4,6 +4,7 @@
 
 import type { SVGProps } from "react";
 import { ArrowBarRight } from "pixelarticons/react/ArrowBarRight.js";
+import { ArrowBarLeft } from "pixelarticons/react/ArrowBarLeft.js";
 import { AudioWaveform } from "pixelarticons/react/AudioWaveform.js";
 import { BookOpen } from "pixelarticons/react/BookOpen.js";
 import { Check as CheckGlyph } from "pixelarticons/react/Check.js";
@@ -114,6 +115,7 @@ export const Scale = pixelIcon(ScaleGlyph, "Scale");
 export const Search = pixelIcon(SearchGlyph, "Search");
 export const Share = pixelIcon(ShareGlyph, "Share");
 export const StepForward = pixelIcon(ArrowBarRight, "StepForward");
+export const StepBack = pixelIcon(ArrowBarLeft, "StepBack");
 export const TestTube = pixelIcon(TestTubeGlyph, "TestTube");
 export const Terminal = pixelIcon(TerminalGlyph, "Terminal");
 export const Trash = pixelIcon(TrashGlyph, "Trash");

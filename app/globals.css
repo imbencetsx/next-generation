@@ -699,6 +699,67 @@
   animation-timing-function: step-end;
   transform: translateY(var(--robot-foot-idle));
 }
+
+/* A robotok ugyanazt a pontos pixelrácsot és járást használják, eltérő páncélszínekkel.
+   Az eredeti sprite B4LÁZ5 esetén változatlan; a szűrő csak a robotra kerül, a fényekre nem. */
+.pixel-robot-sprite[data-robot="levi"] {
+  filter: sepia(0.85) saturate(1.5) hue-rotate(65deg);
+}
+.pixel-robot-sprite[data-robot="bence"] {
+  filter: sepia(1) saturate(2.4) hue-rotate(180deg);
+}
+
+@layer components {
+  .robot-choice {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    cursor: pointer;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem 0.25rem;
+    background: var(--background);
+  }
+  .robot-choice[data-tone="light"] {
+    background: color-mix(in srgb, var(--foreground) 6%, var(--background));
+  }
+  .app-ui .robot-choice:focus-within {
+    --pixel-frame: var(--pixel-frame-focus);
+    box-shadow: inset 0 0 0 2px var(--ring);
+  }
+  fieldset:disabled .robot-choice {
+    cursor: wait;
+    opacity: 0.65;
+  }
+  .robot-choice-stage {
+    display: grid;
+    height: 5rem;
+    place-items: center;
+    background-image: url(/sprites/empty-dirt.png);
+    background-size: 64px 64px;
+    image-rendering: pixelated;
+  }
+  .robot-onboarding {
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+    animation: robot-welcome 160ms ease-out;
+  }
+  @keyframes robot-welcome {
+    from {
+      opacity: 0;
+      scale: 0.96;
+    }
+    to {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .robot-onboarding {
+      animation: none;
+    }
+  }
+}
 /* Járás: a lépés 1–3 képkockák körbe, minden ugrással egy kockát lépve. */
 @keyframes robot-walk {
   0% {
@@ -1126,7 +1187,7 @@
     );
   }
 }
-/* Bányászás: a mező felvillan, és „+1” száll fel belőle. */
+/* Bányászás: a mező felvillan, aranyszilánkok repülnek. */
 .fx-flash {
   background: radial-gradient(
     circle at 50% 50%,
@@ -1144,33 +1205,6 @@
   100% {
     opacity: 0;
     scale: 1.6;
-  }
-}
-.fx-float {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  color: var(--primary);
-  font-family: var(--font-tiny), monospace;
-  font-size: calc(var(--cell) * 0.42);
-  font-weight: normal;
-  line-height: 1;
-  text-shadow:
-    var(--art) var(--art) 0 #170c07,
-    0 0 calc(var(--art) * 4) rgb(240 167 0 / 0.8);
-  animation: fx-float 900ms steps(9, end) both;
-}
-@keyframes fx-float {
-  0% {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-  70% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, calc(var(--cell) * -0.9));
   }
 }
 /* print: szövegbuborék a robot fölött (a legfelső sorban alatta), lépcsős pixelfarokkal. */
@@ -1466,40 +1500,6 @@
   width: var(--tile);
   height: var(--tile);
 }
-/* Arany felszedése: „+1” száll fel a robotból, épp amikor egy rög a robothoz ér. */
-.mine-pickup {
-  position: absolute;
-  top: -12%;
-  left: 50%;
-  color: var(--primary);
-  font-family: var(--font-tiny), monospace;
-  font-size: calc(var(--tile) * 0.42);
-  font-weight: normal;
-  line-height: 1;
-  text-shadow:
-    2px 2px 0 #170c07,
-    0 0 8px rgb(240 167 0 / 0.9);
-  opacity: 0;
-  animation: mine-pickup var(--period) steps(120, end) infinite;
-}
-@keyframes mine-pickup {
-  0% {
-    opacity: 1;
-    transform: translate(-50%, 0) scale(1.3);
-  }
-  2% {
-    transform: translate(-50%, 0) scale(1);
-  }
-  9% {
-    opacity: 1;
-    transform: translate(-50%, calc(var(--tile) * -0.8));
-  }
-  12%,
-  100% {
-    opacity: 0;
-    transform: translate(-50%, calc(var(--tile) * -0.8));
-  }
-}
 
 /* A kezdőlap fejléce: a bejelentkezés bányaege, csillagokkal és parázzsal. */
 .home-hero {
@@ -1570,8 +1570,7 @@
   }
   .shooting-star,
   .embers,
-  .drill-sparks,
-  .mine-pickup {
+  .drill-sparks {
     display: none;
   }
 }
@@ -1680,5 +1679,115 @@
   .app-ui :is(input, select, textarea),
   .app-ui .cm-editor .cm-content {
     font-size: 16px;
+  }
+}
+
+/* ------------------------------------------------------------------ idővonal (components/timeline.tsx) */
+/* Pixeles csúszka: lépcsős sáv, az eltelt rész arany, a fogantyú egy világos pixeltégla peremmel. A jelölések a sáv
+   fölött állnak; a helyük a fogantyú útjához igazodik (a fogantyú fél szélességével beljebb kezdődik és végződik). */
+.timeline {
+  --thumb-width: 14px;
+}
+/* Magas, láthatatlan érintési sáv: a csúszka bárhol megfogható, nem csak a vékony vonalon. */
+.timeline-range {
+  display: block;
+  width: 100%;
+  height: 36px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+  /* Vízszintes húzás a csúszkáé, függőleges görgetés az oldalé. */
+  touch-action: pan-y;
+}
+.timeline-range::-webkit-slider-runnable-track {
+  height: 6px;
+  background: linear-gradient(to right, var(--primary) var(--progress), var(--border) var(--progress));
+  box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.35);
+}
+.timeline-range::-moz-range-track {
+  height: 6px;
+  background: linear-gradient(to right, var(--primary) var(--progress), var(--border) var(--progress));
+  box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.35);
+}
+.timeline-range::-webkit-slider-thumb {
+  width: var(--thumb-width);
+  height: 22px;
+  margin-top: -8px;
+  border: 0;
+  border-radius: 0;
+  background: var(--foreground);
+  box-shadow:
+    inset 0 -3px 0 #9d988a,
+    0 0 0 2px var(--background);
+  appearance: none;
+}
+.timeline-range::-moz-range-thumb {
+  width: var(--thumb-width);
+  height: 22px;
+  border: 0;
+  border-radius: 0;
+  background: var(--foreground);
+  box-shadow:
+    inset 0 -3px 0 #9d988a,
+    0 0 0 2px var(--background);
+}
+.timeline-range:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.timeline-marks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.timeline-marks i {
+  position: absolute;
+  top: 7px;
+  left: calc(var(--thumb-width) / 2 + (100% - var(--thumb-width)) * var(--at));
+  width: 2px;
+  height: 5px;
+  translate: -1px 0;
+}
+.timeline-marks i[data-kind="gold"] {
+  background: var(--primary);
+}
+.timeline-marks i[data-kind="print"] {
+  background: var(--foreground);
+}
+.timeline-marks i[data-kind="error"] {
+  top: 5px;
+  height: 7px;
+  width: 4px;
+  translate: -2px 0;
+  background: var(--brick-text);
+}
+
+/* A szellem (components/pixel-map/robot.tsx): az 1. helyezett robotja áttetszőn, a játékos robotja alatt. */
+.pixel-ghost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  opacity: 0.5;
+  filter: grayscale(1) brightness(1.5) drop-shadow(0 0 calc(var(--art) * 3) rgb(234 231 221 / 0.6));
+  pointer-events: none;
+  transition: transform 180ms steps(4, end);
+}
+.pixel-ghost-label {
+  position: absolute;
+  top: calc(var(--art) * -3);
+  left: 50%;
+  translate: -50% 0;
+  padding: 0 calc(var(--art) * 2);
+  background: var(--foreground);
+  color: var(--background);
+  font-family: var(--font-tiny), monospace;
+  font-size: max(calc(var(--cell) * 0.22), 9px);
+  line-height: 1.2;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pixel-ghost {
+    transition: none;
   }
 }

@@ -4,7 +4,7 @@
 
 import { Machine, parseProgram, type ErrorCode, type SyntaxIssue } from "./interpreter";
 import { MAX_LINES } from "./limits";
-import type { GameMap } from "./robot-map";
+import type { Direction, GameMap } from "./robot-map";
 
 /** Egy futás pontszáma. */
 export type Score = { gold: number; steps: number };
@@ -41,4 +41,34 @@ export function scoreProgram(
   for (let calls = 0; machine.status === "running" && calls <= MAX_LINES + 1; calls++) machine.step();
   const { mined, steps, error } = machine.snapshot();
   return { ok: true, run: { gold: mined, steps, errorCode: error?.code ?? null } };
+}
+
+/**
+ * A robot útja soronként („szellem”): a `trace[n]` a robot helye és iránya `n` feldolgozott sor után, tömörítve
+ * (encodeRobot). A ranglista első helyezettjének futását így lehet visszajátszani a program kiadása nélkül.
+ * Szintaktikailag hibás programnál null.
+ */
+export type RobotTrace = number[];
+
+/** Egy robotállapot egyetlen számban: (sor × oszlopszám + oszlop) × 4 + irány. */
+export const encodeRobot = (robot: GameMap["robot"], cols: number) => (robot.y * cols + robot.x) * 4 + robot.dir;
+
+export function decodeRobot(code: number, cols: number): GameMap["robot"] {
+  const cell = Math.floor(code / 4);
+  return { x: cell % cols, y: Math.floor(cell / cols), dir: (code % 4) as Direction };
+}
+
+export function traceProgram(source: string, map: GameMap): RobotTrace | null {
+  const parsed = parseProgram(source);
+  if (!parsed.ok) return null;
+
+  const machine = new Machine(parsed.program, map);
+  const trace: RobotTrace = [encodeRobot(map.robot, map.cols)];
+  for (let calls = 0; machine.status === "running" && calls <= MAX_LINES + 1; calls++) {
+    machine.step();
+    const { robot, steps } = machine.snapshot();
+    // A sorkorlát-hiba nem dolgoz fel új sort: ilyenkor az utolsó hely marad.
+    trace[steps] = encodeRobot(robot, map.cols);
+  }
+  return trace;
 }

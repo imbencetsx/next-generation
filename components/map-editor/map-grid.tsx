@@ -4,6 +4,7 @@
 // kiválasztott ecsettel fest. Billentyűzettel a nyilakkal, Home/End-del (Ctrl-lal a sarkokba) lehet mozogni,
 // és mindig csak egy mező van a Tab-sorrendben (roving tabindex).
 
+import RobotSprite from "@/components/robot-sprite";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { robotSpriteStyle, tileBackground, TILES } from "@/components/sprites";
 import { useI18n } from "@/i18n/i18n-provider";
@@ -24,7 +25,7 @@ export function CellArtwork({ kind, direction = 3 }: { kind: MapTool; direction?
       style={tileBackground(kind === "wall" ? TILES.wall : TILES.dug)}
     >
       {kind === "gold" && <span className="gold-sprite gold-sparkle absolute inset-0" />}
-      {kind === "robot" && <span className="pixel-robot-sprite absolute inset-0" style={robotSpriteStyle(direction)} />}
+      {kind === "robot" && <RobotSprite className="absolute inset-0" style={robotSpriteStyle(direction)} />}
     </span>
   );
 }

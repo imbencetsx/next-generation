@@ -20,6 +20,7 @@ import type * as png from "../png.js";
 import type * as profileRules from "../profileRules.js";
 import type * as resultRules from "../resultRules.js";
 import type * as results from "../results.js";
+import type * as robotRules from "../robotRules.js";
 import type * as users from "../users.js";
 
 import type {
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   profileRules: typeof profileRules;
   resultRules: typeof resultRules;
   results: typeof results;
+  robotRules: typeof robotRules;
   users: typeof users;
 }>;
 

@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { getFunctionName, type FunctionReference } from "convex/server";
 import { I18nProvider } from "@/i18n/i18n-provider";
 import Workbench from "./index";
 
@@ -8,8 +9,19 @@ const navigation = vi.hoisted(() => ({ query: "" }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(navigation.query) }));
 vi.mock("@/components/auth/user-menu", () => ({ default: () => null }));
 // Közzétett térképen a futás végén a rögzítő mutáció hívódik; a legjobb eredményt a lekérdezés adja.
-const convex = vi.hoisted(() => ({ record: vi.fn(), best: null as { gold: number; steps: number } | null }));
-vi.mock("convex/react", () => ({ useMutation: () => convex.record, useQuery: () => convex.best }));
+// A szellem (az 1. helyezett útja) külön lekérdezés; alapból nincs.
+const convex = vi.hoisted(() => ({
+  record: vi.fn(),
+  best: null as { gold: number; steps: number } | null,
+  ghost: null as { name: string; isMe: boolean; gold: number; steps: number; trace: number[] } | null,
+}));
+vi.mock("convex/react", () => ({
+  useMutation: () => convex.record,
+  useQuery: (query: FunctionReference<"query">, args: unknown) => {
+    if (args === "skip") return undefined;
+    return getFunctionName(query) === "results:ghost" ? convex.ghost : convex.best;
+  },
+}));
 
 // A letöltött fájl neve és tartalma (a downloadText egy <a download> kattintással ment).
 let downloads: { filename: string; blob: Blob }[] = [];
@@ -19,6 +31,7 @@ beforeEach(() => {
   navigation.query = "";
   convex.record.mockReset();
   convex.best = null;
+  convex.ghost = null;
   downloads = [];
   const blobs = new Map<string, Blob>();
   vi.stubGlobal(
@@ -52,9 +65,12 @@ function open(locale: "en" | "hu" = "en") {
 const nameInput = () => screen.getByLabelText("Program name") as HTMLInputElement;
 
 describe("workbench / program name", () => {
-  test("shows the example's name without the fixed .mine extension", () => {
+  test("starts with an untitled empty program without example or map selectors", () => {
     open();
-    expect(nameInput().value).toBe("collect-gold");
+    expect(nameInput().value).toBe("untitled");
+    expect(screen.queryByRole("combobox", { name: "Load example…" })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Map" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Run" }).hasAttribute("disabled")).toBe(true);
     expect(screen.getByText(".mine")).toBeTruthy();
   });
 
@@ -64,7 +80,7 @@ describe("workbench / program name", () => {
     fireEvent.click(screen.getByRole("button", { name: "Export" }));
     expect(downloads).toHaveLength(1);
     expect(downloads[0].filename).toBe("my-robot.mine");
-    expect(await downloads[0].blob.text()).toContain("set count to 0");
+    expect(await downloads[0].blob.text()).toBe("");
   });
 
   test("typing an extension or forbidden characters still yields a clean .mine file name", () => {
@@ -76,12 +92,10 @@ describe("workbench / program name", () => {
     expect(downloads[0].filename).toBe("untitled.mine");
   });
 
-  test("New, examples and imports set the name; a .txt import is saved as .mine", async () => {
+  test("New and imports set the name; a .txt import is saved as .mine", async () => {
     open();
     fireEvent.click(screen.getByRole("button", { name: "New" }));
     expect(nameInput().value).toBe("untitled");
-    fireEvent.change(screen.getByLabelText("Load example…"), { target: { value: "first-steps.mine" } });
-    expect(nameInput().value).toBe("first-steps");
     const fileInput = document.querySelector<HTMLInputElement>('input[type="file"][accept^=".mine"]')!;
     fireEvent.change(fileInput, { target: { files: [new File(["print 1"], "notes.txt", { type: "text/plain" })] } });
     await waitFor(() => expect(nameInput().value).toBe("notes"));
@@ -104,7 +118,26 @@ describe("workbench / program name", () => {
 
   test("the field has a Hungarian label", () => {
     open("hu");
-    expect((screen.getByLabelText("Program neve") as HTMLInputElement).value).toBe("collect-gold");
+    expect((screen.getByLabelText("Program neve") as HTMLInputElement).value).toBe("untitled");
+  });
+
+  test("map imports enable playback and invalid imports preserve the loaded map", async () => {
+    navigation.query = new URLSearchParams({ code: "print 1" }).toString();
+    open();
+    expect(screen.getByRole("button", { name: "Run" }).hasAttribute("disabled")).toBe(true);
+    expect(screen.getByRole("link", { name: "All built-in maps" }).getAttribute("href")).toBe("/maps/built-in");
+    expect(screen.getByRole("link", { name: "All published maps" }).getAttribute("href")).toBe("/maps");
+    const input = document.querySelector<HTMLInputElement>('input[type="file"][accept^=".txt"]')!;
+    fireEvent.change(input, { target: { files: [new File(["1 2\n>."], "tiny.map")] } });
+    await waitFor(() => expect(screen.getByText("tiny.map")).toBeTruthy());
+    expect(screen.queryByText("Load a map to begin")).toBeNull();
+    expect(screen.getByRole("button", { name: "Run" }).hasAttribute("disabled")).toBe(false);
+    fireEvent.change(input, { target: { files: [new File(["invalid"], "broken.map")] } });
+    await screen.findByRole("alert");
+    expect(screen.getByText("tiny.map")).toBeTruthy();
+    expect(screen.queryByText("broken.map")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Step" }));
+    expect(screen.getByRole("log").textContent).toContain("1");
   });
 });
 
@@ -163,14 +196,18 @@ describe("workbench / results on published maps", () => {
     expect(convex.record).not.toHaveBeenCalled();
   });
 
-  test("nothing is recorded on built-in maps, or after switching away from the published map", () => {
+  test("nothing is recorded on built-in maps, or after importing over the published map", async () => {
+    navigation.query = new URLSearchParams({ map: CORRIDOR, code: PROGRAM }).toString();
     open();
     step();
     step();
     expect(convex.record).not.toHaveBeenCalled();
     cleanup();
     openPublished();
-    fireEvent.change(screen.getByRole("combobox", { name: "Map" }), { target: { value: "Corridor" } });
+    fireEvent.change(document.querySelector<HTMLInputElement>('input[type="file"][accept^=".txt"]')!, {
+      target: { files: [new File([CORRIDOR], "corridor.map")] },
+    });
+    await waitFor(() => expect(screen.getByText("corridor.map")).toBeTruthy());
     step();
     step();
     expect(convex.record).not.toHaveBeenCalled();
@@ -225,8 +262,7 @@ describe("workbench / protecting drafts and reporting errors", () => {
   test("custom maps called Corridor keep their own name and runtime errors live in Problems in Hungarian", () => {
     navigation.query = new URLSearchParams({ code: "mine here", map: "1 1\n>", mapName: "Corridor" }).toString();
     open("hu");
-    const mapSelect = screen.getByRole("combobox", { name: "Térkép" }) as HTMLSelectElement;
-    expect(mapSelect.selectedOptions[0].textContent).toBe("Corridor");
+    expect(within(screen.getByRole("region", { name: "Térkép" })).getByText("Corridor")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Lépés" }));
     const problems = screen.getByRole("region", { name: /^Hibák/ });
     const error = within(problems).getByRole("alert");

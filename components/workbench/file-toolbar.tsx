@@ -1,15 +1,14 @@
 "use client";
 
 // A szerkesztő fejlécének első sora: balra a szerkeszthető programnév (a .mine kiterjesztés rögzített),
-// középen a fájlműveletek, jobbra a példaválasztó.
+// mellette az új fájl, import és export.
 
 import { useRef } from "react";
 import FileNameField from "@/components/file-name-field";
 import { Download, NewFile, Upload } from "@/components/icons";
 import { Button } from "@/components/ui/button";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { useI18n } from "@/i18n/i18n-provider";
-import { EXAMPLES, PROGRAM_EXTENSION } from "@/lib/minescript";
+import { PROGRAM_EXTENSION } from "@/lib/minescript";
 
 type Props = {
   /** A programnév kiterjesztés nélkül. */
@@ -20,10 +19,9 @@ type Props = {
   onNew: () => void;
   onImport: (file: File) => void;
   onExport: () => void;
-  onLoadExample: (filename: string) => void;
 };
 
-export default function FileToolbar({ name, onRename, locked, onNew, onImport, onExport, onLoadExample }: Props) {
+export default function FileToolbar({ name, onRename, locked, onNew, onImport, onExport }: Props) {
   const { t } = useI18n();
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -68,30 +66,6 @@ export default function FileToolbar({ name, onRename, locked, onNew, onImport, o
         <Button variant="ghost" size="sm" onClick={onExport} title={t.editor.export}>
           <Download aria-hidden /> <span className="max-2xl:sr-only">{t.editor.export}</span>
         </Button>
-      </div>
-
-      <div className="shrink-0">
-        <label className="sr-only" htmlFor="example">
-          {t.editor.loadExample}
-        </label>
-        {/* Mindig az üres opció látszik: a választás egy művelet, nem állapot. */}
-        <NativeSelect
-          id="example"
-          size="sm"
-          className="w-44"
-          disabled={locked}
-          value=""
-          onChange={(event) => onLoadExample(event.target.value)}
-        >
-          <NativeSelectOption value="" disabled>
-            {t.editor.loadExample}
-          </NativeSelectOption>
-          {EXAMPLES.map((example) => (
-            <NativeSelectOption key={example.filename} value={example.filename}>
-              {t.editor.examples[example.filename] ?? example.name}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
       </div>
     </div>
   );

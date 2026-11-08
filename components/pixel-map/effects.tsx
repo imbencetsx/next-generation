@@ -1,4 +1,4 @@
-// Egy feldolgozott sor látványelemei: ásáskor földrögök repülnek, bányászáskor aranyszilánkok és „+1”, falba
+// Egy feldolgozott sor látványelemei: ásáskor földrögök repülnek, bányászáskor aranyszilánkok, falba
 // ütközéskor szikrázik, print-nél szövegbuborék jelenik meg a robot fölött,
 // a sikeres futás végén csillagok szállnak. Minden sorhoz újra felépül (a kulcsa a mozgás azonosítója), és csak
 // CSS-animáció; csökkentett mozgás beállításnál rejtett (app/globals.css). A konzol és a felolvasó szöveg ugyanezt
@@ -94,9 +94,6 @@ function Mined({ x, y }: { x: number; y: number }) {
     <>
       <At className="fx-flash" x={x} y={y} />
       <Burst kind="gold" x={x} y={y} />
-      <At x={x} y={y}>
-        <b className="fx-float">+1</b>
-      </At>
     </>
   );
 }

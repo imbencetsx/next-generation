@@ -130,4 +130,26 @@ describe("run results on published maps", () => {
     await other.mutation(api.maps.remove, { mapId });
     expect(await t.run((ctx) => ctx.db.query("results").take(10))).toEqual([]);
   });
+
+  test("the ghost replays the #1 run as positions only, never its code", async () => {
+    const { t, miner, other, mapId } = await setup();
+    expect(await miner.query(api.results.ghost, { mapId })).toBeNull();
+    await other.mutation(api.results.record, { mapId, code: ONE_GOLD });
+    await miner.mutation(api.results.record, { mapId, code: TWO_GOLD });
+
+    const ghost = await other.query(api.results.ghost, { mapId });
+    // A kódolás: (sor × 10 + oszlop) × 4 + irány; a robot a 2. sorban (1) kelet (3) felé indul.
+    const at = (x: number) => (1 * 10 + x) * 4 + 3;
+    expect(ghost).toEqual({
+      name: "miner",
+      isMe: false,
+      gold: 2,
+      steps: 4,
+      trace: [at(0), at(2), at(2), at(5), at(5)],
+    });
+    expect(JSON.stringify(ghost)).not.toContain("mine here");
+    expect((await miner.query(api.results.ghost, { mapId }))?.isMe).toBe(true);
+    // Kijelentkezve nincs szellem.
+    expect(await t.query(api.results.ghost, { mapId })).toBeNull();
+  });
 });

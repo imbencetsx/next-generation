@@ -1,6 +1,7 @@
 // A robot: a pozíciója lépcsőzetes átmenettel csúszik, közben a járásanimáció fut; álló helyzetben pihegve
 // fel-le billeg. A fénye (lighting.tsx) ugyanezzel az átmenettel követi.
 
+import RobotSprite from "@/components/robot-sprite";
 import type { CSSProperties } from "react";
 import type { Motion } from "@/components/robot-motion";
 import { robotSpriteStyle } from "@/components/sprites";
@@ -46,12 +47,30 @@ export function Robot({ robot, cell, motion }: Props) {
       data-cheer={motion?.finished ? true : undefined}
       style={{ width: cell, height: cell, transform: cellOffset(robot.x, robot.y, cell), ...slideTransition(motion) }}
     >
-      <div
+      <RobotSprite
         // Új mozgásnál újraindul a járás; megálláskor (az animáció végén) visszaáll az álló képkockára.
         key={motion?.id ?? "idle"}
-        className="pixel-robot-sprite h-full w-full"
+        className="h-full w-full"
         style={{ ...robotSpriteStyle(robot.dir), ...walking }}
       />
+    </div>
+  );
+}
+
+/**
+ * A „szellem”: az 1. helyezett robotja áttetszőn, szürkén, egy kis „#1” címkével. Nem jár (nincs járásanimáció),
+ * csak rövid lépcsős átmenettel csúszik a következő helyére, és a játékos robotja alatt marad. Díszítés: a térkép
+ * alatti felirat írja le szövegesen (simulator.tsx).
+ */
+export function GhostRobot({ robot, label, cell }: { robot: GameMap["robot"]; label: string; cell: number }) {
+  return (
+    <div
+      aria-hidden
+      className="pixel-ghost"
+      style={{ width: cell, height: cell, transform: cellOffset(robot.x, robot.y, cell) }}
+    >
+      <RobotSprite className="h-full w-full" style={robotSpriteStyle(robot.dir)} />
+      <span className="pixel-ghost-label">{label}</span>
     </div>
   );
 }

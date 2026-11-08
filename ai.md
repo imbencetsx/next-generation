@@ -27,3 +27,11 @@ A modelleket előzetes tapasztalatunk alapján megpróbáltuk úgy használni ho
 
 - Nem gondolkozik kreatívan: Amikor a backendet megpróbáltuk elmagyarázni neki akkor sokszor ugyanabba a végpontba jutottunk el; Az Ai modellek nem tudtak a dobozon kívül gondolkodni. Egyszerűen nem értette meg a szintaktikát mert nem magyaráztuk el neki olyan pontosan hogy egy nyelvet felíépítsen belőle. Ezt saját beavatkozásunkkal tudtuk megoldani.
 - Tesztek írásakor 2 esetben olyan teszteket írt ami lehetetlen volt. Ezt csak kitöröltük
+
+## Az 5 eset, ami a legtöbbet segített
+
+1. **Tesztek a kiírásból:** a PDF minden szabályából teszt lett, így az interpreter pontosan a kiírás szerint működik.
+2. **Közös motor:** a szerver ugyanazzal a kóddal futtatja újra a programot, így a ranglista nem csalható.
+3. **Időutazás:** a motor pillanatképeire építve gyorsan elkészült az idővonal, amivel a futás visszanézhető.
+4. **Mobilnézet:** a szerkesztők fülekre bontása egy lépésben, az asztali nézet érintése nélkül készült el.
+5. **Hibakeresés:** a kijelölési kontraszthibát böngészőben mérve találta meg, és célzottan javította.

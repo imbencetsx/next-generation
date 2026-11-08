@@ -6,6 +6,8 @@ tesztekben ugyanaz; nem fordítja JavaScriptre a játékos programját.
 
 A Dusza Árpád Országos Programozói Emlékverseny 2026/2027 webes fordulójára készül.
 A követelmények és a csapat döntései az [AGENTS.md](AGENTS.md) fájlban olvashatók.
+A funkciók használatát, a korlátokat, az extrákat és a bemutatás menetét a
+[versenyre készült rövid leírás](LEIRAS.md) foglalja össze.
 
 ## Helyi indítás
 
@@ -81,7 +83,9 @@ A motorhoz Bun natív tesztfuttató, a Convex/profil tesztekhez Vitest tartozik;
 ## Jelenlegi határok
 
 A szerkesztő, a nyelvi motor, a szimulátor, a térképszerkesztő, a bejelentkezés és a profiloldal működik.
-A térképek/programok/futások tartós mentése és a ranglista még tervezett funkció.
+A közzétett térképek és a játékosonkénti legjobb eredmények a Convex adatbázisában tárolódnak;
+a ranglista ezekre a pályákra érhető el. A program- és térképpiszkozatokat a böngésző helyben őrzi meg,
+eszközök közötti szinkronizálásuk és a teljes futásarchívum még nem készült el.
 A MineScript jelentése és pontozása rögzített: refaktoráláskor is őrizd meg a hibakódokat, a forrássorokat,
 az értékelési sorrendet és a feldolgozott sorok számát.
 

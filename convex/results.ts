@@ -4,7 +4,7 @@
 
 import { v } from "convex/values";
 import { parseMap } from "../lib/robot-map";
-import { isBetterScore, scoreProgram, scoreRank } from "../lib/scoring";
+import { isBetterScore, scoreProgram, scoreRank, traceProgram } from "../lib/scoring";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, type QueryCtx } from "./_generated/server";
 import { LEADERBOARD_SIZE, MAX_RECORDED_CODE_LENGTH, resultError } from "./resultRules";
@@ -122,5 +122,57 @@ export const leaderboard = query({
         isMe: result.userId === viewerId,
       };
     });
+  },
+});
+
+/** Az 1. helyezett eredmény: a legnagyobb rang, holtversenyben a korábban elért (mint a ranglistán). */
+async function leaderResult(ctx: QueryCtx, mapId: Id<"maps">): Promise<Doc<"results"> | null> {
+  let leader: Doc<"results"> | null = null;
+  let scanned = 0;
+  const byRank = ctx.db
+    .query("results")
+    .withIndex("by_mapId_and_rank", (q) => q.eq("mapId", mapId))
+    .order("desc");
+  for await (const result of byRank) {
+    if (leader && result.rank !== leader.rank) break;
+    if (!leader || result._creationTime < leader._creationTime) leader = result;
+    if (++scanned >= MAX_TIE_SCAN) break;
+  }
+  return leader;
+}
+
+/**
+ * A „szellem”: az 1. helyezett futásának útja, hogy a játékos a saját robotja mellett lássa, merre járt. A szerver a
+ * tárolt programot újra lefuttatja, és csak a robot helyét adja vissza soronként (lib/scoring.ts: traceProgram); a
+ * program kódja nem kerül ki. Kijelentkezve, eredmény nélkül vagy ismeretlen térképnél null.
+ */
+export const ghost = query({
+  args: { mapId: v.id("maps") },
+  returns: v.union(
+    v.object({
+      name: v.string(),
+      isMe: v.boolean(),
+      gold: v.number(),
+      steps: v.number(),
+      trace: v.array(v.number()),
+    }),
+    v.null(),
+  ),
+  handler: async (ctx, args) => {
+    const viewerId = await currentUserId(ctx);
+    if (!viewerId) return null;
+    const [map, leader] = await Promise.all([ctx.db.get(args.mapId), leaderResult(ctx, args.mapId)]);
+    if (!map || !leader) return null;
+    const parsed = parseMap(map.text);
+    const trace = parsed.ok ? traceProgram(leader.code, parsed.map) : null;
+    if (!trace) return null;
+    const player = await ctx.db.get(leader.userId);
+    return {
+      name: player?.name ?? "player",
+      isMe: leader.userId === viewerId,
+      gold: leader.gold,
+      steps: leader.steps,
+      trace,
+    };
   },
 });

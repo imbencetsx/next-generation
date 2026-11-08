@@ -1,6 +1,7 @@
 import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { robotValidator } from "./robotRules";
 
 export default defineSchema({
   ...authTables,
@@ -9,6 +10,9 @@ export default defineSchema({
     avatarId: v.optional(v.id("_storage")),
     /** A felület nyelve, ha a felhasználó beállította (a profil oldalon); különben a böngészőé dönt. */
     locale: v.optional(v.union(v.literal("en"), v.literal("hu"))),
+    robot: v.optional(robotValidator),
+    /** Csak az új fiókoknál kérünk robotot; a régi fiókok az eredeti kinézetet kapják. */
+    robotSetupPending: v.optional(v.boolean()),
   })
     .index("email", ["email"])
     .index("phone", ["phone"]),

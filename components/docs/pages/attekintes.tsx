@@ -83,7 +83,7 @@ export default function Attekintes() {
         </thead>
         <tbody>
           <tr>
-            <td>Kódszerkesztő, import/export, mintaprogramok</td>
+            <td>Kódszerkesztő, import/export, hibajelölés</td>
             <td>
               <Status kind="done" />
             </td>

@@ -74,11 +74,27 @@ test("an edited app test selects just that file", () =>
 test("dictionary edits run the rendering test and ask for UI checks", () => {
   const selection = relatedTests(["i18n/hu.ts"]);
   expect(selection.appTests).toEqual([
+    "components/auth",
     "components/home",
     "components/map-editor",
     "components/map-page",
+    "components/maps",
     "components/profile",
     "components/workbench",
   ]);
   expect(selection.ui).toEqual(["i18n/hu.ts"]);
+});
+
+test("account robot changes include persistence and every rendering consumer", () => {
+  const selection = relatedTests(["lib/robots.ts", "components/robot-sprite.tsx"]);
+  expect(selection.unknown).toEqual([]);
+  expect(selection.appTests).toEqual([
+    "components/home",
+    "components/map-editor",
+    "components/map-page",
+    "components/maps",
+    "components/profile",
+    "components/workbench",
+    "convex",
+  ]);
 });
