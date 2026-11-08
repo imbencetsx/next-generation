@@ -122,25 +122,32 @@ export default function Attekintes() {
           <tr>
             <td>Térképszerkesztő, térképexport</td>
             <td>
-              <Status kind="planned" />
+              <Status kind="done" />
             </td>
             <td>
               <Link href="/docs/terkepek">Térképek</Link>
             </td>
           </tr>
           <tr>
-            <td>Bejelentkezés, mentés</td>
+            <td>Bejelentkezés, térképek közzététele</td>
             <td>
-              <Status kind="planned" />
+              <Status kind="done" />
             </td>
-            <td>Drizzle ORM + SQLite</td>
+            <td>Convex; a programok és a futások mentése még tervezett</td>
+          </tr>
+          <tr>
+            <td>Legjobb eredmény rögzítése a közzétett pályákon</td>
+            <td>
+              <Status kind="done" />
+            </td>
+            <td>A szerver újrafuttatja a programot, a kliens számait nem fogadja el</td>
           </tr>
           <tr>
             <td>Ranglista</td>
             <td>
-              <Status kind="planned" />
+              <Status kind="done" />
             </td>
-            <td>A szerver újrafuttatja a programot, a kliens számait nem fogadja el</td>
+            <td>A kezdőlapon minden közzétett pálya kártyáján a legjobb 5 játékos</td>
           </tr>
         </tbody>
       </table>

@@ -110,6 +110,44 @@ const DECISIONS: Decision[] = [
     ),
     status: "provisional",
   },
+  {
+    id: "D8",
+    title: "Kik látják a térképeket?",
+    spec: (
+      <>
+        „Az, hogy a térképek felhasználónként külön vagy minden felhasználó számára közösen érhetőek-e el, a csapat
+        döntése.”
+      </>
+    ),
+    decision: (
+      <>
+        A közzétett térképet minden bejelentkezett játékos látja és használhatja a kezdőlapon. Közzététel után nem
+        változik: a módosított változatot újra közzé kell tenni, így a ranglista eredményei mindig arra a térképre
+        vonatkoznak, amelyiken születtek. A saját térkép törölhető.
+      </>
+    ),
+    status: "provisional",
+  },
+  {
+    id: "D9",
+    title: "Melyik futás eredménye kerül a ranglistára?",
+    spec: (
+      <>
+        „Minden programfuttatás végén az alkalmazás rögzíti, hogy az adott felhasználó […] hány aranyrögöt bányászott
+        ki, és ehhez hány lépésre volt szüksége.”
+      </>
+    ),
+    decision: (
+      <>
+        Csak közzétett pályán. Minden véget ért futás számít: a program vége, a futásidejű hiba és a sorkorlát is, az
+        addig kibányászott arannyal és feldolgozott sorokkal. A Visszaállítással leállított futás nem ért véget, ezért
+        nem kerül rögzítésre. Játékosonként és pályánként csak a legjobb eredményt tároljuk (több arany, azon belül
+        kevesebb lépés; teljes egyezésnél a korábbi marad). Az eredményt a szerver számolja: a programot újra lefuttatja
+        a tárolt pályán.
+      </>
+    ),
+    status: "provisional",
+  },
 ];
 
 export default function Dontesek() {

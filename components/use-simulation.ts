@@ -14,30 +14,70 @@ export const SPEEDS = [
   { id: "slow", delay: 600 },
   { id: "normal", delay: 250 },
   { id: "fast", delay: 80 },
-  { id: "turbo", delay: 10 },
+  { id: "turbo", delay: 1 },
 ] as const;
 export type SpeedId = (typeof SPEEDS)[number]["id"];
 
-/** A „megosztott” térkép neve, ha a dokumentáció linkje (?map=) hozta. */
+/** A „megosztott” térkép neve, ha a link (?map=) név nélkül hozta (pl. a dokumentációból). */
 const SHARED_MAP_NAME = "Shared map";
 
-function initialMap(text: string | null) {
-  if (text !== null) {
-    const result = parseMap(text);
-    if (result.ok) return { map: result.map, name: SHARED_MAP_NAME };
-  }
-  return { map: presetMap(0), name: MAP_PRESETS[0].name };
+export type SimulationOptions = {
+  /** A dokumentációból, a kezdőlapról vagy a térképszerkesztőből érkező térkép (?map=), ha van. */
+  mapText?: string | null;
+  /** A térkép neve (?mapName=), ha van. */
+  mapName?: string | null;
+  /** Ha a térkép közzétett térkép (?mapId=), az azonosítója: ekkor a befejezett futások eredménye rögzül. */
+  mapId?: string | null;
+  /** Minden végigért futás után hívódik (program vége, futásidejű hiba vagy sorkorlát): a futtatott program és
+   * a közzétett térkép azonosítója (vagy null). A Visszaállítással leállított futás nem ér véget. */
+  onRunEnd?: (run: { code: string; mapId: string | null }) => void;
+};
+
+/** Ha ezzel a lépéssel ért véget a futás, jelezzük. Egy futás csak egyszer ér véget, utána a gép nem lép. */
+function reportIfEnded(
+  snapshot: Snapshot,
+  onRunEnd: SimulationOptions["onRunEnd"],
+  run: { code: string; mapId: string | null },
+) {
+  if (snapshot.status !== "running") onRunEnd?.(run);
 }
 
-/**
- * @param code A szerkesztőben lévő program; minden új futás ebből indul.
- * @param initialMapText A dokumentációból érkező térkép (?map=), ha van.
- */
-export function useSimulation(code: string, initialMapText: string | null = null) {
+function initialMap({ mapText = null, mapName = null, mapId = null }: SimulationOptions) {
+  if (mapText !== null) {
+    const result = parseMap(mapText);
+    if (result.ok) {
+      return {
+        map: result.map,
+        name: mapName?.trim() || SHARED_MAP_NAME,
+        publishedId: mapId,
+        presetName: null,
+        defaultMapName: !mapName?.trim(),
+      };
+    }
+  }
+  return {
+    map: presetMap(0),
+    name: MAP_PRESETS[0].name,
+    publishedId: null,
+    presetName: MAP_PRESETS[0].name,
+    defaultMapName: false,
+  };
+}
+
+/** @param code A szerkesztőben lévő program; minden új futás ebből indul. */
+export function useSimulation(code: string, options: SimulationOptions = {}) {
   const machine = useRef<Machine | null>(null);
-  const [initial] = useState(() => initialMap(initialMapText));
+  // A futás indításakor rögzített program: a futás végén ezt adjuk át, akkor is, ha közben átírták.
+  const runCode = useRef("");
+  // A visszahívást minden rendernél frissítjük, de a gép lépései (időzítő, gomb) mindig a legfrissebbet hívják.
+  const onRunEnd = useRef(options.onRunEnd);
+  const [initial] = useState(() => initialMap(options));
   const [map, setMap] = useState(initial.map);
   const [mapName, setMapName] = useState(initial.name);
+  const [defaultMapName, setDefaultMapName] = useState(initial.defaultMapName);
+  const [presetName, setPresetName] = useState<string | null>(initial.presetName);
+  /** A közzétett térkép azonosítója, amíg az van betöltve; más térkép választásakor null. */
+  const [publishedMapId, setPublishedMapId] = useState(initial.publishedId);
   const [mapError, setMapError] = useState<string | null>(null);
   // null: még nem indult futás (a felület ilyenkor a kezdőállapotot mutatja).
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
@@ -50,6 +90,10 @@ export function useSimulation(code: string, initialMapText: string | null = null
 
   const delay = SPEEDS.find((option) => option.id === speed)!.delay;
 
+  useEffect(() => {
+    onRunEnd.current = options.onRunEnd;
+  }, [options.onRunEnd]);
+
   // Lejátszás: időzítve lépteti a gépet, amíg fut.
   useEffect(() => {
     if (!playing) return;
@@ -59,9 +103,10 @@ export function useSimulation(code: string, initialMapText: string | null = null
       setMotion(next.motion);
       setSnapshot(next.snapshot);
       if (next.snapshot.status !== "running") setPlaying(false);
+      reportIfEnded(next.snapshot, onRunEnd.current, { code: runCode.current, mapId: publishedMapId });
     }, delay);
     return () => clearInterval(timer);
-  }, [playing, delay, map.cols]);
+  }, [playing, delay, map.cols, publishedMapId]);
 
   /** A futó gép (szünet után ezt folytatjuk), vagy egy új gép a jelenlegi programmal és térképpel. */
   function ensureMachine(): Machine | null {
@@ -74,9 +119,12 @@ export function useSimulation(code: string, initialMapText: string | null = null
     }
 
     setBlockedBy(null);
+    runCode.current = code;
     machine.current = new Machine(parsed.program, map);
     setSnapshot(machine.current.snapshot());
     setMotion(null);
+    // Az üres program lépés nélkül, azonnal véget ér; ez is befejezett futás.
+    if (machine.current.status !== "running") onRunEnd.current?.({ code, mapId: publishedMapId });
     return machine.current;
   }
 
@@ -96,6 +144,7 @@ export function useSimulation(code: string, initialMapText: string | null = null
     setMotion(next.motion);
     setSnapshot(next.snapshot);
     setPlaying(false);
+    reportIfEnded(next.snapshot, onRunEnd.current, { code: runCode.current, mapId: publishedMapId });
   }
 
   function reset() {
@@ -113,6 +162,9 @@ export function useSimulation(code: string, initialMapText: string | null = null
     reset();
     setMap(presetMap(index));
     setMapName(name);
+    setPresetName(name);
+    setDefaultMapName(false);
+    setPublishedMapId(null);
     setMapError(null);
   }
 
@@ -122,19 +174,25 @@ export function useSimulation(code: string, initialMapText: string | null = null
     // Hibás import esetén a jelenlegi térkép és futás maradjon meg.
     const result = parseMap(await file.text());
     if (!result.ok) {
-      setMapError(`${file.name}: ${result.error}`);
+      setMapError(result.error);
       return;
     }
 
     reset();
     setMap(result.map);
     setMapName(file.name);
+    setPresetName(null);
+    setDefaultMapName(false);
+    setPublishedMapId(null);
     setMapError(null);
   }
 
   return {
     map,
     mapName,
+    presetName,
+    defaultMapName,
+    publishedMapId,
     mapError,
     blockedBy,
     playing,

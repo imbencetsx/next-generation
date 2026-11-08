@@ -86,31 +86,39 @@ export default function Terkepek() {
       </div>
 
       <h2 id="szerkeszto">Térképszerkesztő</h2>
-      <Note tone="future">
-        <p>A térképszerkesztő még nem készült el. A terv:</p>
-      </Note>
+      <p>
+        A munkafelület fejlécéből (<strong>Térképszerkesztő</strong>) érhető el, a szimulátorban éppen betöltött
+        térképpel. Felépítése a munkafelületé: bal oldalon a térképfájl szövege, jobb oldalon ugyanaz a térkép rajzolva.
+        A két nézet ugyanazt a szöveget szerkeszti, így bármelyikben dolgozol, a másik azonnal követi.
+      </p>
       <ul>
         <li>
-          <strong>Eszköztár:</strong> üres kamra, fal, arany és a robot négy iránya. A kiválasztott eszközzel kattintva
-          vagy húzva lehet festeni.
+          <strong>Szöveges szerkesztés</strong> a kódszerkesztővel, a térképjelek színezésével és élő hibajelzéssel. A
+          szöveg szerkesztés közben lehet hibás; ilyenkor a rajz az utolsó érvényes térképet mutatja, és a hibára
+          kattintva a hibás helyre ugrik a kurzor.
         </li>
         <li>
-          <strong>Robot:</strong> új helyre rakáskor a régi helyéről automatikusan eltűnik, így mindig pontosan egy
-          robot van. Ha aranyra kerülne, az arany törlődik.
+          <strong>Ecsetek:</strong> üres kamra, arany, fal és robot. Kattintva vagy lenyomott egérgombbal áthúzva lehet
+          festeni. A robot új helyre rakva a régiről eltűnik, így mindig pontosan egy robot van; a célmező aranya
+          törlődik. A robot mezőjére falat vagy aranyat nem lehet tenni: előbb a robotot kell áthelyezni.
         </li>
         <li>
-          <strong>Méretezés</strong> 1–15 között; átméretezéskor a meglévő tartalom megmarad.
+          <strong>Méret</strong> 1–15 sor és oszlop. Átméretezéskor a megmaradó mezők nem változnak; ha a robot kilógna,
+          a legközelebbi megmaradó mezőre kerül. A robot kezdőiránya külön választható.
         </li>
         <li>
-          <strong>Ellenőrzés:</strong> hibalista jelzi, mi hiányzik; mentés és export csak érvényes térképpel.
+          <strong>Fájlműveletek:</strong> új térkép, mintapálya betöltése, import és export. A hibás import nem írja
+          felül a szerkesztett térképet; exportálni és a szimulátorba átvinni csak érvényes térképet lehet.
         </li>
         <li>
-          <strong>Akadálymentesség:</strong> billentyűzettel bejárható rács, a mezők típusa ikonnal is jelölve.
-        </li>
-        <li>
-          <strong>Export</strong> a fenti szöveges formátumban; az import ugyanazzal az ellenőrzéssel.
+          <strong>Akadálymentesség:</strong> a rács billentyűzettel bejárható (nyilak, Home/End, Ctrl+Home/End), a mezők
+          neve a felolvasóknak is elmondja a sort, az oszlopot és a tartalmat.
         </li>
       </ul>
+      <p>
+        A <strong>Használat a szimulátorban</strong> gomb a térképet visszaviszi a munkafelületre; a szerkesztőben lévő
+        program és a fájlneve közben megmarad.
+      </p>
 
       <h2 id="tarolas">Tárolás és verziók</h2>
       <Note tone="future">

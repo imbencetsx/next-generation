@@ -3,7 +3,6 @@
 
 import type { ReactNode } from "react";
 import UserMenu from "@/components/auth/user-menu";
-import LanguageSwitch from "@/components/language-switch";
 
 type Props = {
   /** A bal oldali márkajelzés, pl. `<Logo />` egy címsorban vagy egy linkben. */
@@ -13,7 +12,8 @@ type Props = {
 
 export default function TopBar({ brand, children }: Props) {
   return (
-    <header className="topbar">
+    // Görgetéskor is fent marad (a háttere átlátszatlan, így a tartalom alatta csúszik el).
+    <header className="topbar sticky top-0 z-20">
       <div className="flex min-h-[68px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-1.5">
         {brand}
         <div className="ml-auto flex items-center gap-2">{children}</div>
@@ -22,13 +22,11 @@ export default function TopBar({ brand, children }: Props) {
   );
 }
 
-/** Bejelentkezett oldalak jobb széle: nyelvváltó, elválasztó, felhasználói menü. */
-export function AccountActions() {
+/** Bejelentkezett oldalak jobb széle: felhasználói menü. */
+export function AccountActions({ withSeparator = false }: { withSeparator?: boolean }) {
   return (
-    <>
-      <LanguageSwitch />
-      <span className="mx-1 hidden h-6 w-px bg-border sm:block" aria-hidden />
+    <div className={withSeparator ? "ml-2 flex items-center border-l border-border pl-4" : "flex items-center"}>
       <UserMenu />
-    </>
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 // Pixeles ikonok (pixelarticons, MIT) egy helyen, a felület saját neveivel.
-// A rajzok 24×24-es rácson vannak: a méretet a legközelebbi 12/16/20/24 px-re igazítjuk, és élesen rajzoljuk,
-// hogy a vonalak ne mosódjanak el (12 és 24 px minden kijelzőn pontos, 16 és 20 px Retinán).
+// A rajzok 24×24-es rácson vannak: a méretet a legközelebbi 12/16/20/24/48 px-re igazítjuk, és élesen rajzoljuk,
+// hogy a vonalak ne mosódjanak el (12, 24 és 48 px minden kijelzőn pontos, 16 és 20 px Retinán).
 
 import type { SVGProps } from "react";
 import { ArrowBarRight } from "pixelarticons/react/ArrowBarRight.js";
@@ -20,7 +20,9 @@ import { Download as DownloadGlyph } from "pixelarticons/react/Download.js";
 import { ExternalLink as ExternalLinkGlyph } from "pixelarticons/react/ExternalLink.js";
 import { File } from "pixelarticons/react/File.js";
 import { Globe as GlobeGlyph } from "pixelarticons/react/Globe.js";
+import { Home as HomeGlyph } from "pixelarticons/react/Home.js";
 import { Lock as LockGlyph } from "pixelarticons/react/Lock.js";
+import { Map as MapGlyph } from "pixelarticons/react/Map.js";
 import { Login as LoginGlyph } from "pixelarticons/react/Login.js";
 import { Logout as LogoutGlyph } from "pixelarticons/react/Logout.js";
 import { Pause as PauseGlyph } from "pixelarticons/react/Pause.js";
@@ -30,9 +32,12 @@ import { Plus } from "pixelarticons/react/Plus.js";
 import { Reload } from "pixelarticons/react/Reload.js";
 import { Scale as ScaleGlyph } from "pixelarticons/react/Scale.js";
 import { Search as SearchGlyph } from "pixelarticons/react/Search.js";
+import { Share as ShareGlyph } from "pixelarticons/react/Share.js";
 import { SquareAlert } from "pixelarticons/react/SquareAlert.js";
 import { TestTube as TestTubeGlyph } from "pixelarticons/react/TestTube.js";
 import { TextWrap } from "pixelarticons/react/TextWrap.js";
+import { Trash as TrashGlyph } from "pixelarticons/react/Trash.js";
+import { Trophy as TrophyGlyph } from "pixelarticons/react/Trophy.js";
 import { Upload as UploadGlyph } from "pixelarticons/react/Upload.js";
 import { UserPlus as UserPlusGlyph } from "pixelarticons/react/UserPlus.js";
 import { WarningDiamond } from "pixelarticons/react/WarningDiamond.js";
@@ -40,7 +45,8 @@ import { WarningDiamond } from "pixelarticons/react/WarningDiamond.js";
 export type IconProps = Omit<SVGProps<SVGSVGElement>, "ref"> & { size?: number };
 type Glyph = (props: SVGProps<SVGSVGElement>) => React.JSX.Element;
 
-const GRID_SIZES = [12, 16, 20, 24];
+// A 48 px a 24-es rács pontos kétszerese: nagy, díszítő ikonokhoz (pl. a kezdőlap belépési pontjai).
+const GRID_SIZES = [12, 16, 20, 24, 48];
 // Döntetlennél a nagyobbat választjuk (14 → 16), hogy a kis ikonok ne zsugorodjanak olvashatatlanra.
 const snap = (size: number) =>
   GRID_SIZES.reduce((best, step) => (Math.abs(step - size) <= Math.abs(best - size) ? step : best));
@@ -72,8 +78,10 @@ export const ExternalLink = pixelIcon(ExternalLinkGlyph, "ExternalLink");
 export const FileIcon = pixelIcon(File, "FileIcon");
 export const Fog = pixelIcon(Cloud, "Fog");
 export const Globe = pixelIcon(GlobeGlyph, "Globe");
+export const Home = pixelIcon(HomeGlyph, "Home");
 export const Idle = pixelIcon(Circle, "Idle");
 export const Lock = pixelIcon(LockGlyph, "Lock");
+export const MapIcon = pixelIcon(MapGlyph, "MapIcon");
 export const Login = pixelIcon(LoginGlyph, "Login");
 export const Logout = pixelIcon(LogoutGlyph, "Logout");
 export const NewFile = pixelIcon(Plus, "NewFile");
@@ -84,8 +92,11 @@ export const Reset = pixelIcon(Reload, "Reset");
 export const Running = pixelIcon(AudioWaveform, "Running");
 export const Scale = pixelIcon(ScaleGlyph, "Scale");
 export const Search = pixelIcon(SearchGlyph, "Search");
+export const Share = pixelIcon(ShareGlyph, "Share");
 export const StepForward = pixelIcon(ArrowBarRight, "StepForward");
 export const TestTube = pixelIcon(TestTubeGlyph, "TestTube");
+export const Trash = pixelIcon(TrashGlyph, "Trash");
+export const Trophy = pixelIcon(TrophyGlyph, "Trophy");
 export const Upload = pixelIcon(UploadGlyph, "Upload");
 export const UserPlus = pixelIcon(UserPlusGlyph, "UserPlus");
 export const Warning = pixelIcon(WarningDiamond, "Warning");

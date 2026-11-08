@@ -164,7 +164,7 @@ function motionKeywordHint(ctx: LineContext, command: "step" | "turn", keyword: 
     if (lower === "around") return "turn by 2 turns the robot around.";
   }
   // Ha a kulcsszó helyén már az érték áll („step 1”), azt tartjuk meg a javaslatban.
-  const wordIsValue = isNumberLiteral(word.text) || isIdentifier(word.text);
+  const wordIsValue = ctx.tokens.length === 2 && (isNumberLiteral(word.text) || isIdentifier(word.text));
   const valueTokens = ctx.tokens.slice(wordIsValue ? 1 : 2);
   return `Write: ${command} ${keyword} ${joined(valueTokens) || "1"}`;
 }

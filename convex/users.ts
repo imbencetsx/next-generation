@@ -65,17 +65,36 @@ export const isUsernameTaken = internalQuery({
 });
 
 /** A bejelentkezett felhasználó, vagy null. */
+const localeValidator = v.union(v.literal("en"), v.literal("hu"));
+
 export const viewer = query({
   args: {},
   returns: v.union(
     v.null(),
-    v.object({ _id: v.id("users"), name: v.string(), imageUrl: v.union(v.string(), v.null()) }),
+    v.object({
+      _id: v.id("users"),
+      name: v.string(),
+      imageUrl: v.union(v.string(), v.null()),
+      /** A fiókhoz mentett nyelv; null, ha még nem állította be (ilyenkor a süti vagy a böngésző dönt). */
+      locale: v.union(localeValidator, v.null()),
+    }),
   ),
   handler: async (ctx) => {
     const user = await currentUser(ctx);
     if (!user) return null;
     const imageUrl = user.avatarId ? await ctx.storage.getUrl(user.avatarId) : null;
-    return { _id: user._id, name: user.name ?? "player", imageUrl };
+    return { _id: user._id, name: user.name ?? "player", imageUrl, locale: user.locale ?? null };
+  },
+});
+
+/** A felület nyelvének mentése a fiókhoz, hogy minden eszközön ez legyen. */
+export const setLocale = mutation({
+  args: { locale: localeValidator },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const user = await requireUser(ctx);
+    await ctx.db.patch(user._id, { locale: args.locale });
+    return null;
   },
 });
 

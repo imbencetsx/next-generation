@@ -26,7 +26,14 @@ const ENGINE_CONSUMERS = [
   "tests/diagnostics",
 ];
 const FULL_SUITE = ["tests"];
-const APP_SUITE = ["convex", "components/profile"];
+const APP_SUITE = [
+  "convex",
+  "components/profile",
+  "components/map-editor",
+  "components/workbench",
+  "components/home",
+  "components/map-page",
+];
 
 type Rule = {
   matches: (path: string) => boolean;
@@ -58,18 +65,45 @@ const RULES: Rule[] = [
     tests: ["tests/syntax", ...ENGINE_CONSUMERS],
   },
   { matches: isOneOf("lib/interpreter.ts"), tests: ENGINE_CONSUMERS },
+  // A ranglista pontozása: a motor tesztje és a szerveroldali rögzítés (Convex).
+  { matches: isOneOf("lib/scoring.ts"), tests: ["tests/interpreter/scoring.test.ts"], appTests: ["convex"] },
   { matches: isOneOf("lib/robot-map.ts"), tests: ["tests/maps", ...ENGINE_CONSUMERS] },
+  { matches: isOneOf("lib/map-editor.ts"), tests: GROUPS.maps, appTests: ["components/map-editor"] },
+  // A térképmezők képe (felfedezett / felfedezetlen / köd).
+  { matches: isOneOf("components/sprites.ts"), tests: ["tests/maps/tiles.test.ts"], ui: true },
+  // A közös fájlnév-szabály és -mező: mindkét szerkesztő fájlkezelése.
+  {
+    matches: isOneOf("lib/file-names.ts", "components/file-name-field.tsx", "components/download-text.ts"),
+    tests: ["tests/syntax/program-file.test.ts", "tests/maps/editor.test.ts"],
+    appTests: ["components/map-editor", "components/workbench"],
+    ui: true,
+  },
+  { matches: isUnder("components/map-editor/"), tests: GROUPS.maps, appTests: ["components/map-editor"], ui: true },
+  // A közös piszkozat- és hibakezelés mindkét szerkesztőt érinti.
+  {
+    matches: isOneOf(
+      "components/use-draft-state.ts",
+      "components/use-replace-confirmation.tsx",
+      "components/diagnostic-details.tsx",
+      "components/run-error-box.tsx",
+    ),
+    tests: [],
+    appTests: ["components/workbench", "components/map-editor"],
+    ui: true,
+  },
   // Dokumentáció: a példái futtatható szerződések.
   { matches: isUnder("lib/docs/", "components/docs/", "app/docs/"), tests: GROUPS.docs },
   // Motorra épülő felületi fájlok: a kapcsolódó motortesztek, és felületi ellenőrzés is kell.
   {
     matches: isOneOf("components/use-simulation.ts", "components/robot-motion.ts", "components/simulator.tsx"),
     tests: GROUPS.robot,
+    appTests: ["components/workbench"],
     ui: true,
   },
   {
     matches: (path) => isUnder("components/code-editor/", "components/workbench/")(path),
     tests: GROUPS.syntax,
+    appTests: ["components/map-editor", "components/workbench"],
     ui: true,
   },
   // Tesztek és teszteszközök; egy módosított tesztfájl pontosan önmagát választja.
@@ -93,8 +127,21 @@ const RULES: Rule[] = [
   { matches: isUnder("convex/_generated/"), tests: [], appTests: APP_SUITE },
   { matches: isUnder("convex/"), tests: [], appTests: ["convex"] },
   { matches: isUnder("components/profile/"), tests: [], appTests: ["components/profile"], ui: true },
-  // A szótár szövegeit a profil oldal renderelési tesztje ellenőrzi.
-  { matches: isUnder("i18n/"), tests: [], appTests: ["components/profile"], ui: true },
+  { matches: isUnder("components/home/"), tests: [], appTests: ["components/home"], ui: true },
+  { matches: isUnder("components/map-page/"), tests: [], appTests: ["components/map-page"], ui: true },
+  // A szótár szövegeit a profil, a térképszerkesztő és a munkafelület renderelési tesztjei ellenőrzik.
+  {
+    matches: isUnder("i18n/"),
+    tests: [],
+    appTests: [
+      "components/profile",
+      "components/map-editor",
+      "components/workbench",
+      "components/home",
+      "components/map-page",
+    ],
+    ui: true,
+  },
   { matches: isOneOf("vitest.config.mts"), tests: [], appTests: APP_SUITE },
   // Az útvonalak és a proxy: a matcher-szinkron tesztje.
   {

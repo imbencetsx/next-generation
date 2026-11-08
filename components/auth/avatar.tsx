@@ -1,19 +1,7 @@
-import Image from "next/image";
+// A felhasználó profilképe a pixeles körben; kép híján a neve kezdőbetűje.
 
-// A keret és a fények ugyanazon a 32×32-es rácson ülnek, mint a profilkép pixelei.
-const ROW_INSET = [12, 12, 8, 8, 6, 6, 4, 4, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 4, 4, 6, 6, 8, 8, 12, 12];
-const inside = (x: number, y: number) => y >= 0 && y < 32 && x >= ROW_INSET[y] && x < 32 - ROW_INSET[y];
-const lighting = { edge: "", lightCorner: "", darkCorner: "" };
-for (let y = 0; y < 32; y++) {
-  for (let x = 0; x < 32; x++) {
-    if (!inside(x, y)) continue;
-    if (inside(x, y - 1) && inside(x - 1, y) && inside(x, y + 1) && inside(x + 1, y)) continue;
-    const square = `M${x} ${y}h1v1h-1z`;
-    lighting.edge += square;
-    if (x < 12 && y < 12) lighting.lightCorner += square;
-    else if (x >= 20 && y >= 20) lighting.darkCorner += square;
-  }
-}
+import Image from "next/image";
+import PixelCircle from "@/components/pixel-circle";
 
 export default function Avatar({
   name,
@@ -25,26 +13,12 @@ export default function Avatar({
   size?: number;
 }) {
   return (
-    <span className="pixel-avatar display" style={{ width: size, height: size, fontSize: size / 2 }} aria-hidden>
-      <span className="pixel-avatar-face">
-        {imageUrl ? (
-          <Image src={imageUrl} alt="" width={size} height={size} unoptimized className="size-full object-cover" />
-        ) : (
-          name.charAt(0).toUpperCase()
-        )}
-      </span>
-      <svg
-        className="pixel-avatar-lighting"
-        viewBox="0 0 32 32"
-        shapeRendering="crispEdges"
-        aria-hidden
-        focusable="false"
-      >
-        <path d={lighting.darkCorner} className="pixel-avatar-dark-edge" transform="translate(1 1)" />
-        <path d={lighting.edge} className="pixel-avatar-edge" />
-        <path d={lighting.lightCorner} className="pixel-avatar-light-edge" />
-        <path d={lighting.darkCorner} className="pixel-avatar-dark-edge" />
-      </svg>
-    </span>
+    <PixelCircle size={size}>
+      {imageUrl ? (
+        <Image src={imageUrl} alt="" width={size} height={size} unoptimized className="size-full object-cover" />
+      ) : (
+        name.charAt(0).toUpperCase()
+      )}
+    </PixelCircle>
   );
 }

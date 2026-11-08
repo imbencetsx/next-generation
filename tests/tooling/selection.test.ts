@@ -73,6 +73,12 @@ test("an edited app test selects just that file", () =>
   ]));
 test("dictionary edits run the rendering test and ask for UI checks", () => {
   const selection = relatedTests(["i18n/hu.ts"]);
-  expect(selection.appTests).toEqual(["components/profile"]);
+  expect(selection.appTests).toEqual([
+    "components/home",
+    "components/map-editor",
+    "components/map-page",
+    "components/profile",
+    "components/workbench",
+  ]);
   expect(selection.ui).toEqual(["i18n/hu.ts"]);
 });

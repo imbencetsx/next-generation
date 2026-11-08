@@ -7,6 +7,9 @@ import { getIndentUnit, HighlightStyle, indentService, StreamLanguage, syntaxHig
 import { linter, type Diagnostic } from "@codemirror/lint";
 import { countColumn, EditorSelection } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
+import { MESSAGES } from "@/i18n/messages";
+import type { Locale } from "@/i18n/locale";
+import { localizedDiagnostic } from "@/i18n/diagnostics";
 import { tags } from "@lezer/highlight";
 import { KEYWORDS, TOKEN_PATTERNS, isBooleanLiteral, validateMineScript } from "@/lib/minescript";
 
@@ -91,14 +94,17 @@ export function completeOrIndent(view: EditorView) {
 }
 
 /** A szintaktikai hibák CodeMirror-jelölésként, üzenettel, javaslattal és a kapcsolódó sorokkal. */
-function lintMineScript(view: EditorView): Diagnostic[] {
+function lintMineScript(view: EditorView, locale: Locale): Diagnostic[] {
   const doc = view.state.doc;
-  return validateMineScript(doc.toString()).map((issue) => {
+  return validateMineScript(doc.toString()).map((original) => {
+    const issue = localizedDiagnostic(original, locale);
     const line = doc.line(issue.line);
     const from = Math.min(line.to, line.from + issue.column - 1);
     // Üres sornál nincs mit aláhúzni, ilyenkor a sor elejére tesszük a jelölést.
     const to = Math.max(from, Math.min(line.to, line.from + issue.endColumn - 1));
-    const related = issue.related?.map((item) => `Line ${item.line}: ${item.message}`).join("\n");
+    const related = issue.related
+      ?.map((item) => `${MESSAGES[locale].editor.relatedLine(item.line)} ${item.message}`)
+      .join("\n");
     return {
       from,
       to,
@@ -110,10 +116,12 @@ function lintMineScript(view: EditorView): Diagnostic[] {
 }
 
 /** Minden, ami a MineScript szerkesztéséhez kell, egyetlen bővítménylistában. */
-export const minescriptSupport = [
+export const createMineScriptSupport = (locale: Locale) => [
   language,
   syntaxHighlighting(highlightStyle),
   indentAfterBlockOpeners,
   autocompletion({ override: [completeKeywords], interactionDelay: 0 }),
-  linter(lintMineScript, { delay: 350 }),
+  linter((view) => lintMineScript(view, locale), { delay: 350 }),
 ];
+
+export const minescriptSupport = createMineScriptSupport("en");

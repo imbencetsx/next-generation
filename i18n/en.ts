@@ -56,6 +56,12 @@ export const en = {
   },
 
   profile: {
+    language: "Language",
+    languageHint: "Your choice is saved to your account and applies on every device.",
+    english: "English",
+    hungarian: "Magyar",
+    saveLanguage: "Save language",
+    languageSaved: "Language updated.",
     title: "Your profile",
     description: "Make yourself at home before heading back into the mine.",
     open: "Edit profile",
@@ -94,7 +100,110 @@ export const en = {
     },
   },
 
+  mapDiagnostics: {
+    header: "The first line must give rows and columns separated by one space, e.g. 3 15.",
+    dimensions: (rows: string, cols: string) =>
+      `Both dimensions must be between 1 and 15 (got ${rows} rows and ${cols} columns).`,
+    rows: (expected: string, found: string) => `The header declares ${expected} map rows, but the file has ${found}.`,
+    columns: (line: string, expected: string, found: string) =>
+      `Line ${line} contains ${found} characters; the header requires ${expected}.`,
+    robot: "The map has no robot. Place exactly one: > < ^ or v.",
+    secondRobot: "The map has more than one robot. Keep exactly one.",
+    symbol: "Invalid map symbol. Allowed symbols: . @ # > < ^ v",
+  },
+
+  diagnostics: {
+    S_EMPTY_LINE: ["Empty lines are not allowed inside a program.", "Delete the empty line."],
+    S_TAB: ["Tabs are not allowed.", "Use spaces for indentation and exactly one space between tokens."],
+    S_SPACING: ["Use exactly one space between tokens.", "Remove extra spaces between tokens."],
+    S_TRAILING_SPACE: ["This line has trailing spaces.", "Remove spaces at the end of the line."],
+    S_INVALID_CHARACTER: [
+      "This character is not allowed in MineScript.",
+      "Use ASCII letters, digits, spaces and the supported operators.",
+    ],
+    S_UNKNOWN_INSTRUCTION: [
+      "Unknown instruction.",
+      "Instructions are set, step, turn, mine, print, if, else and while. Keywords are case-sensitive.",
+    ],
+    S_EXPECTED_KEYWORD: [
+      "A required keyword is missing or misspelled.",
+      "Use step forward, turn by, mine here or set name to value.",
+    ],
+    S_MISSING_VALUE: [
+      "A required value or variable name is missing.",
+      "Supply the required variable, number or boolean.",
+    ],
+    S_EXTRA_TOKENS: [
+      "Too many tokens in this instruction.",
+      "Write one instruction per line with only its required arguments.",
+    ],
+    S_COMPLEX_VALUE: [
+      "Only one simple value is allowed here.",
+      "Compute the expression in a separate set instruction first.",
+    ],
+    S_NUMBER_RANGE: [
+      "Number literals must be integers from 0 to 100.",
+      "Compute negative or larger values with a set instruction.",
+    ],
+    S_INVALID_VALUE: ["Invalid simple value.", "Use a variable, true/false or an integer literal from 0 to 100."],
+    S_RESERVED_NAME: [
+      "Keywords cannot be variable names in any letter case.",
+      "Choose another name, such as count or ready.",
+    ],
+    S_INVALID_NAME: ["Invalid variable name.", "Start with a letter; use only a–z, A–Z and digits."],
+    S_INVALID_EXPRESSION: [
+      "Invalid expression on the right side of set.",
+      "Use one value, one isThere call or at most one operator.",
+    ],
+    S_UNKNOWN_OPERATOR: ["Unknown operator.", "Operators are + - * = <> < <= > >= and or not."],
+    S_UNEXPECTED_INDENT: [
+      "Unexpected indentation.",
+      "Only if, else and while open blocks; the first line starts in column 1.",
+    ],
+    S_INDENT_MISMATCH: ["Indentation does not match an open block.", "Use consistent indentation within a block."],
+    S_ELSE_WITHOUT_IF: [
+      "There is no matching if for this else.",
+      "Place else directly after the if block at the same indentation as if.",
+    ],
+    S_ELSE_MISALIGNED: ["The else is not aligned with its if.", "Align else with its if line."],
+    S_DUPLICATE_ELSE: ["This if already has an else.", "An if can have only one else branch."],
+    E_TYPE_MISMATCH: [
+      "The new value has a different type from the variable.",
+      "The first assignment locks the variable type; use a different variable.",
+    ],
+    E_UNINITIALIZED: [
+      "A variable was read before its first assignment.",
+      "Assign it with set first; variable names are case-sensitive.",
+    ],
+    E_NON_BOOL_CONDITION: ["The if or while condition must be boolean.", "Use true, false or a boolean variable."],
+    E_BAD_OPERAND: [
+      "An operand has the wrong type.",
+      "Use integers for arithmetic and booleans for logic; equality requires matching types.",
+    ],
+    E_BEDROCK_HIT: [
+      "The robot hit a wall or the edge of the map.",
+      "Check the cell ahead with set wall to isThere 1 before moving.",
+    ],
+    E_NO_GOLD: [
+      "There is no gold on the robot cell.",
+      "Gold can only be mined once. Check the next cell with set gold to isThere 2.",
+    ],
+    E_BAD_ARG: [
+      "An argument has the wrong type or is out of range.",
+      "step forward and turn by require non-negative integers; isThere accepts 0, 1 or 2.",
+    ],
+    INSTRUCTION_COUNT_LIMIT_EXCEEDED: [
+      "The program reached 1000 processed lines.",
+      "The 1001st line cannot run; ensure while conditions eventually become false.",
+    ],
+  },
+
   editor: {
+    technicalDetails: "Technical details (English)",
+    replaceTitle: "Replace your work?",
+    replaceDescription: "Your current draft has changes. Export it first if you want to keep a separate copy.",
+    replaceConfirm: "Replace draft",
+
     region: "Code editor",
     sourceLabel: "MineScript source code",
     loadExample: "Load example…",
@@ -103,13 +212,14 @@ export const en = {
     export: "Export",
     docs: "Language documentation",
     wrap: "Wrap",
+    programName: "Program name",
     noSyntaxErrors: "No syntax errors",
     problemCount: (count: number) => `${count} problem${count === 1 ? "" : "s"}`,
     cursor: (line: number, column: number) => `Ln ${line}, Col ${column}`,
     lineCount: (count: number) => `${count} line${count === 1 ? "" : "s"}`,
     locked: "Locked while running. Reset to edit.",
     problems: "Problems",
-    nothingToFix: "Nothing to fix. The program is valid.",
+    nothingToFix: "No syntax errors.",
     hint: "Hint:",
     relatedLine: (line: number) => `Line ${line}:`,
     reference: "Language documentation",
@@ -123,12 +233,132 @@ export const en = {
       while: "Loop block (indent 2 spaces)",
     },
     referenceNote:
-      "Values are variables, true/false, or integers 0–100. Operators: + - * = <> < <= > >= and or. isThere: 0 empty, 1 wall, 2 gold.",
+      "Values are variables, true/false, or integer literals 0–100. Computed integers may be negative or greater than 100. if/else/while bodies may be empty (D2). An empty while true reaches the 1000-line limit. Operators: + - * = <> < <= > >= and or. isThere: 0 empty, 1 wall, 2 gold.",
     examples: {
       "collect-gold.mine": "Collect gold",
       "first-steps.mine": "First steps",
       "variables.mine": "Variables & logic",
     } as Record<string, string>,
+  },
+
+  mapEditor: {
+    title: "Map editor",
+    source: "Map file",
+    visual: "Visual editor",
+    filename: "Map filename",
+    rows: "Rows",
+    cols: "Columns",
+    resize: "Resize",
+    dimensionsHint: "Each dimension must be a whole number between 1 and 15.",
+    resizeHint:
+      "Shrinking crops the outer cells. If necessary, the robot moves inside the remaining area and its cell is cleared.",
+    robotDirection: "Starting direction",
+    tools: "Paint tool",
+    toolNames: { empty: "Empty chamber", gold: "Gold", wall: "Wall", robot: "Robot" },
+    valid: "Valid map",
+    invalid: "Invalid map",
+    lastValid: "Showing the last valid map. Fix the text to continue visual editing.",
+    protectedRobot: "Move the robot first before placing a wall or gold on its cell.",
+    useMap: "Use in simulator",
+    workbench: "Code editor",
+    fileRead: "Could not read this file. Your current map is unchanged.",
+    fileLarge: "The file is too large for a map of up to 15 × 15 cells. Your current map is unchanged.",
+    exportHint: "Only valid maps can be exported or used in the simulator. Export saves a map file on your device.",
+    keyboardHint: "Choose a tool and click a cell. Use arrow keys to move between cells, then Enter or Space to paint.",
+    formatHint:
+      "First line: rows and columns, separated by one space. Then one row per line: . empty, @ gold, # wall, ^ < v > robot. Exactly one robot is required.",
+    cell: (row: number, col: number, kind: string) => `Row ${row}, column ${col}: ${kind}`,
+    statistics: (gold: number, cells: number) => `${gold} gold · ${cells} cells`,
+    errorLocation: (line: number, column: number) => `Line ${line}, column ${column}`,
+    publish: "Publish",
+    publishTitle: "Publish map",
+    publishName: "Map name",
+    publishNameHint: "1–60 characters. This name is shown to other players; your filename stays the same.",
+    publishPreview: "Card preview",
+    publishing: "Publishing…",
+    published: (name: string) => `Published as “${name}”. Everyone can now find it on the home page.`,
+    publishHint:
+      "Choose a name and share this map with every player. A published map never changes; publish again to share an edited version.",
+    openHome: "Open the home page",
+  },
+
+  home: {
+    newFile: "New file…",
+    newProgram: "MineScript program",
+    newMap: "Map",
+    title: "Home",
+    /** A robot üdvözlése a kezdőlapon; egyet sorsolunk. Rövid legyen, hogy nagy betűvel is egy sorba férjen.
+     * A magyar szótárban ugyanennyi sor kell (ugyanaz az index). */
+    greetings: [
+      (name: string) => `Welcome back, ${name}!`,
+      (name: string) => `Hi, ${name}!`,
+      (name: string) => `Good to see you, ${name}!`,
+      (name: string) => `Let's dig, ${name}!`,
+      (name: string) => `Pickaxe up, ${name}!`,
+      (name: string) => `You're back, ${name}!`,
+    ],
+    publishedTitle: "Published maps",
+    publishedIntro: "Maps made by players. Pick one and write a program that mines as much gold as possible.",
+    filter: "Show maps",
+    all: "All",
+    mine: "Mine",
+    loading: "Loading maps…",
+    empty: "No one has published a map yet. Be the first!",
+    emptyMine: "You haven't published a map yet.",
+    loadMore: "Load more",
+    by: (author: string) => `by ${author}`,
+    you: "you",
+    details: (rows: number, cols: number, gold: number) => `${rows} × ${cols} cells, ${gold} gold`,
+    preview: (name: string, rows: number, cols: number) => `Map “${name}”, ${rows} rows by ${cols} columns`,
+    leaderboard: "Leaderboard",
+    leaderboardEmpty: "No one has completed this map yet.",
+    place: "#",
+    player: "Player",
+    goldColumn: "Gold",
+    steps: "Steps",
+    program: "Write a program",
+    deleteMap: "Delete map",
+    deleteTitle: (name: string) => `Delete “${name}”?`,
+    deleteText: "The map disappears for every player, together with its leaderboard. This can't be undone.",
+    confirm: "Delete",
+    cancel: "Cancel",
+  },
+
+  mapPage: {
+    back: "Back to home",
+    leaderboard: "Leaderboard",
+    rule: "More gold ranks higher. With equal gold, fewer steps rank higher.",
+    notFoundTitle: "Map not found",
+    notFound: "This map does not exist or has been deleted.",
+  },
+
+  results: {
+    publishedMap: "Published map: your best result is recorded after every finished run.",
+    best: (gold: number, steps: number) => `Your best: ${gold} gold · ${steps} step${steps === 1 ? "" : "s"}`,
+    noBest: "No result yet on this map.",
+    saving: "Recording the result…",
+    improved: (gold: number, steps: number) =>
+      `Recorded: ${gold} gold · ${steps} step${steps === 1 ? "" : "s"} — a new best!`,
+    notImproved: (gold: number, steps: number) =>
+      `Recorded: ${gold} gold · ${steps} step${steps === 1 ? "" : "s"}. Your best is unchanged.`,
+    errors: {
+      unauthenticated: "Your session has expired, so the result was not recorded. Sign in again.",
+      notFound: "This map has been deleted, so the result was not recorded.",
+      syntax: "The program has syntax errors, so the result was not recorded.",
+      tooLong: "The program is too long to record.",
+      generic: "Could not record the result. Try again.",
+    },
+  },
+
+  maps: {
+    errors: {
+      unauthenticated: "Your session has expired. Sign in again.",
+      invalid: "This map is not valid, so it cannot be published.",
+      name: "Give the map a name of 1 to 60 characters.",
+      notFound: "This map no longer exists.",
+      forbidden: "You can only delete your own maps.",
+      generic: "Something went wrong. Try again.",
+    },
   },
 
   console: {
@@ -170,7 +400,7 @@ export const en = {
       `Map with ${rows} rows and ${cols} columns. Robot at row ${row}, column ${col}, facing ${direction}.`,
     facing: (direction: string) => `Robot faces ${direction}.`,
     fogCaption: "Solid dirt hides everything unexplored.",
-    exploredCaption: "Dug-out dirt marks explored cells.",
+    exploredCaption: "Dug-out dirt and bright bricks mark explored cells; dark bricks are unexplored walls.",
   },
 };
 

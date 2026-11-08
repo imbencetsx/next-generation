@@ -2,6 +2,10 @@
 
 // A szintaktikai hibák listája (kattintásra a hibás helyre ugrik) és egy összecsukható nyelvi gyorsreferencia.
 
+import DiagnosticDetails from "@/components/diagnostic-details";
+import { localizedDiagnostic } from "@/i18n/diagnostics";
+import RunErrorBox from "@/components/run-error-box";
+import type { RunError } from "@/lib/interpreter";
 import { Check } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -21,24 +25,27 @@ const REFERENCE = [
 
 type Props = {
   issues: SyntaxIssue[];
+  runtimeError: RunError | null;
   onJump: (line: number, column?: number) => void;
 };
 
-export default function ProblemsPanel({ issues, onJump }: Props) {
+export default function ProblemsPanel({ issues, runtimeError, onJump }: Props) {
   const { t } = useI18n();
+  const count = issues.length + (runtimeError ? 1 : 0);
 
   return (
     <Card role="region" aria-labelledby="problems" className="min-h-0 gap-0 overflow-y-auto p-3">
       <h2 id="problems" className="panel-title mb-2 flex items-center gap-2">
         {t.editor.problems}
-        {issues.length > 0 && (
+        {count > 0 && (
           <Badge variant="destructive" className="font-mono tracking-normal">
-            {issues.length}
+            {count}
           </Badge>
         )}
       </h2>
 
-      {issues.length === 0 ? (
+      {runtimeError && <RunErrorBox error={runtimeError} onJump={onJump} />}
+      {count === 0 ? (
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
           <Check size={14} aria-hidden /> <span className="font-read">{t.editor.nothingToFix}</span>
         </p>
@@ -68,13 +75,14 @@ export default function ProblemsPanel({ issues, onJump }: Props) {
   );
 }
 
-function IssueItem({ issue, onJump }: { issue: SyntaxIssue; onJump: Props["onJump"] }) {
-  const { t } = useI18n();
+function IssueItem({ issue: original, onJump }: { issue: SyntaxIssue; onJump: Props["onJump"] }) {
+  const { t, locale } = useI18n();
+  const issue = localizedDiagnostic(original, locale);
   return (
     <li className="rounded border border-transparent px-2 py-1.5 hover:border-border hover:bg-accent/40">
       <button className="w-full text-left text-sm" onClick={() => onJump(issue.line, issue.column)}>
         <span className="mr-2 font-mono text-xs text-brick-text">
-          Ln {issue.line}:{issue.column}
+          {t.mapEditor.errorLocation(issue.line, issue.column)}
         </span>
         <Badge variant="destructive" className="mr-2 h-4 px-1 font-mono text-[10px]">
           {issue.code}
@@ -95,6 +103,7 @@ function IssueItem({ issue, onJump }: { issue: SyntaxIssue; onJump: Props["onJum
           {t.editor.relatedLine(item.line)} {item.message}
         </button>
       ))}
+      <DiagnosticDetails diagnostic={original} />
     </li>
   );
 }

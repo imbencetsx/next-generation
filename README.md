@@ -80,8 +80,8 @@ A motorhoz Bun natív tesztfuttató, a Convex/profil tesztekhez Vitest tartozik;
 
 ## Jelenlegi határok
 
-A szerkesztő, a nyelvi motor, a szimulátor, a bejelentkezés és a profiloldal működik.
-A vizuális térképszerkesztő, a térképek/programok/futások tartós mentése és a ranglista még tervezett funkció.
+A szerkesztő, a nyelvi motor, a szimulátor, a térképszerkesztő, a bejelentkezés és a profiloldal működik.
+A térképek/programok/futások tartós mentése és a ranglista még tervezett funkció.
 A MineScript jelentése és pontozása rögzített: refaktoráláskor is őrizd meg a hibakódokat, a forrássorokat,
 az értékelési sorrendet és a feldolgozott sorok számát.
 

@@ -57,6 +57,12 @@ export const hu: Messages = {
   },
 
   profile: {
+    language: "Nyelv",
+    languageHint: "A választást a fiókodhoz mentjük, így minden eszközön ezt a nyelvet használjuk.",
+    english: "English",
+    hungarian: "Magyar",
+    saveLanguage: "Nyelv mentése",
+    languageSaved: "Nyelv frissítve.",
     title: "Profilod",
     description: "Szabd magadra a profilod, mielőtt visszatérsz a bányába.",
     open: "Profil szerkesztése",
@@ -95,7 +101,134 @@ export const hu: Messages = {
     },
   },
 
+  mapDiagnostics: {
+    header: "Az első sorban a sorok és oszlopok száma álljon, pontosan egy szóközzel: például 3 15.",
+    dimensions: (rows: string, cols: string) =>
+      `Mindkét méretnek 1 és 15 közé kell esnie (megadva: ${rows} sor, ${cols} oszlop).`,
+    rows: (expected: string, found: string) => `A fejléc ${expected} térképsort ír elő, de a fájlban ${found} van.`,
+    columns: (line: string, expected: string, found: string) =>
+      `A(z) ${line}. sorban ${found} karakter van a fejlécben megadott ${expected} helyett.`,
+    robot: "A térképen nincs robot. Helyezz el pontosan egyet: > < ^ vagy v.",
+    secondRobot: "A térképen egynél több robot van. Pontosan egy robotot hagyj meg.",
+    symbol: "Érvénytelen térképjel. Csak ezek használhatók: . @ # > < ^ v",
+  },
+
+  diagnostics: {
+    S_EMPTY_LINE: ["A program belsejében nem lehet üres sor.", "Töröld az üres sort."],
+    S_TAB: ["A tabulátor nem megengedett.", "A behúzáshoz szóközöket, a szavak között pontosan egy szóközt használj."],
+    S_SPACING: [
+      "A szavak között pontosan egy szóköz állhat.",
+      "Töröld a fölösleges szóközöket; a sor eleji behúzás megmaradhat.",
+    ],
+    S_TRAILING_SPACE: ["A sor végén fölösleges szóköz van.", "Töröld a sor végi szóközöket."],
+    S_INVALID_CHARACTER: [
+      "Ez a karakter nem használható MineScriptben.",
+      "Ne használj ékezetes betűt, aláhúzásjelet, zárójelet vagy más nyelvekből átvett írásjelet.",
+    ],
+    S_UNKNOWN_INSTRUCTION: [
+      "Ismeretlen vagy itt nem használható utasítás.",
+      "Utasítások: set, step, turn, mine, print, if, else, while. A kis- és nagybetűk számítanak.",
+    ],
+    S_EXPECTED_KEYWORD: [
+      "Hiányzó vagy elírt kötelező kulcsszó.",
+      "Helyes alakok: step forward 1; turn by 1; mine here; set count to 0. A kis- és nagybetűk számítanak.",
+    ],
+    S_MISSING_VALUE: [
+      "Az utasításból hiányzik egy érték vagy változónév.",
+      "Add meg a szükséges változót, számot vagy logikai értéket.",
+    ],
+    S_EXTRA_TOKENS: [
+      "Túl sok szó van ebben az utasításban.",
+      "Egy sorba egy utasítást írj, csak a szükséges argumentumokkal.",
+    ],
+    S_COMPLEX_VALUE: [
+      "Itt csak egyetlen egyszerű érték állhat.",
+      "A műveletet külön set sorban számold ki, majd a változót használd.",
+    ],
+    S_NUMBER_RANGE: [
+      "A kódba írt számliterál csak 0 és 100 közötti egész szám lehet.",
+      "Nagyobb vagy negatív értéket művelettel számolj ki egy set utasításban.",
+    ],
+    S_INVALID_VALUE: [
+      "Ez nem érvényes egyszerű érték.",
+      "Változónevet, true/false értéket vagy 0–100 közötti számliterált használj.",
+    ],
+    S_RESERVED_NAME: [
+      "Foglalt kulcsszó nem lehet változónév, más betűmérettel sem.",
+      "Válassz másik nevet, például count vagy ready.",
+    ],
+    S_INVALID_NAME: [
+      "Érvénytelen változónév.",
+      "A név betűvel kezdődjön, és csak a–z, A–Z betűket és számjegyeket tartalmazzon.",
+    ],
+    S_INVALID_EXPRESSION: [
+      "Érvénytelen kifejezés a set jobb oldalán.",
+      "Egy egyszerű érték, egy isThere hívás vagy legfeljebb egy művelet írható ide.",
+    ],
+    S_UNKNOWN_OPERATOR: [
+      "Ismeretlen műveleti jel.",
+      "Műveletek: + - * = <> < <= > >= and or not. Több műveletet külön set sorokba írj.",
+    ],
+    S_UNEXPECTED_INDENT: [
+      "Ez a sor nem kezdődhet új vagy mélyebb behúzással.",
+      "Csak if, else vagy while nyithat blokkot. Az első sor az első oszlopban kezdődjön.",
+    ],
+    S_INDENT_MISMATCH: [
+      "A behúzás nem illeszkedik egy nyitott blokk szintjéhez sem.",
+      "Egy blokk sorait azonos számú szóközzel húzd be; kilépéskor egy külső blokk szintjére térj vissza.",
+    ],
+    S_ELSE_WITHOUT_IF: [
+      "Az else előtt nincs hozzá tartozó if blokk.",
+      "Az else közvetlenül az if törzse után, az if sorával azonos behúzással álljon.",
+    ],
+    S_ELSE_MISALIGNED: [
+      "Az else behúzása nem egyezik a hozzá tartozó if sorával.",
+      "Az else sort pontosan az if sorával egy szintre igazítsd.",
+    ],
+    S_DUPLICATE_ELSE: [
+      "Ehhez az if utasításhoz már tartozik else ág.",
+      "Egy if csak egy else ágat kaphat. A fölösleges else sort töröld, vagy írj elé új if utasítást.",
+    ],
+    E_TYPE_MISMATCH: [
+      "A változó típusa nem egyezik az új érték típusával.",
+      "Az első értékadás rögzíti a típust. A másik típusú értékhez hozz létre másik változót.",
+    ],
+    E_UNINITIALIZED: [
+      "A változót az első értékadása előtt használod.",
+      "Előbb adj értéket set utasítással. A változónevekben a kis- és nagybetűk számítanak.",
+    ],
+    E_NON_BOOL_CONDITION: [
+      "Az if vagy while feltétele nem logikai érték.",
+      "A feltétel true, false vagy logikai változó legyen. A szükséges összehasonlítást külön set sorban végezd el.",
+    ],
+    E_BAD_OPERAND: [
+      "A művelet egyik értéke nem megfelelő típusú.",
+      "Számoláshoz számok, logikai művelethez logikai értékek kellenek. Egyenlőségvizsgálatnál a két típusnak egyeznie kell.",
+    ],
+    E_BEDROCK_HIT: [
+      "A robot falba ütközött vagy elérte a térkép szélét.",
+      "Lépés előtt vizsgáld meg a következő mezőt: set wall to isThere 1. A robot a már megtett szabad mezőkön át eljutott az akadály elé.",
+    ],
+    E_NO_GOLD: [
+      "A robot mezőjén nincs bányászható arany.",
+      "A már kibányászott arany nem termelődik újra. Vizsgáld meg az előtted lévő mezőt: set gold to isThere 2, majd lépj rá és bányássz.",
+    ],
+    E_BAD_ARG: [
+      "Az utasítás argumentuma rossz típusú vagy tartományon kívüli.",
+      "A step forward és turn by nemnegatív egész számot vár. Az isThere csak 0 (üres), 1 (fal) vagy 2 (arany) értéket fogad el.",
+    ],
+    INSTRUCTION_COUNT_LIMIT_EXCEEDED: [
+      "A program elérte az 1000 feldolgozott soros korlátot.",
+      "Az 1001. sor már nem hajtható végre. Ellenőrizd, hogy a while feltétele idővel false legyen; egy üres while true is eléri a korlátot.",
+    ],
+  },
+
   editor: {
+    technicalDetails: "Technikai részletek (angolul)",
+    replaceTitle: "Lecseréled a munkádat?",
+    replaceDescription: "A jelenlegi piszkozatod módosult. Ha külön példányban megőriznéd, előbb exportáld.",
+    replaceConfirm: "Piszkozat lecserélése",
+
     region: "Kódszerkesztő",
     sourceLabel: "MineScript forráskód",
     loadExample: "Példa betöltése…",
@@ -104,13 +237,14 @@ export const hu: Messages = {
     export: "Exportálás",
     docs: "Nyelv Dokumentáció",
     wrap: "Sortörés",
+    programName: "Program neve",
     noSyntaxErrors: "Nincs szintaktikai hiba",
     problemCount: (count: number) => `${count} hiba`,
     cursor: (line: number, column: number) => `${line}. sor, ${column}. oszlop`,
     lineCount: (count: number) => `${count} sor`,
     locked: "Futás közben nem szerkeszthető. A szerkesztéshez állítsd vissza.",
     problems: "Hibák",
-    nothingToFix: "Nincs mit javítani, a program helyes.",
+    nothingToFix: "Nincs szintaktikai hiba.",
     hint: "Tipp:",
     relatedLine: (line: number) => `${line}. sor:`,
     reference: "Nyelv Dokumentáció",
@@ -124,11 +258,131 @@ export const hu: Messages = {
       while: "Ciklus (2 szóköz behúzás)",
     },
     referenceNote:
-      "Érték lehet változó, true/false vagy 0–100 közötti egész szám. Műveletek: + - * = <> < <= > >= and or. isThere: 0 üres, 1 fal, 2 arany.",
+      "Érték lehet változó, true/false vagy a kódba írt 0–100 közötti egész szám. Számolás eredménye lehet negatív vagy 100-nál nagyobb is. Az if/else/while törzse üres is lehet (D2). Az üres while true az 1000 soros korlátnál áll le. Műveletek: + - * = <> < <= > >= and or. isThere: 0 üres, 1 fal, 2 arany.",
     examples: {
       "collect-gold.mine": "Aranygyűjtés",
       "first-steps.mine": "Első lépések",
       "variables.mine": "Változók és logika",
+    },
+  },
+
+  mapEditor: {
+    title: "Térképszerkesztő",
+    source: "Térképfájl",
+    visual: "Vizuális szerkesztő",
+    filename: "Térképfájl neve",
+    rows: "Sorok",
+    cols: "Oszlopok",
+    resize: "Átméretezés",
+    dimensionsHint: "Mindkét méret 1 és 15 közötti egész szám lehet.",
+    resizeHint:
+      "Kicsinyítéskor a szélső mezők levágódnak. Szükség esetén a robot a megmaradó területre kerül, és a mezője kiürül.",
+    robotDirection: "Kezdőirány",
+    tools: "Rajzolóeszköz",
+    toolNames: { empty: "Üres kamra", gold: "Arany", wall: "Fal", robot: "Robot" },
+    valid: "Érvényes térkép",
+    invalid: "Hibás térkép",
+    lastValid: "Az utolsó érvényes térkép látható. A vizuális szerkesztéshez javítsd a szöveget.",
+    protectedRobot: "Előbb helyezd át a robotot, mielőtt falat vagy aranyat teszel a mezőjére.",
+    useMap: "Használat a szimulátorban",
+    workbench: "Kódszerkesztő",
+    fileRead: "Nem sikerült beolvasni a fájlt. A jelenlegi térképed változatlan maradt.",
+    fileLarge: "A fájl túl nagy egy legfeljebb 15 × 15 mezős térképhez. A jelenlegi térképed változatlan maradt.",
+    exportHint:
+      "Csak érvényes térkép exportálható vagy használható a szimulátorban. Az export térképfájlt ment az eszközödre.",
+    keyboardHint:
+      "Válassz eszközt, majd kattints egy mezőre. A nyilakkal mozoghatsz a mezők között, Enterrel vagy Szóközzel rajzolhatsz.",
+    formatHint:
+      "Első sor: sorok és oszlopok száma, köztük egy szóköz. Utána soronként a mezők: . üres, @ arany, # fal, ^ < v > robot. Pontosan egy robot szükséges.",
+    cell: (row: number, col: number, kind: string) => `${row}. sor, ${col}. oszlop: ${kind}`,
+    statistics: (gold: number, cells: number) => `${gold} arany · ${cells} mező`,
+    errorLocation: (line: number, column: number) => `${line}. sor, ${column}. oszlop`,
+    publish: "Közzététel",
+    publishTitle: "Térkép közzététele",
+    publishName: "Térkép neve",
+    publishNameHint: "1–60 karakter. Ezt a nevet látják a játékosok; a fájlneved nem változik.",
+    publishPreview: "Kártya előnézete",
+    publishing: "Közzététel…",
+    published: (name: string) => `Közzétéve „${name}” néven. Mostantól mindenki megtalálja a kezdőlapon.`,
+    publishHint:
+      "Adj nevet a térképnek, és oszd meg minden játékossal. A közzétett térkép nem változik; a módosított változatot újra közzé kell tenni.",
+    openHome: "Kezdőlap megnyitása",
+  },
+
+  home: {
+    newFile: "Új fájl…",
+    newProgram: "MineScript program",
+    newMap: "Térkép",
+    title: "Kezdőlap",
+    greetings: [
+      (name: string) => `Üdv vissza, ${name}!`,
+      (name: string) => `Szia, ${name}!`,
+      (name: string) => `Jó újra látni, ${name}!`,
+      (name: string) => `Ássunk, ${name}!`,
+      (name: string) => `Csákányt fel, ${name}!`,
+      (name: string) => `Megjöttél, ${name}!`,
+    ],
+    publishedTitle: "Közzétett térképek",
+    publishedIntro:
+      "Játékosok által készített pályák. Válassz egyet, és írj programot, amely minél több aranyat kibányász.",
+    filter: "Térképek szűrése",
+    all: "Mind",
+    mine: "Saját",
+    loading: "Térképek betöltése…",
+    empty: "Még senki nem tett közzé térképet. Légy te az első!",
+    emptyMine: "Még nem tettél közzé térképet.",
+    loadMore: "Továbbiak",
+    by: (author: string) => `készítette: ${author}`,
+    you: "te",
+    details: (rows: number, cols: number, gold: number) => `${rows} × ${cols} mező, ${gold} arany`,
+    preview: (name: string, rows: number, cols: number) => `„${name}” térkép, ${rows} sor és ${cols} oszlop`,
+    leaderboard: "Ranglista",
+    leaderboardEmpty: "Ezt a pályát még senki nem teljesítette.",
+    place: "#",
+    player: "Játékos",
+    goldColumn: "Arany",
+    steps: "Lépés",
+    program: "Program írása",
+    deleteMap: "Térkép törlése",
+    deleteTitle: (name: string) => `Törlöd: „${name}”?`,
+    deleteText: "A térkép minden játékosnál eltűnik, a ranglistájával együtt. Ez nem vonható vissza.",
+    confirm: "Törlés",
+    cancel: "Mégse",
+  },
+
+  mapPage: {
+    back: "Vissza a kezdőlapra",
+    leaderboard: "Ranglista",
+    rule: "Előrébb áll, aki több aranyat bányászott. Azonos aranynál a kevesebb lépés nyer.",
+    notFoundTitle: "Nincs ilyen térkép",
+    notFound: "Ez a térkép nem létezik, vagy törölték.",
+  },
+
+  results: {
+    publishedMap: "Közzétett pálya: minden végigért futás után rögzül a legjobb eredményed.",
+    best: (gold: number, steps: number) => `Legjobb eredményed: ${gold} arany · ${steps} lépés`,
+    noBest: "Ezen a pályán még nincs eredményed.",
+    saving: "Eredmény rögzítése…",
+    improved: (gold: number, steps: number) => `Rögzítve: ${gold} arany · ${steps} lépés — új legjobb!`,
+    notImproved: (gold: number, steps: number) =>
+      `Rögzítve: ${gold} arany · ${steps} lépés. A legjobb eredményed nem változott.`,
+    errors: {
+      unauthenticated: "Lejárt a munkamenet, ezért az eredmény nem rögzült. Jelentkezz be újra.",
+      notFound: "Ezt a pályát közben törölték, ezért az eredmény nem rögzült.",
+      syntax: "A program hibás, ezért az eredmény nem rögzült.",
+      tooLong: "A program túl hosszú a rögzítéshez.",
+      generic: "Nem sikerült rögzíteni az eredményt. Próbáld újra.",
+    },
+  },
+
+  maps: {
+    errors: {
+      unauthenticated: "Lejárt a munkamenet. Jelentkezz be újra.",
+      invalid: "A térkép nem érvényes, ezért nem tehető közzé.",
+      name: "Adj a térképnek 1–60 karakteres nevet.",
+      notFound: "Ez a térkép már nem létezik.",
+      forbidden: "Csak a saját térképedet törölheted.",
+      generic: "Valami hiba történt. Próbáld újra.",
     },
   },
 
@@ -165,6 +419,6 @@ export const hu: Messages = {
       `Térkép, ${rows} sor és ${cols} oszlop. A robot a ${row}. sor ${col}. oszlopában áll, iránya ${direction}.`,
     facing: (direction: string) => `A robot iránya: ${direction}.`,
     fogCaption: "A tömör föld eltakarja a felfedezetlen mezőket.",
-    exploredCaption: "A kiásott föld jelöli a felfedezett mezőket.",
+    exploredCaption: "A kiásott föld és a világos tégla jelöli a felfedezett mezőket; a sötét tégla felfedezetlen fal.",
   },
 };

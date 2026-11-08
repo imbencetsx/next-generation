@@ -128,3 +128,11 @@ behaviour are unchanged from the PDF (§2.2.4, §3.4).
   console text added by `print`.
 - `parseMap` failures keep `error` (a message containing `Line N` for row problems)
   and add `line` (1-based file line) when the problem is on a specific line.
+
+## Localized presentation
+
+The engine contract remains English, including codes, spans, messages, hints and related lines.
+The app presents Hungarian explanations by code and includes valid suggested MineScript code unchanged.
+`i18n/diagnostics.ts` never mutates the original diagnostic; the complete English detail is available
+in an expandable technical section. CodeMirror uses the same presentation helper as the Problems panel.
+Map parser failures are translated at the UI boundary by `i18n/map-errors.ts`.
