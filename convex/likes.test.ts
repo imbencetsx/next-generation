@@ -71,6 +71,25 @@ describe("map likes", () => {
     expect(await other.query(api.likes.likers, { mapId })).toBeNull();
   });
 
+  test("the list carries each liker's profile picture, or null without one", async () => {
+    const { t, miner, other, third, mapId } = await setup();
+    // Az „other” játékosnak van profilképe, a „third”-nek nincs.
+    await t.run(async (ctx) => {
+      const avatarId = await ctx.storage.store(new Blob([new Uint8Array([1, 2, 3])], { type: "image/png" }));
+      const user = (await ctx.db.query("users").collect()).find(({ name }) => name === "other")!;
+      await ctx.db.patch(user._id, { avatarId });
+    });
+    await other.mutation(api.likes.toggle, { mapId });
+    await third.mutation(api.likes.toggle, { mapId });
+
+    const likers = await miner.query(api.likes.likers, { mapId });
+    expect(likers?.map(({ name, imageUrl }) => ({ name, hasImage: typeof imageUrl === "string" }))).toEqual([
+      { name: "third", hasImage: false },
+      { name: "other", hasImage: true },
+    ]);
+    expect(likers?.[0].imageUrl).toBeNull();
+  });
+
   test("signed-out callers cannot like, and deleting the map removes its likes", async () => {
     const { t, miner, other, mapId } = await setup();
     await expect(t.mutation(api.likes.toggle, { mapId })).rejects.toThrow("MAP_unauthenticated");

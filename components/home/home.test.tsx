@@ -142,13 +142,14 @@ describe("home page", () => {
     expect(within(card).queryByRole("button", { name: "Delete map" })).toBeNull();
   });
 
-  test("gold shines on the mine strip and in every map preview", () => {
+  test("gold shines on the mine strip, while map previews stay completely still", () => {
     convex.results = [map({})];
     open();
     const card = screen.getByRole("article", { name: "Corridor run" });
-    // A Corridor pályán három arany van; mindegyik a szimulátoréval azonos csillogó sprite.
-    expect(card.querySelectorAll(".gold-sparkle")).toHaveLength(3);
-    expect(document.querySelectorAll(".gold-sparkle").length).toBeGreaterThan(3);
+    // A Corridor pályán három arany van: az előnézetben álló sprite-ok, csillogás nélkül.
+    expect(card.querySelectorAll(".gold-sprite")).toHaveLength(3);
+    expect(card.querySelectorAll(".gold-sparkle")).toHaveLength(0);
+    expect(document.querySelectorAll(".gold-sparkle").length).toBeGreaterThan(0);
   });
 
   test("a map card's Leaderboard button opens the map's own page", () => {
@@ -159,14 +160,42 @@ describe("home page", () => {
     expect(within(card).queryByRole("table")).toBeNull();
   });
 
-  test("the Mine filter asks only for the player's own maps and has its own empty message", () => {
+  test("the home page shows a few built-in maps above the newest published ones, each with a link to all", () => {
+    convex.results = Array.from({ length: 8 }, (_, index) =>
+      map({ _id: `map${index}` as PublishedMap["_id"], name: `Map ${index}` }),
+    );
+    convex.status = "CanLoadMore";
     open();
-    expect(screen.getByText("No one has published a map yet. Be the first!")).toBeTruthy();
+    // A kezdőlap csak az első néhány közzétett térképet kéri, és nem lapoz, nem szűr.
     expect(convex.lastArgs).toEqual({ mine: false });
-    fireEvent.click(screen.getByRole("button", { name: "Mine" }));
-    expect(convex.lastArgs).toEqual({ mine: true });
-    expect(screen.getByRole("button", { name: "Mine" }).getAttribute("aria-pressed")).toBe("true");
-    expect(screen.getByText("You haven't published a map yet.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Mine" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Load more" })).toBeNull();
+
+    const builtIn = screen.getByRole("list", { name: "Built-in maps" });
+    const published = screen.getByRole("list", { name: "Published maps" });
+    expect(within(builtIn).getAllByRole("article")).toHaveLength(3);
+    expect(within(published).getAllByRole("article")).toHaveLength(6);
+    // A beépített pályák vannak elöl.
+    expect(builtIn.compareDocumentPosition(published) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    expect(screen.getByRole("link", { name: "All built-in maps" }).getAttribute("href")).toBe("/maps/built-in");
+    expect(screen.getByRole("link", { name: "All published maps" }).getAttribute("href")).toBe("/maps");
+  });
+
+  test("a built-in map opens in the workbench or as an editable copy, with its difficulty", () => {
+    open();
+    const card = screen.getByRole("article", { name: "Corridor" });
+    expect(card.textContent).toContain("by MineScript");
+    expect(card.textContent).toContain("Difficulty: Easy");
+    const program = new URL(
+      within(card).getByRole("link", { name: "Write a program" }).getAttribute("href")!,
+      "http://x",
+    );
+    expect(program.pathname).toBe("/workbench");
+    expect(program.searchParams.get("map")).toContain(">.@..@.@.#");
+    expect(program.searchParams.get("mapId")).toBeNull();
+    const copy = new URL(within(card).getByRole("link", { name: "Edit a copy" }).getAttribute("href")!, "http://x");
+    expect(copy.pathname).toBe("/map-editor");
   });
 
   test("an own map is deleted with an icon-only button, only after confirming in a dialog", async () => {
@@ -232,8 +261,8 @@ describe("home page", () => {
     convex.results = [map({ isMine: true, likeCount: 2 })];
     convex.likers = {
       map1: [
-        { name: "digger", likedAt: Date.UTC(2026, 10, 8), isMe: false },
-        { name: "miner", likedAt: Date.UTC(2026, 10, 7), isMe: true },
+        { name: "digger", imageUrl: null, likedAt: Date.UTC(2026, 10, 8), isMe: false },
+        { name: "miner", imageUrl: null, likedAt: Date.UTC(2026, 10, 7), isMe: true },
       ],
     };
     open();
@@ -243,7 +272,10 @@ describe("home page", () => {
       .getAllByRole("listitem")
       .map((item) => item.textContent);
     expect(names[0]).toContain("digger");
-    expect(names[1]).toContain("miner (you)");
+    // A saját kedvelésen „you” címke van; profilkép híján a név kezdőbetűje áll a pixeles körben.
+    expect(names[1]).toContain("miner");
+    expect(names[1]).toContain("you");
+    expect(names[0]).not.toContain("you");
     fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
     await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
   });
@@ -258,13 +290,12 @@ describe("home page", () => {
     expect(await within(dialog).findByText("Csak a saját térképedet törölheted.")).toBeTruthy();
   });
 
-  test("more maps can be loaded, and the page is in Hungarian too", () => {
+  test("the page is in Hungarian too", () => {
     convex.results = [map({})];
-    convex.status = "CanLoadMore";
     open("hu");
-    fireEvent.click(screen.getByRole("button", { name: "Továbbiak" }));
-    expect(convex.loadMore).toHaveBeenCalledWith(9);
     expect(screen.getByRole("heading", { level: 1, name: "Üdv vissza, miner!" })).toBeTruthy();
     expect(screen.getByText("Közzétett térképek")).toBeTruthy();
+    expect(screen.getByText("Beépített pályák")).toBeTruthy();
+    expect(screen.getByRole("article", { name: "Folyosó" })).toBeTruthy();
   });
 });

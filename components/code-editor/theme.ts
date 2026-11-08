@@ -4,6 +4,9 @@
 import { EditorView } from "@codemirror/view";
 
 const GOLD_TINT = "rgb(240 167 0 / 0.22)";
+/** A kijelölés háttere: arany árnyalat, amin a fehér szöveg és az arany kulcsszavak is olvashatók maradnak. */
+const SELECTION = "rgb(240 167 0 / 0.26)";
+const SELECTION_UNFOCUSED = "rgb(240 167 0 / 0.16)";
 const BRICK_TINT = "rgb(140 52 43 / 0.35)";
 const WAVY_ERROR_UNDERLINE = { textDecoration: "underline wavy var(--brick-text)", textUnderlineOffset: "4px" };
 const MONO = "var(--font-geist-mono), monospace";
@@ -36,7 +39,14 @@ export const editorTheme = EditorView.theme(
     // Kurzor és kijelölés
     ".cm-activeLine": { backgroundColor: "var(--code-highlight)" },
     ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--primary)", borderLeftWidth: "2px" },
-    ".cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection": { backgroundColor: GOLD_TINT },
+    // A CodeMirror sötét alaptémája (#233, kékes) erősebb szelektorral színez; a dupla osztály ezt felülírja.
+    ".cm-selectionLayer.cm-selectionLayer .cm-selectionBackground": { backgroundColor: SELECTION_UNFOCUSED },
+    "&.cm-focused > .cm-scroller > .cm-selectionLayer.cm-selectionLayer .cm-selectionBackground": {
+      backgroundColor: SELECTION,
+    },
+    // A böngésző a kijelölés színét a szülő ::selection-jéből örökli (az oldalon sötét szöveg); a kijelölt kód
+    // tartsa meg a saját kiemelési színét.
+    "& ::selection, &::selection": { color: "currentcolor" },
     ".cm-matchingBracket": { backgroundColor: GOLD_TINT, outline: "none" },
     ".cm-searchMatch": { backgroundColor: "rgb(234 231 221 / 0.18)" },
     ".cm-panels": { backgroundColor: "var(--popover)", color: "var(--foreground)" },

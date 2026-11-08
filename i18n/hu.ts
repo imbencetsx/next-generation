@@ -323,6 +323,14 @@ export const hu: Messages = {
       (name: string) => `Csákányt fel, ${name}!`,
       (name: string) => `Megjöttél, ${name}!`,
     ],
+    builtInTitle: "Beépített pályák",
+    builtInIntro: "Kész bányák gyakorláshoz, a könnyűtől a nehézig. Válassz egyet, és írj hozzá programot.",
+    builtInAuthor: "MineScript",
+    allBuiltIn: "Összes beépített pálya",
+    allPublished: "Összes közzétett térkép",
+    difficulty: { easy: "Könnyű", medium: "Közepes", hard: "Nehéz" },
+    difficultyLabel: (level: string) => `Nehézség: ${level}`,
+    editCopy: "Másolat szerkesztése",
     publishedTitle: "Közzétett térképek",
     publishedIntro:
       "Játékosok által készített pályák. Válassz egyet, és írj programot, amely minél több aranyat kibányász.",
@@ -357,6 +365,17 @@ export const hu: Messages = {
     likersEmpty: "Ezt a térképet még senki nem kedvelte.",
     likersMore: (count: number) => `…és még ${count} játékos`,
     close: "Bezárás",
+  },
+
+  mobile: {
+    workbenchViews: "A munkafelület nézetei",
+    mapEditorViews: "A térképszerkesztő nézetei",
+    code: "Kód",
+    map: "Térkép",
+    console: "Konzol",
+    problems: "Hibák",
+    draw: "Rajz",
+    text: "Szöveg",
   },
 
   mapPage: {
@@ -426,7 +445,18 @@ export const hu: Messages = {
     fog: "Köd",
     gold: "Arany",
     lines: "Sorok",
-    maps: { "Corridor": "Folyosó", "Rooms": "Termek", "Open field": "Nyílt mező", "Shared map": "Megosztott térkép" },
+    maps: {
+      "Corridor": "Folyosó",
+      "Rooms": "Termek",
+      "Open field": "Nyílt mező",
+      "Gold rush": "Aranyláz",
+      "Zigzag": "Cikcakk",
+      "Islands": "Szigetek",
+      "Spiral": "Spirál",
+      "Fortress": "Erőd",
+      "Labyrinth": "Labirintus",
+      "Shared map": "Megosztott térkép",
+    },
     directions: ["észak", "nyugat", "dél", "kelet"],
     mapLabel: (rows: number, cols: number, row: number, col: number, direction: string) =>
       `Térkép, ${rows} sor és ${cols} oszlop. A robot a ${row}. sor ${col}. oszlopában áll, iránya ${direction}.`,

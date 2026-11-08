@@ -174,10 +174,17 @@ export const cellAt = (map: Pick<GameMap, "cols">, index: number) => ({
   y: Math.floor(index / map.cols),
 });
 
-/** A beépített pályák; a nevük egyben fordítási kulcs is (sim.maps). */
-export const MAP_PRESETS = [
+/** A beépített pályák nehézsége (a kezdőlap és a beépített pályák oldala mutatja; a fordítás: builtIn.difficulty). */
+export type PresetDifficulty = "easy" | "medium" | "hard";
+
+/**
+ * A beépített pályák; a nevük egyben fordítási kulcs is (sim.maps). Az első a szimulátor alapértelmezett pályája.
+ * A sorrend az indexük miatt rögzített (a szerkesztő példaválasztója); a felület nehézség szerint rendezve mutatja.
+ */
+export const MAP_PRESETS: { name: string; difficulty: PresetDifficulty; text: string }[] = [
   {
     name: "Corridor",
+    difficulty: "easy",
     text: `3 10
 ##########
 >.@..@.@.#
@@ -185,6 +192,7 @@ export const MAP_PRESETS = [
   },
   {
     name: "Rooms",
+    difficulty: "medium",
     text: `7 12
 ############
 #.....#..@.#
@@ -196,12 +204,93 @@ export const MAP_PRESETS = [
   },
   {
     name: "Open field",
+    difficulty: "easy",
     text: `5 8
 ........
 ..@.....
 .>....@.
 ......@.
 .@......`,
+  },
+  {
+    name: "Gold rush",
+    difficulty: "easy",
+    text: `6 10
+>.@.@.@.@.
+.@.@.@.@.@
+@.@.@.@.@.
+.@.@.@.@.@
+@.@.@.@.@.
+.@.@.@.@.@`,
+  },
+  {
+    name: "Zigzag",
+    difficulty: "medium",
+    text: `7 11
+>.........#
+#########.#
+#.@.......#
+#.#########
+#.....@...#
+#########.#
+@.........#`,
+  },
+  {
+    name: "Islands",
+    difficulty: "medium",
+    text: `8 12
+v...........
+..##....##..
+.#@@#..#@@#.
+..##....##..
+............
+....#@@#....
+.....##.....
+@..........@`,
+  },
+  {
+    name: "Spiral",
+    difficulty: "hard",
+    text: `9 9
+>........
+########.
+#.....@#.
+#.###..#.
+#.#@#..#.
+#.#.##.#.
+#.#....#.
+#.######.
+#@.......`,
+  },
+  {
+    name: "Fortress",
+    difficulty: "hard",
+    text: `9 11
+>..........
+.#########.
+.#..@.@..#.
+.#.#####.#.
+.#.#@@@#.#.
+.#.##.##.#.
+.#.......#.
+.####.####.
+...........`,
+  },
+  {
+    name: "Labyrinth",
+    difficulty: "hard",
+    text: `11 11
+>...#.....@
+###.#.###.#
+#...#...#.#
+#.#####.#.#
+#.....#.#..
+#####.#.##.
+#@..#.#....
+#.#.#.#####
+#.#...#...#
+#.#####.#.#
+#.......#@#`,
   },
 ];
 

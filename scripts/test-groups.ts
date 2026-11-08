@@ -33,6 +33,7 @@ const APP_SUITE = [
   "components/workbench",
   "components/home",
   "components/map-page",
+  "components/maps",
 ];
 
 type Rule = {
@@ -118,6 +119,15 @@ const RULES: Rule[] = [
     matches: (path) => isUnder("scripts/test-")(path) || isOneOf("package.json", "bun.lock", "tsconfig.json")(path),
     tests: FULL_SUITE,
   },
+  // A kis képernyős fülsor és a képernyőméret-figyelés: a munkafelület, a térképszerkesztő és a térkép oldalának tesztjei.
+  {
+    matches: isOneOf("components/mobile-tabs.tsx", "components/use-media-query.ts"),
+    tests: [],
+    appTests: ["components/workbench", "components/map-editor", "components/map-page"],
+    ui: true,
+  },
+  // A sprite-okat rajzoló Python-szkriptek: nincs hozzájuk teszt, a kirajzolt képet a felületen kell megnézni.
+  { matches: isOneOf("scripts/draw-mine-timber.py", "scripts/cut-gold-chips.py"), tests: [], ui: true },
   // Convex backend és a profil oldal: a Vitest-csomag (bun run test:app).
   {
     matches: (path) => /^(convex|components\/profile)\/.*\.test\.tsx?$/.test(path),
@@ -129,6 +139,8 @@ const RULES: Rule[] = [
   { matches: isUnder("components/profile/"), tests: [], appTests: ["components/profile"], ui: true },
   { matches: isUnder("components/home/"), tests: [], appTests: ["components/home"], ui: true },
   { matches: isUnder("components/map-page/"), tests: [], appTests: ["components/map-page"], ui: true },
+  // A térképlisták (beépített és közzétett) a kezdőlapon is megjelennek.
+  { matches: isUnder("components/maps/"), tests: [], appTests: ["components/maps", "components/home"], ui: true },
   // A szótár szövegeit a profil, a térképszerkesztő és a munkafelület renderelési tesztjei ellenőrzik.
   {
     matches: isUnder("i18n/"),
@@ -139,6 +151,7 @@ const RULES: Rule[] = [
       "components/workbench",
       "components/home",
       "components/map-page",
+      "components/maps",
     ],
     ui: true,
   },

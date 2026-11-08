@@ -69,7 +69,7 @@ export default function MapGrid({ map, disabled, onPaint }: Props) {
   }
 
   return (
-    <div ref={viewport} className="min-h-[240px] flex-1 overflow-auto bg-background">
+    <div ref={viewport} className="min-h-[320px] flex-1 overflow-auto bg-background">
       <div className="grid min-h-full min-w-full w-max place-items-center p-4">
         <div
           ref={grid}

@@ -15,6 +15,7 @@ import Logo from "@/components/logo";
 import TopBar, { AccountActions } from "@/components/top-bar";
 import { buttonVariants } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
+import { PHONE_QUERY, useMediaQuery } from "@/components/use-media-query";
 import { useI18n } from "@/i18n/i18n-provider";
 import { parseMap } from "@/lib/robot-map";
 import { ROUTES, withMap } from "@/lib/routes";
@@ -22,6 +23,8 @@ import MapLeaderboard from "./leaderboard";
 
 /** A nagy előnézet legfeljebb ekkora helyet foglal; a mezőméret egész pixel, hogy a pixel art éles maradjon. */
 const PREVIEW_SIZE = 420;
+/** Telefonon (a lap 16 px-es margóival együtt) ennyi fér ki keresztben. */
+const PHONE_PREVIEW_SIZE = 300;
 const MAX_PREVIEW_CELL = 64;
 
 export default function MapPage({ mapId }: { mapId: string }) {
@@ -70,15 +73,14 @@ type PublishedMap = NonNullable<FunctionReturnType<typeof api.maps.get>>;
 function MapDetails({ map }: { map: PublishedMap }) {
   const { t, locale } = useI18n();
   const parsed = parseMap(map.text);
-  const cell = Math.min(MAX_PREVIEW_CELL, Math.floor(PREVIEW_SIZE / Math.max(map.rows, map.cols)));
+  const size = useMediaQuery(PHONE_QUERY) ? PHONE_PREVIEW_SIZE : PREVIEW_SIZE;
+  const cell = Math.min(MAX_PREVIEW_CELL, Math.floor(size / Math.max(map.rows, map.cols)));
   const published = new Date(map._creationTime);
 
   return (
     <div className="grid gap-12 lg:grid-cols-[auto_1fr]">
       <div className="flex flex-col gap-5">
-        {parsed.ok && (
-          <MiniMap map={parsed.map} cell={cell} label={t.home.preview(map.name, map.rows, map.cols)} shine />
-        )}
+        {parsed.ok && <MiniMap map={parsed.map} cell={cell} label={t.home.preview(map.name, map.rows, map.cols)} />}
         <div className="space-y-1">
           <h1 className="font-pixel text-3xl break-words">{map.name}</h1>
           <p className="font-read text-muted-foreground">

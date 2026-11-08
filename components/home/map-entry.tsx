@@ -72,7 +72,7 @@ export default function MapEntry({ map }: { map: PublishedMap }) {
           {t.home.leaderboard}
         </Link>
         <LikeButton mapId={map._id} mapName={map.name} liked={map.likedByMe} count={map.likeCount} />
-        {map.isMine && <LikersDialog mapId={map._id} mapName={map.name} total={map.likeCount} />}
+        {map.isMine && <LikersDialog mapId={map._id} mapName={map.name} total={map.likeCount} mapText={map.text} />}
         {map.isMine && <DeleteMap mapId={map._id} mapName={map.name} />}
       </div>
     </MapCard>

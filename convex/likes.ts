@@ -55,7 +55,17 @@ export const toggle = mutation({
 /** Kik kedvelték a térképet, a legújabb elöl. Csak a szerzőnek; másnak (és nem létező térképnél) null. */
 export const likers = query({
   args: { mapId: v.id("maps") },
-  returns: v.union(v.array(v.object({ name: v.string(), likedAt: v.number(), isMe: v.boolean() })), v.null()),
+  returns: v.union(
+    v.array(
+      v.object({
+        name: v.string(),
+        imageUrl: v.union(v.string(), v.null()),
+        likedAt: v.number(),
+        isMe: v.boolean(),
+      }),
+    ),
+    v.null(),
+  ),
   handler: async (ctx, args) => {
     const viewerId = await currentUserId(ctx);
     const map = await ctx.db.get(args.mapId);
@@ -67,8 +77,13 @@ export const likers = query({
       .order("desc")
       .take(LIKERS_LIMIT);
     const users = await Promise.all(likes.map((like) => ctx.db.get(like.userId)));
+    // A profilkép aláírt címe (vagy null, ha a játékosnak nincs képe); a lista legfeljebb LIKERS_LIMIT elemű.
+    const imageUrls = await Promise.all(
+      users.map((user) => (user?.avatarId ? ctx.storage.getUrl(user.avatarId) : null)),
+    );
     return likes.map((like, index) => ({
       name: users[index]?.name ?? "player",
+      imageUrl: imageUrls[index],
       likedAt: like._creationTime,
       isMe: like.userId === viewerId,
     }));

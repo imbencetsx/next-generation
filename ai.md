@@ -21,9 +21,9 @@
 
 A modelleket előzetes tapasztalatunk alapján megpróbáltuk úgy használni hogy mindegyiknek adtunk egy szerepet már előzetesen. Kijelöltük hogy az Opus 5.5 modell jó abban hogy egy létező UI-t összehangol. GPT 6.1 Sol: Jó codebasek logikája megértésében. Gemini 3.8 Flash: Meglepően értehetően ír és nagyon jól magyaráz el nehezebb dolgokat
 
-Úgy vettük észre hogy ezzel a megoldással mind gyorsan megismertük 
+Úgy vettük észre hogy ezzel a megoldással mind gyorsan megismertük a projektet.
 
-## Esetek amikor az Ai nem végeze jól a dolgát:
+## Esetek amikor az Ai nem végezte jól a dolgát:
 
 - Nem gondolkozik kreatívan: Amikor a backendet megpróbáltuk elmagyarázni neki akkor sokszor ugyanabba a végpontba jutottunk el; Az Ai modellek nem tudtak a dobozon kívül gondolkodni. Egyszerűen nem értette meg a szintaktikát mert nem magyaráztuk el neki olyan pontosan hogy egy nyelvet felíépítsen belőle. Ezt saját beavatkozásunkkal tudtuk megoldani.
 - Tesztek írásakor 2 esetben olyan teszteket írt ami lehetetlen volt. Ezt csak kitöröltük
