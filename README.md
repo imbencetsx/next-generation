@@ -11,7 +11,7 @@ A funkciók használatát, a korlátokat, az extrákat és a bemutatás menetét
 
 ## Helyi indítás
 
-Bun 1.3 és egy Convex fejlesztői projekt szükséges.
+Bun 1.3, Node.js 24 LTS és egy Convex fejlesztői projekt szükséges.
 
 ```sh
 bun install
@@ -39,6 +39,33 @@ A régi `/test` cím átirányít a munkafelületre.
 Az auth kulcsok a Convex deploymenten élnek, nem a repóban. Éles telepítéshez az [AGENTS.md](AGENTS.md)
 telepítési fejezete ad útmutatót. A helyi fejlesztés és a Vercel béta szándékosan ugyanazt a fejlesztői
 adatbázist használja.
+
+## Éles szerver Node.js-szel
+
+Bun nélkül is telepíthető, Node.js 24 LTS és npm használatával. A repó `bun.lock` fájlja a
+Bun-telepítéseket rögzíti; az első `npm install` saját `package-lock.json` fájlt készít.
+
+A szerver `.env.local` fájljába a production deployment adatai kerüljenek:
+
+```dotenv
+CONVEX_DEPLOY_KEY="production-deploy-kulcs"
+NEXT_PUBLIC_CONVEX_URL=https://production-deployment.convex.cloud
+NEXT_PUBLIC_CONVEX_SITE_URL=https://production-deployment.convex.site
+```
+
+Ezután a projekt könyvtárában:
+
+```sh
+npm install
+npm run auth:setup -- --prod --site-url https://sajat-domain.hu
+npm run build:prod
+npm start
+```
+
+A `sajat-domain.hu` helyére az alkalmazás nyilvános címe kerül, záró perjel nélkül.
+A production Convex környezeti változóihoz az `OPENAI_API_KEY` is szükséges a térképnevek
+moderálásához; nélküle a közzététel nem működik. A kiszolgáláshoz HTTPS és tartósan futó
+Node-folyamat szükséges. A motortesztek futtatásához továbbra is Bun kell.
 
 ## Hol kezdj olvasni?
 

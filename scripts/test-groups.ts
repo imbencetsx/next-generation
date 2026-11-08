@@ -124,6 +124,7 @@ const RULES: Rule[] = [
     ui: true,
   },
   // Tesztek és teszteszközök; egy módosított tesztfájl pontosan önmagát választja.
+  { matches: isOneOf("scripts/setup-auth.mjs"), tests: ["tests/tooling/setup-auth.test.ts"] },
   { matches: isUnder("tests/support/"), tests: FULL_SUITE },
   { matches: (path) => /^tests\/.*\.test\.ts$/.test(path), tests: (path) => [path] },
   // Egy tesztmappa segédfájlja (pl. tests/adversarial/model.ts): a mappa összes tesztje.

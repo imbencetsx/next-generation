@@ -7,7 +7,14 @@
 // A meglévő kulcsokat alapból nem írja felül. Az értékeket argumentumtömbként adjuk át (NAME=VALUE alak),
 // így a „-----BEGIN” kezdetű kulcsot sem shell, sem a CLI nem értelmezi félre. Semmit nem ír lemezre.
 
+import { spawnSync } from "node:child_process";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
 import { exportJWK, exportPKCS8, generateKeyPair } from "jose";
+
+// A telepített CLI-t közvetlenül a Node indítja, csomagletöltés és shell nélkül.
+const require = createRequire(import.meta.url);
+const convexCli = join(dirname(require.resolve("convex/package.json")), "bin/main.js");
 
 const args = process.argv.slice(2);
 const prod = args.includes("--prod");
@@ -16,7 +23,7 @@ const siteUrl = args[args.indexOf("--site-url") + 1];
 const target = prod ? ["--prod"] : [];
 
 if (!args.includes("--site-url") || !siteUrl || !/^https?:\/\/[^/]+$/.test(siteUrl)) {
-  console.error("Usage: bun run auth:setup -- [--prod] [--rotate] --site-url <origin, e.g. https://example.com>");
+  console.error("Usage: npm run auth:setup -- [--prod] [--rotate] --site-url <origin, e.g. https://example.com>");
   process.exit(1);
 }
 if (prod && !siteUrl.startsWith("https://")) {
@@ -24,10 +31,11 @@ if (prod && !siteUrl.startsWith("https://")) {
   process.exit(1);
 }
 
-function convex(...command: string[]) {
-  const result = Bun.spawnSync(["bunx", "convex", ...command, ...target], { stderr: "pipe" });
-  if (result.exitCode !== 0) throw new Error(`convex ${command[0]} ${command[1]} failed:\n${result.stderr.toString()}`);
-  return result.stdout.toString().trim();
+function convex(...command) {
+  const result = spawnSync(process.execPath, [convexCli, ...command, ...target], { encoding: "utf8" });
+  if (result.error) throw result.error;
+  if (result.status !== 0) throw new Error(`convex ${command[0]} ${command[1]} failed:\n${result.stderr}`);
+  return result.stdout.trim();
 }
 
 const hasKeys = convex("env", "get", "JWT_PRIVATE_KEY") !== "";

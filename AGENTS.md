@@ -109,7 +109,7 @@ convex/auth.ts               Convex Auth with a custom username/password credent
 convex/auth.config.ts        JWT issuer config — without it every user looks signed out
 convex/credentials.ts        username/password rules shared by the server and the login form
 convex/users.ts              currentUserId(ctx) (checks the session too) and the viewer query
-scripts/setup-auth.ts        sets JWT_PRIVATE_KEY / JWKS / SITE_URL on a Convex deployment: bun run auth:setup -- [--prod] --site-url <origin>
+scripts/setup-auth.mjs        sets JWT_PRIVATE_KEY / JWKS / SITE_URL on a Convex deployment: bun run auth:setup -- [--prod] --site-url <origin>
 .env.example                 every env var the app needs, with where it comes from
 components/scene/            shared decorative scenery: star-field.tsx, embers.tsx, light-model.ts + pixel-light.tsx (the one pixelated flashlight: low-res canvas, stepped bands, beam ahead of the robot; used by the simulator, the home tunnel and the login corridor), mine-light.tsx (that light + drill sparks for the small mine scenes); login-lights.tsx in components/auth puts the stars and embers behind /login
 components/pixel-circle.tsx  stepped pixel circle with lighting (profile picture, leaderboard medals); components/gold-shine.tsx sparkling gold nugget (strip, previews)
@@ -154,7 +154,9 @@ docs/testing.md              test groups, commands, source mapping, performance 
 
 1. Create a production deploy key in the Convex dashboard and set `CONVEX_DEPLOY_KEY` on the build machine (a real secret).
 2. Once per deployment: `bun run auth:setup -- --prod --site-url https://<your-domain>`.
-3. Each release: `bun run build:prod` (deploys `convex/` to production, then runs `next build` with the production `NEXT_PUBLIC_CONVEX_URL`), then `next start` on the Node server. Only the Next.js server is self-hosted; Convex is hosted by Convex.
+3. Each release: `bun run build:prod` (builds Next.js with the production `NEXT_PUBLIC_CONVEX_URL`, then deploys `convex/`), then `next start` on the Node server. Only the Next.js server is self-hosted; Convex is hosted by Convex.
+
+Production also supports Node.js 24 LTS with npm, without Bun: `npm install`, `npm run auth:setup -- --prod --site-url https://<your-domain>`, `npm run build:prod`, `npm start`. The auth script loads `.env.local` and invokes the installed Convex CLI through Node; the build command uses npm internally. Keep the production URLs and deploy key in the server’s `.env.local`. The engine tests still use Bun.
 
 ## 4. File formats (PDF §1)
 
