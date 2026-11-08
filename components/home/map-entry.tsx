@@ -1,11 +1,14 @@
 "use client";
 
 // Egy közzétett térkép a kezdőlap rácsában (pixeles kerettel, háttér nélkül): a térkép képe, a neve, a szerzője és mérete, valamint a
-// műveletek: programot írni a munkafelületen lehet rá, a „Ranglista” a térkép oldalára visz, a saját térkép törölhető.
+// műveletek: programot írni a munkafelületen lehet rá, a „Ranglista” a térkép oldalára visz, a szívvel kedvelni lehet
+// (a sajátot is), a saját térképnél megnézhető, kik kedvelték, és törölhető.
 
 import Link from "next/link";
 import { useMutation } from "convex/react";
 import { useState } from "react";
+import LikeButton from "@/components/likes/like-button";
+import LikersDialog from "@/components/likes/likers-dialog";
 import MapCard from "@/components/map-card";
 import { Alert, Code, Trash, Trophy } from "@/components/icons";
 import {
@@ -36,6 +39,8 @@ export type PublishedMap = {
   goldCount: number;
   authorName: string;
   isMine: boolean;
+  likeCount: number;
+  likedByMe: boolean;
 };
 
 export default function MapEntry({ map }: { map: PublishedMap }) {
@@ -66,6 +71,8 @@ export default function MapEntry({ map }: { map: PublishedMap }) {
           <Trophy aria-hidden />
           {t.home.leaderboard}
         </Link>
+        <LikeButton mapId={map._id} mapName={map.name} liked={map.likedByMe} count={map.likeCount} />
+        {map.isMine && <LikersDialog mapId={map._id} mapName={map.name} total={map.likeCount} />}
         {map.isMine && <DeleteMap mapId={map._id} mapName={map.name} />}
       </div>
     </MapCard>

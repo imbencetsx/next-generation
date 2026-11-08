@@ -20,6 +20,7 @@ import { Download as DownloadGlyph } from "pixelarticons/react/Download.js";
 import { ExternalLink as ExternalLinkGlyph } from "pixelarticons/react/ExternalLink.js";
 import { File } from "pixelarticons/react/File.js";
 import { Globe as GlobeGlyph } from "pixelarticons/react/Globe.js";
+import { Heart as HeartGlyph } from "pixelarticons/react/Heart.js";
 import { Home as HomeGlyph } from "pixelarticons/react/Home.js";
 import { Lock as LockGlyph } from "pixelarticons/react/Lock.js";
 import { Map as MapGlyph } from "pixelarticons/react/Map.js";
@@ -39,8 +40,20 @@ import { TextWrap } from "pixelarticons/react/TextWrap.js";
 import { Trash as TrashGlyph } from "pixelarticons/react/Trash.js";
 import { Trophy as TrophyGlyph } from "pixelarticons/react/Trophy.js";
 import { Upload as UploadGlyph } from "pixelarticons/react/Upload.js";
+import { User as UserGlyph } from "pixelarticons/react/User.js";
 import { UserPlus as UserPlusGlyph } from "pixelarticons/react/UserPlus.js";
+import { Users as UsersGlyph } from "pixelarticons/react/Users.js";
 import { WarningDiamond } from "pixelarticons/react/WarningDiamond.js";
+
+// Kitöltött szív (a pixelarticons csak körvonalasat ad): ugyanaz a körvonal a 24-es rácson, belül tömören.
+// A kedvelt állapotot ez jelzi, nem csak a gomb színe.
+function HeartFilledGlyph(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <path d="M5 2h4v2h2v2h2V4h2V2h4v2h2v2h2v6h-2v2h-2v2h-2v2h-2v2h-2v2h-2v-2H9v-2H7v-2H5v-2H3v-2H1V6h2V4h2V2Z" />
+    </svg>
+  );
+}
 
 export type IconProps = Omit<SVGProps<SVGSVGElement>, "ref"> & { size?: number };
 type Glyph = (props: SVGProps<SVGSVGElement>) => React.JSX.Element;
@@ -78,6 +91,8 @@ export const ExternalLink = pixelIcon(ExternalLinkGlyph, "ExternalLink");
 export const FileIcon = pixelIcon(File, "FileIcon");
 export const Fog = pixelIcon(Cloud, "Fog");
 export const Globe = pixelIcon(GlobeGlyph, "Globe");
+export const Heart = pixelIcon(HeartGlyph, "Heart");
+export const HeartFilled = pixelIcon(HeartFilledGlyph, "HeartFilled");
 export const Home = pixelIcon(HomeGlyph, "Home");
 export const Idle = pixelIcon(Circle, "Idle");
 export const Lock = pixelIcon(LockGlyph, "Lock");
@@ -98,6 +113,8 @@ export const TestTube = pixelIcon(TestTubeGlyph, "TestTube");
 export const Trash = pixelIcon(TrashGlyph, "Trash");
 export const Trophy = pixelIcon(TrophyGlyph, "Trophy");
 export const Upload = pixelIcon(UploadGlyph, "Upload");
+export const User = pixelIcon(UserGlyph, "User");
 export const UserPlus = pixelIcon(UserPlusGlyph, "UserPlus");
+export const Users = pixelIcon(UsersGlyph, "Users");
 export const Warning = pixelIcon(WarningDiamond, "Warning");
 export const Wrap = pixelIcon(TextWrap, "Wrap");

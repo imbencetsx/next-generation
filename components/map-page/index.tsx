@@ -1,13 +1,15 @@
 "use client";
 
 // Egy közzétett térkép oldala (/maps/<azonosító>): balra a térkép nagyban, a neve, szerzője, mérete és a
-// programírás gombja; jobbra a teljes ranglista. A kezdőlap térképeinek „Ranglista” gombja vezet ide.
+// programírás és a kedvelés gombja (saját térképnél alatta a kedvelők); jobbra a teljes ranglista. A kezdőlap térképeinek „Ranglista” gombja vezet ide.
 
 import Link from "next/link";
 import { useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { MiniMap } from "@/components/docs/mini-map";
 import { ChevronLeft, Code } from "@/components/icons";
+import LikeButton from "@/components/likes/like-button";
+import LikersList from "@/components/likes/likers-list";
 import LoadingStatus from "@/components/loading-status";
 import Logo from "@/components/logo";
 import TopBar, { AccountActions } from "@/components/top-bar";
@@ -85,15 +87,26 @@ function MapDetails({ map }: { map: PublishedMap }) {
           </p>
           <p className="font-read text-muted-foreground">{t.home.details(map.rows, map.cols, map.goldCount)}</p>
         </div>
-        <Link
-          href={withMap(ROUTES.workbench, map.text, map.name, map._id)}
-          data-slot="button"
-          data-variant="default"
-          className={buttonVariants({ size: "lg", className: "self-start" })}
-        >
-          <Code aria-hidden />
-          {t.home.program}
-        </Link>
+        <div className="flex flex-wrap items-start gap-2">
+          <Link
+            href={withMap(ROUTES.workbench, map.text, map.name, map._id)}
+            data-slot="button"
+            data-variant="default"
+            className={buttonVariants({ size: "lg" })}
+          >
+            <Code aria-hidden />
+            {t.home.program}
+          </Link>
+          <LikeButton mapId={map._id} mapName={map.name} liked={map.likedByMe} count={map.likeCount} size="lg" />
+        </div>
+        {map.isMine && (
+          <section aria-labelledby="likers-title" className="space-y-2">
+            <h2 id="likers-title" className="font-pixel text-xl">
+              {t.home.likers}
+            </h2>
+            <LikersList mapId={map._id} total={map.likeCount} labelledBy="likers-title" />
+          </section>
+        )}
       </div>
 
       <section aria-labelledby="leaderboard-title" className="min-w-0 space-y-4">

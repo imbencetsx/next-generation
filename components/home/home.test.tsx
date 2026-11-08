@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { getFunctionName, type FunctionReference } from "convex/server";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { I18nProvider } from "@/i18n/i18n-provider";
 import type { PublishedMap } from "./map-entry";
@@ -14,6 +15,9 @@ const convex = vi.hoisted(() => ({
   lastArgs: null as unknown,
   loadMore: vi.fn(),
   remove: vi.fn(),
+  toggleLike: vi.fn(),
+  /** A kedvelők névsora térképenként (likes:likers). */
+  likers: {} as Record<string, unknown>,
   /** A ranglista-lekérdezés válasza térképenként (undefined: még tölt). */
   leaderboards: {} as Record<string, unknown>,
   viewer: { _id: "user1", name: "miner", imageUrl: null } as unknown,
@@ -23,10 +27,14 @@ vi.mock("convex/react", () => ({
     convex.lastArgs = args;
     return { results: convex.results, status: convex.status, loadMore: convex.loadMore };
   },
-  useMutation: () => convex.remove,
-  // A ranglista-lekérdezés térképazonosítót kap, a bejelentkezett játékos lekérdezése nem.
-  useQuery: (_query: unknown, args?: { mapId?: string }) =>
-    args?.mapId ? (convex.leaderboards[args.mapId] ?? []) : convex.viewer,
+  useMutation: (mutation: FunctionReference<"mutation">) =>
+    getFunctionName(mutation) === "likes:toggle" ? convex.toggleLike : convex.remove,
+  // A térképes lekérdezések térképazonosítót kapnak, a bejelentkezett játékos lekérdezése nem.
+  useQuery: (query: FunctionReference<"query">, args?: { mapId?: string }) => {
+    if (!args?.mapId) return convex.viewer;
+    if (getFunctionName(query) === "likes:likers") return convex.likers[args.mapId];
+    return convex.leaderboards[args.mapId] ?? [];
+  },
 }));
 
 function map(overrides: Partial<PublishedMap>): PublishedMap {
@@ -40,6 +48,8 @@ function map(overrides: Partial<PublishedMap>): PublishedMap {
     goldCount: 3,
     authorName: "other",
     isMine: false,
+    likeCount: 0,
+    likedByMe: false,
     ...overrides,
   };
 }
@@ -50,6 +60,8 @@ beforeEach(() => {
   convex.lastArgs = null;
   convex.loadMore.mockReset();
   convex.remove.mockReset();
+  convex.toggleLike.mockReset();
+  convex.likers = {};
   convex.leaderboards = {};
   convex.viewer = { _id: "user1", name: "miner", imageUrl: null };
 });
@@ -184,6 +196,56 @@ describe("home page", () => {
     }
     fireEvent.click(within(again).getByRole("button", { name: "Delete" }));
     await waitFor(() => expect(convex.remove).toHaveBeenCalledWith({ mapId: "map1" }));
+  });
+
+  test("any map can be liked with the heart button, which shows the count and the liked state", async () => {
+    convex.results = [
+      map({ likeCount: 4 }),
+      map({ _id: "map2" as PublishedMap["_id"], name: "Liked", likedByMe: true }),
+    ];
+    convex.toggleLike.mockResolvedValue(true);
+    open();
+    const card = screen.getByRole("article", { name: "Corridor run" });
+    const heart = within(card).getByRole("button", { name: "Like “Corridor run”, 4 likes" });
+    expect(heart.getAttribute("aria-pressed")).toBe("false");
+    expect(heart.textContent).toBe("4");
+    // Más térképén nincs kedvelőlista.
+    expect(within(card).queryByRole("button", { name: "Who liked “Corridor run”" })).toBeNull();
+    fireEvent.click(heart);
+    await waitFor(() => expect(convex.toggleLike).toHaveBeenCalledWith({ mapId: "map1" }));
+
+    const liked = screen.getByRole("article", { name: "Liked" });
+    expect(within(liked).getByRole("button", { name: "Like “Liked”, 0 likes" }).getAttribute("aria-pressed")).toBe(
+      "true",
+    );
+  });
+
+  test("a failed like is announced next to the heart", async () => {
+    convex.results = [map({})];
+    convex.toggleLike.mockRejectedValue(new Error("offline"));
+    open("hu");
+    fireEvent.click(screen.getByRole("button", { name: "„Corridor run” kedvelése, 0 kedvelés" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("Nem sikerült menteni a kedvelést.");
+  });
+
+  test("on an own map the author can open the list of who liked it", async () => {
+    convex.results = [map({ isMine: true, likeCount: 2 })];
+    convex.likers = {
+      map1: [
+        { name: "digger", likedAt: Date.UTC(2026, 10, 8), isMe: false },
+        { name: "miner", likedAt: Date.UTC(2026, 10, 7), isMe: true },
+      ],
+    };
+    open();
+    fireEvent.click(screen.getByRole("button", { name: "Who liked “Corridor run”" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Who liked “Corridor run”" });
+    const names = within(dialog)
+      .getAllByRole("listitem")
+      .map((item) => item.textContent);
+    expect(names[0]).toContain("digger");
+    expect(names[1]).toContain("miner (you)");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
   });
 
   test("a failed delete is explained inside the dialog", async () => {

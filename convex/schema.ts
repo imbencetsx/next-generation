@@ -22,7 +22,16 @@ export default defineSchema({
     rows: v.number(),
     cols: v.number(),
     goldCount: v.number(),
+    /** A kedvelések száma (a likes táblával együtt frissül); a régebbi térképeknél hiányozhat, akkor 0. */
+    likeCount: v.optional(v.number()),
   }).index("by_ownerId", ["ownerId"]),
+  // Kedvelések: játékosonként és térképenként legfeljebb egy sor. A saját térképet is lehet kedvelni.
+  likes: defineTable({
+    mapId: v.id("maps"),
+    userId: v.id("users"),
+  })
+    .index("by_mapId", ["mapId"])
+    .index("by_mapId_and_userId", ["mapId", "userId"]),
   // Játékosonként és térképenként a legjobb eredmény (kiírás 3.5). A szerver számolja: a programot újra
   // lefuttatja a tárolt térképen. Csak jobb eredmény írja felül (több arany, vagy ugyanannyi kevesebb lépésből).
   results: defineTable({

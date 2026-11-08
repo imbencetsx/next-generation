@@ -322,6 +322,14 @@ export const en = {
     deleteText: "The map disappears for every player, together with its leaderboard. This can't be undone.",
     confirm: "Delete",
     cancel: "Cancel",
+    like: (name: string) => `Like “${name}”`,
+    likeCount: (count: number) => `${count} like${count === 1 ? "" : "s"}`,
+    likeFailed: "Could not save your like. Try again.",
+    likers: "Liked by",
+    likersOf: (name: string) => `Who liked “${name}”`,
+    likersEmpty: "No one has liked this map yet.",
+    likersMore: (count: number) => `…and ${count} more`,
+    close: "Close",
   },
 
   mapPage: {
