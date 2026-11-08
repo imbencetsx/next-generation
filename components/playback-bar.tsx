@@ -62,7 +62,7 @@ export default function PlaybackBar({ simulation, showFirstIssue }: Props) {
         <Button variant="outline" onClick={simulation.reset} disabled={!simulation.started}>
           <Reset aria-hidden /> {t.sim.reset}
         </Button>
-        <label className="ml-1 flex items-center gap-2 text-sm text-muted-foreground">
+        <label className="ml-1 flex items-center gap-2 text-sm text-foreground">
           {t.sim.speed}
           <NativeSelect
             value={simulation.speed}

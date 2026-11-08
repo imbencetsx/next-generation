@@ -1,9 +1,8 @@
 "use client";
 
-// Kis, szerkeszthető fájlnév-mező a szerkesztők fejlécébe: ikon, a név, és mögötte a rögzített kiterjesztés.
+// Kis, szerkeszthető fájlnév-mező a szerkesztők fejlécébe: a név, és mögötte a rögzített kiterjesztés.
 // A program- és a térképszerkesztő is ezt használja, hogy a két mező mérete és viselkedése azonos legyen.
 
-import { FileIcon } from "@/components/icons";
 import { Input } from "@/components/ui/input";
 import { DEFAULT_FILE_NAME, MAX_FILE_NAME_LENGTH } from "@/lib/file-names";
 
@@ -22,7 +21,6 @@ export default function FileNameField({ id, label, value, extension, onChange }:
   const extensionId = `${id}-extension`;
   return (
     <div className="flex min-w-0 shrink-0 items-center gap-1 font-mono text-xs">
-      <FileIcon size={12} className="shrink-0 text-muted-foreground" aria-hidden />
       <label htmlFor={id} className="sr-only">
         {label}
       </label>
