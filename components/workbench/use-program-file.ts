@@ -1,6 +1,6 @@
 "use client";
 
-// A szerkesztett program és a fájlműveletei: átnevezés, új fájl, példa betöltése, import és export.
+// A szerkesztett program és a fájlműveletei: átnevezés, új fájl, import és export.
 // A nevet kiterjesztés nélkül tároljuk; a fájlnév mindig „<név>.mine” (programFilename).
 
 import { useRef, useState } from "react";
@@ -8,7 +8,7 @@ import { useDraftState } from "@/components/use-draft-state";
 import { useReplaceConfirmation } from "@/components/use-replace-confirmation";
 import { downloadText } from "@/components/download-text";
 import { DEFAULT_FILE_NAME } from "@/lib/file-names";
-import { EXAMPLES, programFilename, programName } from "@/lib/minescript";
+import { programFilename, programName } from "@/lib/minescript";
 
 /**
  * @param sharedCode A dokumentációból vagy a térképszerkesztőből (?code=) érkező program, ha van.
@@ -17,8 +17,8 @@ import { EXAMPLES, programFilename, programName } from "@/lib/minescript";
 export function useProgramFile(sharedCode: string | null, sharedFilename: string | null = null, documentId = "") {
   const operation = useRef(0);
   const initial = {
-    code: sharedCode ?? EXAMPLES[0].code,
-    name: programName(sharedCode !== null ? sharedFilename || "docs-example" : EXAMPLES[0].filename),
+    code: sharedCode ?? "",
+    name: programName(sharedFilename || (sharedCode !== null ? "docs-example" : DEFAULT_FILE_NAME)),
   };
   const [document, setDocument] = useDraftState(
     "minescript:program-draft:v1",
@@ -67,16 +67,6 @@ export function useProgramFile(sharedCode: string | null, sharedFilename: string
     });
   }
 
-  function loadExample(exampleFilename: string, onReplace?: () => void) {
-    const example = EXAMPLES.find((item) => item.filename === exampleFilename);
-    if (!example) return;
-    operation.current++;
-    replacement.request(() => {
-      replace({ code: example.code, name: programName(example.filename) });
-      onReplace?.();
-    });
-  }
-
   // A program a szerkesztés alatt lehet hibás (kiírás 3.3), ezért importnál nem ellenőrzünk.
   async function importFile(file: File, onReplace?: () => void) {
     const token = ++operation.current;
@@ -103,7 +93,6 @@ export function useProgramFile(sharedCode: string | null, sharedFilename: string
     rename,
     filename,
     newFile,
-    loadExample,
     importFile,
     exportFile,
   };

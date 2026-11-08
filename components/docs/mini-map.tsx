@@ -3,6 +3,7 @@
 // Ugyanaz a jelölés, mint a szimulátorban (mapTile): a felfedezett mező kiásott föld vagy világos tégla,
 // a felfedezetlen tömör föld vagy sötét tégla.
 
+import RobotSprite from "@/components/robot-sprite";
 import { mapTile, robotSpriteStyle, tileBackground } from "@/components/sprites";
 import GoldShine from "@/components/gold-shine";
 import { cellAt, cellIndex, DIRECTIONS, type GameMap } from "@/lib/robot-map";
@@ -60,9 +61,7 @@ export function MiniMap({
               {!wall &&
                 gold[index] &&
                 (shine ? <GoldShine {...cellAt(map, index)} /> : <span className="gold-sprite absolute inset-0" />)}
-              {index === robotIndex && (
-                <span className="pixel-robot-sprite absolute inset-0" style={robotSpriteStyle(robot.dir)} />
-              )}
+              {index === robotIndex && <RobotSprite className="absolute inset-0" style={robotSpriteStyle(robot.dir)} />}
             </div>
           );
         })}

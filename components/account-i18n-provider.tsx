@@ -6,6 +6,8 @@ import type { ReactNode } from "react";
 import { api } from "@/convex/_generated/api";
 import { I18nProvider } from "@/i18n/i18n-provider";
 import type { Locale } from "@/i18n/locale";
+import { RobotProvider } from "@/components/robot-sprite";
+import { DEFAULT_ROBOT } from "@/lib/robots";
 
 export default function AccountI18nProvider({
   initialLocale,
@@ -18,7 +20,7 @@ export default function AccountI18nProvider({
   const viewer = useQuery(api.users.viewer, isAuthenticated ? {} : "skip");
   return (
     <I18nProvider initialLocale={initialLocale} accountLocale={viewer?.locale}>
-      {children}
+      <RobotProvider robot={viewer?.robot ?? DEFAULT_ROBOT}>{children}</RobotProvider>
     </I18nProvider>
   );
 }

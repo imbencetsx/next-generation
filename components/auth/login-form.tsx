@@ -50,6 +50,7 @@ export default function LoginForm({ initialPrompt = 0 }: { initialPrompt?: numbe
   const [error, setError] = useState<AuthErrorKey | null>(null);
   const [pending, setPending] = useState(false);
   const [promptIndex, setPromptIndex] = useState(initialPrompt);
+  const [formVersion, setFormVersion] = useState(0);
 
   useEffect(() => {
     if (isAuthenticated) router.replace(next);
@@ -57,7 +58,8 @@ export default function LoginForm({ initialPrompt = 0 }: { initialPrompt?: numbe
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const element = event.currentTarget;
+    const form = new FormData(element);
     // A név elé gépelt „@” jeleket elhagyjuk (sokan így írják a felhasználónevet).
     const username = normalizeUsername(String(form.get("username") ?? "").replace(/^@+/, ""));
     const password = String(form.get("password") ?? "");
@@ -71,6 +73,10 @@ export default function LoginForm({ initialPrompt = 0 }: { initialPrompt?: numbe
     setError(null);
     try {
       await signIn(AUTH_PROVIDER, { flow, username, password });
+      // A jelszót és a saját állapotú névmezőt is ürítjük, mielőtt a navigáció félretenné az oldalt.
+      element.reset();
+      setFormVersion((version) => version + 1);
+      setFlow("signIn");
       // A süti már beállt; a szerver (proxy) ezzel engedi be a védett oldalra.
       router.replace(next);
       router.refresh();
@@ -104,7 +110,7 @@ export default function LoginForm({ initialPrompt = 0 }: { initialPrompt?: numbe
           {signingUp ? t.auth.createAccount : t.auth.signIn}
         </h1>
 
-        <form className="flex flex-col gap-4" onSubmit={submit} aria-busy={pending}>
+        <form key={formVersion} className="flex flex-col gap-4" onSubmit={submit} aria-busy={pending}>
           <div className="flex flex-col gap-2">
             <Label htmlFor="username">{t.auth.username}</Label>
             <UsernameInput

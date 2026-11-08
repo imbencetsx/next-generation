@@ -4,7 +4,8 @@
 // (oszlopok, sorok), a rácson a mezők, fölöttük a robot fejlámpájának fénye, az arany izzása, a lebegő por,
 // a robot és a lépésekhez tartozó látványelemek. A felolvasó a role="img" címkéjét kapja; a díszítés rejtett.
 //
-// Rétegek (app/globals.css, „pixel art térkép”): mezők → sötétség a fénykúppal → izzás és por → robot → effektek.
+// Rétegek (app/globals.css, „pixel art térkép”): mezők → sötétség a fénykúppal → izzás és por → szellem → robot →
+// effektek.
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { Motion } from "@/components/robot-motion";
@@ -12,7 +13,7 @@ import { TILE } from "@/components/sprites";
 import { cellAt, type GameMap } from "@/lib/robot-map";
 import { MapEffects } from "./effects";
 import { GlowLayer, LightLayer } from "./lighting";
-import { Robot } from "./robot";
+import { GhostRobot, Robot } from "./robot";
 import { Ruler } from "./ruler";
 import { MapTile } from "./tile";
 
@@ -24,6 +25,8 @@ type Props = {
   fog: boolean;
   /** A legutóbbi lépés mozgása; null esetén a robot ugrik, és minden mező azonnal frissül. */
   motion: Motion | null;
+  /** Az 1. helyezett futásának „szelleme” ugyanennyi feldolgozott sornál (ha be van kapcsolva). */
+  ghost?: { robot: GameMap["robot"]; label: string } | null;
   /** Nem fut program (a futás előtt és a végén): teljes fény, minden mező jól látszik. Futás közben csak a robot lámpája világít. */
   lit: boolean;
   label: string;
@@ -32,7 +35,7 @@ type Props = {
 /** A vonalzók vastagsága mezőben: fél mező, így a 16 px-es gerenda pixelei akkorák, mint a 32-es mezőké. */
 const RULER_SHARE = 0.5;
 
-export default function PixelMap({ map, robot, explored, gold, fog, motion, lit, label }: Props) {
+export default function PixelMap({ map, robot, explored, gold, fog, motion, ghost = null, lit, label }: Props) {
   const frame = useRef<HTMLDivElement>(null);
   const size = useElementSize(frame);
   const { cell, ruler } = layout(size, map);
@@ -77,6 +80,7 @@ export default function PixelMap({ map, robot, explored, gold, fog, motion, lit,
           ))}
           <LightLayer map={map} robot={robot} cell={cell} motion={motion} />
           <GlowLayer map={map} cell={cell} glowing={glowing} />
+          {ghost && <GhostRobot robot={ghost.robot} label={ghost.label} cell={cell} />}
           <Robot robot={robot} cell={cell} motion={motion} />
           {motion?.effects && <MapEffects key={motion.id} map={map} robot={robot} motion={motion} />}
         </div>

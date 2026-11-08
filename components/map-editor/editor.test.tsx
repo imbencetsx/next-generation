@@ -11,7 +11,11 @@ vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(n
 vi.mock("@/components/auth/user-menu", () => ({ default: () => null }));
 // A közzététel a Convex actiont hívja; a teszt a hívást és a válaszát figyeli.
 const convex = vi.hoisted(() => ({ publish: vi.fn() }));
-vi.mock("convex/react", () => ({ useMutation: () => convex.publish, useAction: () => convex.publish }));
+vi.mock("convex/react", () => ({
+  useMutation: () => convex.publish,
+  useAction: () => convex.publish,
+  useQuery: () => undefined,
+}));
 
 beforeEach(() => {
   localStorage.clear();

@@ -4,6 +4,7 @@
 // Minden kedvelő egy pixeles keretű sor: profilkép (vagy a neve kezdőbetűje), név, a sajátnál „te” címke, és mikor
 // kedvelte. A sorok egymás után érkeznek; üres listánál a robot áll ott egyedül.
 
+import RobotSprite from "@/components/robot-sprite";
 import { useQuery } from "convex/react";
 import Avatar from "@/components/auth/avatar";
 import { HeartFilled } from "@/components/icons";
@@ -83,11 +84,7 @@ function Placeholder({ label }: { label: string }) {
 function Empty({ text }: { text: string }) {
   return (
     <div className="flex flex-col items-center gap-3 py-4 text-center">
-      <span
-        aria-hidden
-        className="likers-empty-robot pixel-robot-sprite size-16"
-        style={robotSpriteStyle(FACING_VIEWER)}
-      />
+      <RobotSprite aria-hidden className="likers-empty-robot size-16" style={robotSpriteStyle(FACING_VIEWER)} />
       <p className="max-w-[28ch] font-read text-sm text-muted-foreground">{text}</p>
     </div>
   );

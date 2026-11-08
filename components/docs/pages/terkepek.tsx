@@ -80,9 +80,9 @@ export default function Terkepek() {
 
       <h2 id="beepitett">Beépített pályák</h2>
       <p>
-        A szimulátor térképválasztójában érhetők el; a kezdőlap a legkönnyebbeket mutatja, a <em>Beépített pályák</em>{" "}
-        oldal (<code>/maps/built-in</code>) mindet, nehézség szerint. Egy pálya kártyájáról programot lehet írni rá,
-        vagy a másolatát a térképszerkesztőben átalakítani.
+        A kezdőlap a legkönnyebbeket mutatja, a <em>Beépített pályák</em> oldal (<code>/maps/built-in</code>) mindet,
+        nehézség szerint. Egy pálya kártyájáról programot lehet írni rá, vagy a másolatát a térképszerkesztőben
+        átalakítani.
       </p>
       <div className="flex flex-wrap gap-6">
         {MAP_PRESETS.map((preset, index) => (

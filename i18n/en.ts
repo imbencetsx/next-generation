@@ -45,6 +45,8 @@ export const en = {
     ],
     signedInAs: "Signed in as",
     signOut: "Sign out",
+    signingOut: "Signing out…",
+    signOutFailed: "Could not sign out. Please try again.",
     errors: {
       username: "Username must be 3 to 20 characters: letters, digits or underscores.",
       password: "Password must be 8 to 128 characters.",
@@ -55,7 +57,23 @@ export const en = {
     },
   },
 
+  robots: {
+    names: { balazs: "B4LÁZ5", levi: "L3V1", bence: "B3NC3" },
+    descriptions: {
+      balazs: "The original miner. Gold helmet, ready to dig.",
+      levi: "Forest-green armour for a fresh start.",
+      bence: "Blue from helmet to tracks.",
+    },
+    welcome: "Choose your robot",
+    onboardingHint: "Who’s coming into the mine? You can change this later in your profile.",
+    continue: "Let’s dig",
+  },
+
   profile: {
+    robot: "Your robot",
+    robotHint: "Pick the robot you’ll see in the mine. Your choice follows your account.",
+    saveRobot: "Save robot",
+    robotSaved: "Robot updated.",
     language: "Language",
     languageHint: "Your choice is saved to your account and applies on every device.",
     english: "English",
@@ -402,6 +420,8 @@ export const en = {
   },
 
   sim: {
+    noMapTitle: "Load a map to begin",
+    noMapHint: "Import a map file above, or open a map card from one of the map pages.",
     region: "Simulator",
     playback: "Playback",
     run: "Run",
@@ -412,7 +432,25 @@ export const en = {
     reset: "Reset",
     speed: "Speed",
     speeds: { slow: "Slow", normal: "Normal", fast: "Fast", turbo: "Turbo" },
-    status: { ready: "Ready", running: "Running", paused: "Paused", finished: "Finished", error: "Error" },
+    status: {
+      needsMap: "Choose or import a map",
+      ready: "Ready",
+      running: "Running",
+      paused: "Paused",
+      finished: "Finished",
+      error: "Error",
+      reviewing: "Reviewing an earlier moment",
+    },
+    timeline: "Timeline",
+    timelineValue: (line: number, total: number) => `After ${line} of ${total} processed lines`,
+    timelinePosition: (line: number, total: number) => `${line} / ${total}`,
+    stepBack: "Step back",
+    live: "Back to live",
+    timelineMarks: { gold: "gold mined", print: "printed", error: "stopped with an error" },
+    ghost: "Ghost",
+    ghostLabel: "#1",
+    ghostCaption: (name: string, gold: number, steps: number) =>
+      `Ghost: the #1 run by ${name} (${gold} gold, ${steps} steps), line by line.`,
     fixBeforeRunning: (count: number) => `Fix ${count} syntax error${count === 1 ? "" : "s"} before running.`,
     errorAt: (code: string, line: number, column: number) => `${code} on line ${line}, column ${column}`,
     goToLine: (line: number) => `Go to line ${line}`,

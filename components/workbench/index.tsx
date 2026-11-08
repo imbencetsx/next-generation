@@ -19,6 +19,9 @@ import TopBar, { AccountActions } from "@/components/top-bar";
 import { Card } from "@/components/ui/card";
 import { COMPACT_QUERY, useMediaQuery } from "@/components/use-media-query";
 import { useSimulation } from "@/components/use-simulation";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { useI18n } from "@/i18n/i18n-provider";
 import type { Snapshot } from "@/lib/interpreter";
 import { validateMineScript, type SyntaxIssue } from "@/lib/minescript";
@@ -63,6 +66,11 @@ export default function Workbench() {
     },
   });
   const { snapshot, locked } = simulation;
+  // Közzétett térképen az 1. helyezett futásának útja („szellem”); a kódját a szerver nem adja ki.
+  const ghost = useQuery(
+    api.results.ghost,
+    simulation.publishedMapId ? { mapId: simulation.publishedMapId as Id<"maps"> } : "skip",
+  );
 
   const [cursor, setCursor] = useState({ line: 1, column: 1 });
   const compact = useMediaQuery(COMPACT_QUERY);
@@ -113,7 +121,6 @@ export default function Workbench() {
           onNew={newFile}
           onImport={(nextFile) => file.importFile(nextFile, simulation.reset)}
           onExport={file.exportFile}
-          onLoadExample={(filename) => file.loadExample(filename, simulation.reset)}
         />
         {!compact && playback}
       </div>
@@ -139,6 +146,7 @@ export default function Workbench() {
   const simulator = (
     <Simulator
       simulation={simulation}
+      ghost={ghost ?? null}
       footer={
         simulation.publishedMapId && <PublishedMapResult mapId={simulation.publishedMapId} record={recorder.state} />
       }

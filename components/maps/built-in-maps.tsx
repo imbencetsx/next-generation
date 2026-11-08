@@ -1,7 +1,7 @@
 "use client";
 
 // A beépített pályák (lib/robot-map.ts, MAP_PRESETS) kártyái: a térkép képe, a lefordított neve, a nehézsége, és
-// két művelet: program írása rá a munkafelületen (ott a választóban is ez lesz kiválasztva), vagy egy másolata a
+// két művelet: program írása rá a munkafelületen, vagy egy másolata a
 // térképszerkesztőben. A kezdőlap az első néhányat mutatja, a /maps/built-in oldal mindet.
 
 import Link from "next/link";

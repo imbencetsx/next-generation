@@ -25,6 +25,11 @@ describe("profile page rendering", () => {
       for (const text of [
         t.profile.title,
         t.profile.picture,
+        t.profile.robot,
+        t.profile.saveRobot,
+        t.robots.names.balazs,
+        t.robots.names.levi,
+        t.robots.names.bence,
         t.profile.username,
         t.profile.password,
         t.profile.language,

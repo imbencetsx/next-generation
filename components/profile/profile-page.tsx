@@ -12,6 +12,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import { useI18n } from "@/i18n/i18n-provider";
 import LanguageForm from "./language-form";
+import RobotForm from "./robot-form";
 import PasswordForm from "./password-form";
 import PictureForm from "./picture-form";
 import UsernameForm from "./username-form";
@@ -54,6 +55,7 @@ export default function ProfilePage() {
 
         {viewer ? (
           <>
+            <RobotForm savedRobot={viewer.robot} />
             <PictureForm name={viewer.name} imageUrl={viewer.imageUrl} />
             <UsernameForm name={viewer.name} />
             <LanguageForm savedLocale={viewer.locale} />

@@ -16,6 +16,8 @@ import {
   isValidUsername,
 } from "./credentials";
 import { profileError, validAvatar } from "./profileRules";
+import { DEFAULT_ROBOT } from "../lib/robots";
+import { robotValidator } from "./robotRules";
 
 /**
  * A bejelentkezett felhasználó azonosítója, vagy null.
@@ -77,13 +79,33 @@ export const viewer = query({
       imageUrl: v.union(v.string(), v.null()),
       /** A fiókhoz mentett nyelv; null, ha még nem állította be (ilyenkor a süti vagy a böngésző dönt). */
       locale: v.union(localeValidator, v.null()),
+      robot: robotValidator,
+      robotSetupPending: v.boolean(),
     }),
   ),
   handler: async (ctx) => {
     const user = await currentUser(ctx);
     if (!user) return null;
     const imageUrl = user.avatarId ? await ctx.storage.getUrl(user.avatarId) : null;
-    return { _id: user._id, name: user.name ?? "player", imageUrl, locale: user.locale ?? null };
+    return {
+      _id: user._id,
+      name: user.name ?? "player",
+      imageUrl,
+      locale: user.locale ?? null,
+      robot: user.robot ?? DEFAULT_ROBOT,
+      robotSetupPending: user.robotSetupPending ?? false,
+    };
+  },
+});
+
+/** A saját robot mentése egyben lezárja a regisztráció utáni választást is. */
+export const setRobot = mutation({
+  args: { robot: robotValidator },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const user = await requireUser(ctx);
+    await ctx.db.patch(user._id, { robot: args.robot, robotSetupPending: false });
+    return null;
   },
 });
 

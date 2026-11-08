@@ -28,6 +28,7 @@ const ENGINE_CONSUMERS = [
 const FULL_SUITE = ["tests"];
 const APP_SUITE = [
   "convex",
+  "components/auth",
   "components/profile",
   "components/map-editor",
   "components/workbench",
@@ -72,6 +73,21 @@ const RULES: Rule[] = [
   { matches: isOneOf("lib/map-editor.ts"), tests: GROUPS.maps, appTests: ["components/map-editor"] },
   // A térképmezők képe (felfedezett / felfedezetlen / köd).
   { matches: isOneOf("components/sprites.ts"), tests: ["tests/maps/tiles.test.ts"], ui: true },
+  // A robot kinézete fiókhoz kötött, és minden játékfelületen megjelenik.
+  {
+    matches: isOneOf("lib/robots.ts", "components/robot-sprite.tsx", "components/account-i18n-provider.tsx"),
+    tests: [],
+    appTests: [
+      "convex",
+      "components/profile",
+      "components/map-editor",
+      "components/workbench",
+      "components/home",
+      "components/map-page",
+      "components/maps",
+    ],
+    ui: true,
+  },
   // A közös fájlnév-szabály és -mező: mindkét szerkesztő fájlkezelése.
   {
     matches: isOneOf("lib/file-names.ts", "components/file-name-field.tsx", "components/download-text.ts"),
@@ -137,6 +153,7 @@ const RULES: Rule[] = [
   { matches: isUnder("convex/_generated/"), tests: [], appTests: APP_SUITE },
   { matches: isUnder("convex/"), tests: [], appTests: ["convex"] },
   { matches: isUnder("components/profile/"), tests: [], appTests: ["components/profile"], ui: true },
+  { matches: isUnder("components/auth/"), tests: [], appTests: ["components/auth"], ui: true },
   { matches: isUnder("components/home/"), tests: [], appTests: ["components/home"], ui: true },
   { matches: isUnder("components/map-page/"), tests: [], appTests: ["components/map-page"], ui: true },
   // A térképlisták (beépített és közzétett) a kezdőlapon is megjelennek.
@@ -146,6 +163,7 @@ const RULES: Rule[] = [
     matches: isUnder("i18n/"),
     tests: [],
     appTests: [
+      "components/auth",
       "components/profile",
       "components/map-editor",
       "components/workbench",

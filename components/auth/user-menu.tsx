@@ -3,7 +3,7 @@
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery } from "convex/react";
 import { Logout } from "@/components/icons";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Link from "next/link";
 import Avatar from "@/components/auth/avatar";
 import { Button } from "@/components/ui/button";
@@ -15,12 +15,21 @@ export default function UserMenu() {
   const { t } = useI18n();
   const viewer = useQuery(api.users.viewer);
   const { signOut } = useAuthActions();
-  const router = useRouter();
+  const [pending, setPending] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   async function leave() {
-    await signOut();
-    router.replace(ROUTES.login);
-    router.refresh();
+    if (pending) return;
+    setPending(true);
+    setFailed(false);
+    try {
+      await signOut();
+      // Új dokumentumot töltünk: ne maradjon meg a kliensoldalon félretett belépőűrlap.
+      window.location.replace(ROUTES.login);
+    } catch {
+      setFailed(true);
+      setPending(false);
+    }
   }
 
   return (
@@ -35,9 +44,21 @@ export default function UserMenu() {
         <span className="sr-only">{t.auth.signedInAs}</span>
         <span className="font-read max-sm:sr-only">{viewer ? `@${viewer.name}` : "…"}</span>
       </Link>
-      <Button variant="ghost" size="icon" onClick={leave} aria-label={t.auth.signOut} title={t.auth.signOut}>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={leave}
+        disabled={pending}
+        aria-label={pending ? t.auth.signingOut : t.auth.signOut}
+        title={t.auth.signOut}
+      >
         <Logout aria-hidden />
       </Button>
+      {failed && (
+        <p role="alert" className="max-w-48 font-read text-xs text-brick-text">
+          {t.auth.signOutFailed}
+        </p>
+      )}
     </div>
   );
 }

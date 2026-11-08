@@ -7,6 +7,7 @@ export default defineConfig({
     environment: "edge-runtime",
     include: [
       "convex/**/*.test.ts",
+      "components/auth/**/*.test.tsx",
       "components/profile/**/*.test.tsx",
       "components/map-editor/**/*.test.tsx",
       "components/workbench/**/*.test.tsx",

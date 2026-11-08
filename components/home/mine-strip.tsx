@@ -1,10 +1,11 @@
 // A kezdőlap szalagja: egy bánya keresztmetszete a játék saját sprite-jaiból (mennyezet, járat, talp), a tartalom
 // szélességében. A robot kelet felé ás: a bánya folyamatosan elgördül mellette, így úgy tűnik, mintha haladna.
 // Előtte tömör föld és arany (feltérképezetlen), mögötte kiásott járat; ahol átmegy, ott ásódik ki a föld. Az aranyat
-// felszedi („+1”), a fúrója szikrázik, a lámpája bevilágítja a sötét járatot. Díszítő ábra, ezért a felolvasók
+// felszedi, a fúrója szikrázik, a lámpája bevilágítja a sötét járatot. Díszítő ábra, ezért a felolvasók
 // kihagyják; csökkentett mozgás beállításnál minden áll (app/globals.css). A mezőméretet a szülő adja a --tile
 // CSS-változóban, hogy a robot üdvözlő buborékja pontosan a robotra mutathasson (robot-greeting.tsx).
 
+import RobotSprite from "@/components/robot-sprite";
 import type { CSSProperties } from "react";
 import GoldShine from "@/components/gold-shine";
 import { DrillSparks, MineLight } from "@/components/scene/mine-light";
@@ -51,14 +52,10 @@ const FACING_EAST = 3;
 /** Négy ugrás mezőnként (mint a szimulátorban), három képkocka ciklusonként. */
 const WALK = `robot-walk ${(CELL_SECONDS / 4) * 3}s step-end infinite`;
 
-/** Mikor ér a robot közepéhez egy arany (a kör hányadánál): (oszlop − robot) mod minta. */
-const pickupAt = (goldColumn: number) => (((goldColumn - ROBOT_INDEX) % PATTERN) + PATTERN) % PATTERN;
-
 export default function MineStrip() {
   const strip = {
     "--robot": ROBOT_INDEX,
     "--pattern": PATTERN,
-    "--period": `${PERIOD_SECONDS}s`,
   } as CSSProperties;
 
   return (
@@ -75,20 +72,8 @@ export default function MineStrip() {
 
       <MineLight cols={LIT_COLUMNS} rows={ROWS} robot={{ x: ROBOT_INDEX, y: TUNNEL_ROW }} />
       <span className="mine-robot">
-        <span
-          className="pixel-robot-sprite absolute inset-0"
-          style={{ ...robotSpriteStyle(FACING_EAST), animation: WALK }}
-        />
+        <RobotSprite className="absolute inset-0" style={{ ...robotSpriteStyle(FACING_EAST), animation: WALK }} />
         <DrillSparks />
-        {GOLD_AT.map((column) => (
-          <b
-            key={column}
-            className="mine-pickup"
-            style={{ animationDelay: `${(pickupAt(column) / PATTERN) * PERIOD_SECONDS}s` }}
-          >
-            +1
-          </b>
-        ))}
       </span>
     </div>
   );

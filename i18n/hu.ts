@@ -46,6 +46,8 @@ export const hu: Messages = {
     ],
     signedInAs: "Bejelentkezve mint",
     signOut: "Kijelentkezés",
+    signingOut: "Kijelentkezés…",
+    signOutFailed: "Nem sikerült kijelentkezni. Próbáld újra.",
     errors: {
       username: "A felhasználónév 3–20 karakter lehet: betűk, számjegyek vagy aláhúzásjel.",
       password: "A jelszó 8–128 karakter hosszú lehet.",
@@ -56,7 +58,23 @@ export const hu: Messages = {
     },
   },
 
+  robots: {
+    names: { balazs: "B4LÁZ5", levi: "L3V1", bence: "B3NC3" },
+    descriptions: {
+      balazs: "Az eredeti bányász. Aranysisak, munkára készen.",
+      levi: "Erdőzöld páncél, friss indulás.",
+      bence: "A sisaktól a lánctalpig kék.",
+    },
+    welcome: "Válassz robotot!",
+    onboardingHint: "Ki tartson veled a bányába? A profilodban később is válthatsz.",
+    continue: "Irány a bánya!",
+  },
+
   profile: {
+    robot: "Robotod",
+    robotHint: "Válaszd ki, kit látnál a bányában. A választást a fiókodhoz mentjük.",
+    saveRobot: "Robot mentése",
+    robotSaved: "Robot frissítve.",
     language: "Nyelv",
     languageHint: "A választást a fiókodhoz mentjük, így minden eszközön ezt a nyelvet használjuk.",
     english: "English",
@@ -426,6 +444,8 @@ export const hu: Messages = {
   },
 
   sim: {
+    noMapTitle: "Tölts be egy térképet!",
+    noMapHint: "Importálj egy térképfájlt a fenti gombbal, vagy nyiss meg egy pályakártyát a térképek oldalairól.",
     region: "Szimulátor",
     playback: "Lejátszás",
     run: "Futtatás",
@@ -436,7 +456,25 @@ export const hu: Messages = {
     reset: "Visszaállítás",
     speed: "Sebesség",
     speeds: { slow: "Lassú", normal: "Normál", fast: "Gyors", turbo: "Turbó" },
-    status: { ready: "Indításra kész", running: "Fut", paused: "Szünetel", finished: "Befejeződött", error: "Hiba" },
+    status: {
+      needsMap: "Válassz vagy importálj térképet",
+      ready: "Indításra kész",
+      running: "Fut",
+      paused: "Szünetel",
+      finished: "Befejeződött",
+      error: "Hiba",
+      reviewing: "Korábbi állapot visszanézése",
+    },
+    timeline: "Idővonal",
+    timelineValue: (line: number, total: number) => `${total} feldolgozott sorból ${line} után`,
+    timelinePosition: (line: number, total: number) => `${line} / ${total}`,
+    stepBack: "Visszalépés",
+    live: "Vissza az élőhöz",
+    timelineMarks: { gold: "arany kibányászva", print: "kiírás", error: "hibával megállt" },
+    ghost: "Szellem",
+    ghostLabel: "#1",
+    ghostCaption: (name: string, gold: number, steps: number) =>
+      `Szellem: az 1. helyezett, ${name} futása (${gold} arany, ${steps} lépés), soronként.`,
     fixBeforeRunning: (count: number) => `Futtatás előtt javíts ki ${count} szintaktikai hibát.`,
     errorAt: (code: string, line: number, column: number) => `${code}: ${line}. sor, ${column}. oszlop`,
     goToLine: (line: number) => `Ugrás: ${line}. sor`,

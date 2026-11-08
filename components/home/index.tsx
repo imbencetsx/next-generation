@@ -15,6 +15,7 @@ import { ROUTES } from "@/lib/routes";
 import { HOME_PUBLISHED_COUNT, PublishedMapsHeader, PublishedMapsList, usePublishedMaps } from "./published-maps";
 import RobotGreeting from "./robot-greeting";
 import NewFileMenu from "./new-file-menu";
+import HomeOnboarding from "./onboarding";
 
 /** A kezdőlapon ennyi beépített pálya látszik (egy sor). */
 const HOME_BUILT_IN_COUNT = 3;
@@ -55,6 +56,7 @@ export default function HomePage({ greeting = 0 }: { greeting?: number }) {
           </div>
         </section>
       </main>
+      <HomeOnboarding ready={maps.status !== "LoadingFirstPage"} />
     </div>
   );
 }

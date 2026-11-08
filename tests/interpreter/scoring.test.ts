@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { isBetterScore, scoreProgram, scoreRank } from "../../lib/scoring";
+import { decodeRobot, encodeRobot, isBetterScore, scoreProgram, scoreRank, traceProgram } from "../../lib/scoring";
 import { CORRIDOR, mapFrom } from "../support/harness";
 
 // PDF 3.5: több arany előrébb; azonos aranynál a kevesebb lépés. A lépés a feldolgozott programsorok száma (3.4).
@@ -58,5 +58,45 @@ describe("scoring / a run's result for the leaderboard", () => {
     for (const a of scores) {
       for (const b of scores) expect(scoreRank(a) > scoreRank(b)).toBe(isBetterScore(a, b));
     }
+  });
+});
+
+// A szellem (a ranglista első helyezettjének visszajátszása) a robot helyét kapja minden feldolgozott sor után.
+describe("scoring / the robot's path line by line (ghost replay)", () => {
+  const corridor = mapFrom(CORRIDOR);
+  const at = (trace: number[], steps: number) => decodeRobot(trace[steps], corridor.cols);
+
+  test("has one position per processed line plus the start, ending where the run ends", () => {
+    const trace = traceProgram(PDF_PROGRAM, corridor)!;
+    expect(trace).toHaveLength(64 + 1);
+    expect(at(trace, 0)).toEqual({ x: 0, y: 1, dir: 3 });
+    // A fal előtti utolsó mezőn áll, kelet felé (a 9. oszlop, 0-tól 8).
+    expect(at(trace, 64)).toEqual({ x: 8, y: 1, dir: 3 });
+  });
+
+  test("a multi-cell step is one line, and turning changes only the direction", () => {
+    const trace = traceProgram("step forward 3\nturn by 1", corridor)!;
+    expect(trace.map((code) => decodeRobot(code, corridor.cols))).toEqual([
+      { x: 0, y: 1, dir: 3 },
+      { x: 3, y: 1, dir: 3 },
+      { x: 3, y: 1, dir: 0 },
+    ]);
+  });
+
+  test("stops at the position of a runtime error (D3: the free cells are walked first)", () => {
+    const trace = traceProgram("step forward 20", corridor)!;
+    expect(trace).toHaveLength(2);
+    expect(at(trace, 1)).toEqual({ x: 8, y: 1, dir: 3 });
+  });
+
+  test("the 1000-line limit does not add a position for the line it refuses", () => {
+    const trace = traceProgram("set r to true\nwhile r\n  turn by 1", corridor)!;
+    expect(trace).toHaveLength(1000 + 1);
+  });
+
+  test("a syntactically invalid program has no path, and encoding round-trips", () => {
+    expect(traceProgram("Set x to 1", corridor)).toBeNull();
+    const robot = { x: 4, y: 2, dir: 1 as const };
+    expect(decodeRobot(encodeRobot(robot, 7), 7)).toEqual(robot);
   });
 });

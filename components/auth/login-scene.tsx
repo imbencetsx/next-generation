@@ -1,6 +1,7 @@
 // A bejelentkezés jelenete: bánya-folyosó a játék sprite-jaiból, a robot helyben sétál és buborékban szól a játékoshoz.
 // A folyosó sötét, a robot lámpája világítja be előre, a fúrója szikrázik (components/scene/mine-light.tsx).
 
+import RobotSprite from "@/components/robot-sprite";
 import { DrillSparks, MineLight } from "@/components/scene/mine-light";
 import { robotSpriteStyle, tileBackground, TILES } from "@/components/sprites";
 
@@ -42,8 +43,8 @@ export default function LoginScene({ message }: { message: string }) {
             )}
             {index === ROBOT_AT && (
               <div className="absolute inset-0 z-[3]">
-                <div
-                  className="pixel-robot-sprite absolute inset-0"
+                <RobotSprite
+                  className="absolute inset-0"
                   style={{ ...robotSpriteStyle(FACING_EAST), animation: WALK_IN_PLACE }}
                 />
                 <DrillSparks />

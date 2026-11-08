@@ -20,7 +20,7 @@ Submission must also include a short description (how to reach each feature, wha
 
 | Area | Status | Where |
 |---|---|---|
-| Code editor (CodeMirror 6, highlighting, lint, autocomplete, import/export, examples) | done | `components/code-editor/`, `components/workbench/` |
+| Code editor (CodeMirror 6, highlighting, lint, autocomplete, import/export; empty by default) | done | `components/code-editor/`, `components/workbench/` |
 | Syntax analysis: one-pass lexer, parser with error recovery, compiler to flat instructions | done | `lib/syntax/` (`validateMineScript` in `lib/minescript.ts` is a thin entry point) |
 | Interpreter: program-counter machine, one source line per step, step events | done | `lib/interpreter.ts` |
 | Diagnostics: coded syntax/runtime errors with exact column spans, hints, related lines | done | `lib/diagnostics.ts`, contract in `docs/diagnostics.md` |
@@ -30,6 +30,7 @@ Submission must also include a short description (how to reach each feature, wha
 | Map editor (text + visual, new/import/export, presets, back to the simulator) | done | `app/map-editor/`, `components/map-editor/`, `lib/map-editor.ts`, `components/code-editor/map-mode.ts` |
 | Backend: Convex cloud (dev deployment from `.env.local`; production via `bun run build:prod`) | set up | `convex/` |
 | Auth: Convex Auth, username + password, open registration; httpOnly cookie sessions, `/workbench` and `/profile` gated server-side by `proxy.ts` | done | `convex/auth.ts`, `convex/users.ts`, `proxy.ts`, `app/login/`, `components/auth/` |
+| Account robot: B4LÁZ5 (original/default), L3V1 (green), B3NC3 (blue), editable on `/profile`; new accounts get a small one-step picker after signup once the home screen and its data/assets have loaded; existing accounts keep the original | done | `lib/robots.ts`, `convex/robotRules.ts`, `components/robot-sprite.tsx`, `components/profile/robot-*`, `convex/users.ts` |
 | Home page (`/`): write a program, make a map; a few built-in maps (easiest first) above the 6 newest published maps, each section with an "all" link | done | `app/(home)/`, `components/home/` |
 | Map lists: `/maps/built-in` (all 9 built-in maps by difficulty: write a program or edit a copy) and `/maps` (all published maps, All/Mine filter, Load more) | done | `app/maps/page.tsx`, `app/maps/built-in/`, `components/maps/` |
 | Map publishing (shared, immutable; server map validation, HU/EN name filtering + free text moderation of names, per-user rate limit) | done | `convex/maps.ts`, `convex/mapModeration.ts`, `convex/mapRules.ts`, `components/map-editor/publish-map.tsx` |
@@ -39,6 +40,8 @@ Submission must also include a short description (how to reach each feature, wha
 | Local program and map drafts (automatic restore on reload; replacement confirmation) | done | `components/use-draft-state.ts`, `components/use-replace-confirmation.tsx` |
 | Fast conformance tests (Bun native runner) | done | `tests/`, `scripts/test-related.ts`, `docs/testing.md` |
 | Mobile layout: below the lg breakpoint (`COMPACT_QUERY`) the workbench splits into Code / Map / Console / Problems tabs with the run controls docked above them (Run switches to Map), the map editor into Draw / Text / Problems tabs; inputs are 16 px (no iOS zoom), safe-area padding, `viewportFit: cover` | done | `components/mobile-tabs.tsx`, `components/use-media-query.ts`, `components/workbench/index.tsx`, `components/map-editor/index.tsx` |
+| Time travel: every processed line's snapshot is kept; a timeline (slider, step back, back to live; marks for gold mined / print / error) replays map, active line, console and variables of any earlier moment without touching the machine or the recorded result | done | `components/use-simulation.ts` (history, timeline), `components/timeline.tsx`, `components/playback-bar.tsx` |
+| Ghost: on a published map the #1 run is replayed as a see-through robot that moves in lockstep with the player's processed lines (toggle + caption); the server re-runs the stored code and returns only positions, never the code | done | `convex/results.ts` (`ghost`), `lib/scoring.ts` (`traceProgram`, `encodeRobot`/`decodeRobot`), `components/simulator.tsx`, `components/pixel-map/robot.tsx` (`GhostRobot`) |
 | React playback integration tests (fake timers: normal, pause, step, Turbo and the 1000-line limit) | done | `components/workbench/simulation.test.tsx` |
 
 **Engine semantics are frozen to the PDF and §6.** Do not change what programs mean (validity, outputs, counts, error codes/lines) without the user's approval. Improving diagnostics, performance or structure is fine when behaviour stays identical and the conformance suite stays green.
@@ -64,16 +67,16 @@ Submission must also include a short description (how to reach each feature, wha
 
 ```
 app/(home)/                  / home page (signed-in): start cards + published maps; route group keeps the root layout static (next.config.ts redirects the old /test URL to /workbench)
-components/home/             index.tsx (page: hero, built-in maps section, published maps section), robot-greeting.tsx (the strip's robot greets the player by name in a big Pixelify speech bubble; line picked on the server in app/(home)/page.tsx), published-maps.tsx (home: newest few + "all" link; /maps: All/Mine filter, paginated), mine-strip.tsx (3-row mine cross-section scrolling past the walking robot: dug tunnel behind, solid dirt + gold ahead, "+1" pickups, drill sparks, lamp light), hero backdrop with stars, shooting star and embers; the greeting types itself out; map card previews stay completely still (no shine, lift or entrance), map-entry.tsx (one published map in a pixel-frame border, no background: preview, details, write a program, Leaderboard link, delete own)
+components/home/             index.tsx (page: hero, built-in maps section, published maps section), robot-greeting.tsx (the strip's robot greets the player by name in a big Pixelify speech bubble; line picked on the server in app/(home)/page.tsx), published-maps.tsx (home: newest few + "all" link; /maps: All/Mine filter, paginated), mine-strip.tsx (3-row mine cross-section scrolling past the walking robot: dug tunnel behind, solid dirt + gold ahead, drill sparks, lamp light), hero backdrop with stars, shooting star and embers; the greeting types itself out; map card previews stay completely still (no shine, lift or entrance), map-entry.tsx (one published map in a pixel-frame border, no background: preview, details, write a program, Leaderboard link, delete own)
 components/maps/             built-in-maps.tsx (preset cards with difficulty badge, sorted easy→hard), section-header.tsx (title, intro, SeeAllLink), maps-page.tsx (BuiltInMapsPage, PublishedMapsPage; same shell as /maps/<id>)
 components/map-page/         /maps/<id>: index.tsx (map details + leaderboard section), leaderboard.tsx (ranking table), medal.tsx (gold/silver/bronze for places 1–3); app/maps/[mapId]/page.tsx reads the id inside Suspense (unknown ids at build time)
 convex/maps.ts               publish (action: checks name before internal commit) / list (paginated, newest first, `mine`) / remove; table `maps` (immutable, by_ownerId)
 convex/mapRules.ts           MAP_* error codes and publishedMapName (1–60 chars), shared with the client
-convex/results.ts            record (server re-runs the code on the stored map, keeps the player's best; an improvement replaces the row so _creationTime = when it was reached) / myBest / leaderboard (top LEADERBOARD_SIZE); table `results` (by_mapId_and_userId, by_mapId_and_rank)
+convex/results.ts            record (server re-runs the code on the stored map, keeps the player's best; an improvement replaces the row so _creationTime = when it was reached) / myBest / leaderboard (top LEADERBOARD_SIZE) / ghost (the #1 run's robot positions per processed line, no code); table `results` (by_mapId_and_userId, by_mapId_and_rank)
 convex/likes.ts              toggle (like/unlike, keeps maps.likeCount in step) / likers (author only, newest first, LIKERS_LIMIT); table `likes` (by_mapId, by_mapId_and_userId); maps.remove deletes them
 components/likes/            like-button.tsx (heart toggle + count, aria-pressed, filled heart when liked), likers-list.tsx (framed rows with profile picture, name, "you" badge, date), likers-dialog.tsx (own map cards: map preview + count header)
 convex/resultRules.ts        RESULT_* error codes and the recorded-code size limit
-lib/scoring.ts               Score, isBetterScore (PDF 3.5 order), scoreRank (single sortable key), scoreProgram (run to the end, as the UI would)
+lib/scoring.ts               Score, isBetterScore (PDF 3.5 order), scoreRank (single sortable key), scoreProgram (run to the end, as the UI would), traceProgram + encodeRobot/decodeRobot (robot position after each processed line, for the ghost)
 components/workbench/use-result-recorder.ts, published-map-result.tsx  record finished runs on a published map (?mapId=) and show the player's best
 app/icon.svg, app/favicon.ico, app/apple-icon.png  favicon: the robot's front idle frame (robot_sheet row 1, col 1), transparent, centred on its visible 22×23 pixels (the sprite has near-invisible alpha ≤ 16 noise pixels; drop them before measuring); 32 px 1:1, 64 px 2×, Apple 6× (regenerate all three if the sprite changes)
 app/workbench/page.tsx       /workbench: editor + simulator workbench
@@ -91,14 +94,15 @@ components/docs/example.tsx  runnable example card (runs the real engine, checks
 lib/docs/examples.ts         DOC_EXAMPLES catalogue: code + map + expected result for every docs example
 lib/docs/nav.ts              docs page list (slug, title, description) — drives nav and static params
 components/code-editor/      CodeMirror: index.tsx (React wrapper, read-only lock), minescript-mode.ts (highlighting, completion, Tab, indent, lint), theme.ts, active-line.ts (running/error line)
-components/workbench/        page shell: index.tsx (layout, status bar), file-toolbar.tsx (editable program name with a fixed .mine suffix, New/Import/Export/Wrap, example select), problems-panel.tsx (syntax problems + reference), use-program-file.ts (code, name, file operations; programName/programFilename in lib/minescript.ts)
+components/workbench/        page shell: index.tsx (layout, status bar), file-toolbar.tsx (editable program name with a fixed .mine suffix, New/Import/Export; no example dropdown), problems-panel.tsx (syntax problems + reference), use-program-file.ts (code, name, file operations; programName/programFilename in lib/minescript.ts)
 components/mobile-tabs.tsx   bottom tab bar for small screens (WAI-ARIA tabs, arrow keys, count badges) + TabPanel (hidden panels stay mounted); components/use-media-query.ts (COMPACT_QUERY, PHONE_QUERY; false on the server)
 components/top-bar.tsx       shared top bar (logo left, actions right) and AccountActions (user menu)
+components/timeline.tsx      time-travel slider under the run controls (step back, back to live, gold/print/error marks; aria-valuetext names the mark)
 components/playback-bar.tsx  Run/Pause, Step, Reset, Speed, run status and the "fix N syntax errors" notice (in the editor header; `compact` = one-row variant for the mobile dock)
-components/simulator.tsx     map panel: map select/import/fog, gold/lines stats, runtime error box (renders PixelMap)
+components/simulator.tsx     map panel: map name/import/fog; no selector, empty prompt until a map is linked or imported, gold/lines stats, runtime error box (renders PixelMap)
 components/pixel-map/        pixel-art map stage: index.tsx (layout: 32×32 sprites + half-cell numbered timber rulers fill the panel, cell rounded down to whole device pixels), tile.tsx, robot.tsx (sliding, idle bob, cheer), ruler.tsx (robot's column/row glow gold), lighting.tsx (pixel flashlight while a run is going, smooth gold glow, dust), effects.tsx (dig debris, mining burst, bump sparks + shake, print bubble, finish stars; skipped at Turbo and with reduced motion); timber sprites from scripts/draw-mine-timber.py
 public/sprites/              tiles: empty-dirt (dug chamber), full_dirt (undug/fog), gold + 4 shine frames and gold_chips* cut-outs (regenerate with scripts/cut-gold-chips.py), robot_sheet (4×4: idle + 3 walk frames; rows down/left/right/up), wall (explored brick), wall-unexplored (dark brick); `mapTile()` in components/sprites.ts picks a cell's tile from wall/explored/fog
-components/use-simulation.ts map state, Machine instance, playback timer, named SPEEDS
+components/use-simulation.ts map state, Machine instance, playback timer, named SPEEDS, run history + timeline (seek/stepBack/live; `snapshot` is the viewed moment, `liveStatus` the real run)
 components/robot-motion.ts   Motion: how far the robot slides, when each cell is dug, and which effect a line triggers (read from two engine snapshots; display only)
 convex/                      Convex backend; _generated/ is CLI output (do not edit)
 convex/auth.ts               Convex Auth with a custom username/password credentials provider (id "username", Scrypt)
@@ -115,7 +119,9 @@ proxy.ts                     Next 16 proxy: Convex Auth cookies + /api/auth rout
                              (also works around a @convex-dev/auth 0.0.96 bug that turned our redirects into 200s)
 app/workbench, app/login, app/profile layout.tsx  wrap only these routes in AppProviders (components/app-providers.tsx: cookie session, Convex client, i18n, Suspense); /docs stays static
 components/auth/             login-form, login-scene (speech bubble), require-auth (client fallback), user-menu
+                             successful authentication clears the submitted form; sign-out waits for cookie/session removal then replaces the document with /login so a cached signup form cannot reappear
 components/profile/          /profile page: profile-page.tsx (layout) + picture-form, username-form, password-form, feedback; prepare-picture.ts (pixel avatar in the browser)
+components/robot-sprite.tsx   shared sprite + account context; the original sheet stays intact, CSS palettes make L3V1 green and B3NC3 blue. Profile robot-form and signup robot-onboarding share robot-picker; components/home/onboarding mounts the signup dialog only after home data, document load, fonts, sprites and a painted frame are ready; users.setRobot saves the choice and completes onboarding. Optional user fields robot/robotSetupPending keep existing accounts compatible.
 convex/errors.ts             coded errors for the client: ConvexError({ code: "PROFILE_taken" }); errorKeyFrom reads error.data.code (or the code inside the message for /api/auth, which forwards only text); the UI translates the key
 convex/credentials.ts        username/password rules, AUTH_ERRORS and authError / authErrorKey
 convex/png.ts                PNG header size check (no decoding)
@@ -128,10 +134,10 @@ lib/syntax/                  the only parser, one pass: vocabulary.ts (keywords,
 lib/diagnostics.ts           Diagnostic, SYNTAX_CODES / ERROR_CODES (types derive from them), message helpers (quote, plural, cellName)
 lib/limits.ts                the PDF's numeric limits: MAX_MAP_SIZE, MAX_NUMBER_LITERAL, MAX_LINES
 lib/suggest.ts               editDistance / closest for "did you mean" hints
-lib/examples.ts              EXAMPLES: the editor's sample programs (filename = i18n key)
+lib/examples.ts              EXAMPLES: sample program fixtures (not offered in the coding toolbar)
 lib/minescript.ts            PROGRAM_EXTENSION, re-exports EXAMPLES, KEYWORDS/isIdentifier, validateMineScript (= syntax issues)
 lib/interpreter.ts           parseProgram, Machine (pc over flat instructions, one line per step), StepEvent, idleSnapshot
-lib/robot-map.ts             GameMap, DIRECTIONS, parseMap (header → row count → grid), cellIndex/cellAt, MAP_PRESETS (9 built-in maps with difficulty; order fixed by index, names are sim.maps keys; a workbench ?map= equal to a preset selects it)
+lib/robot-map.ts             GameMap, DIRECTIONS, parseMap (header → row count → grid), cellIndex/cellAt, MAP_PRESETS (9 built-in maps with difficulty; order fixed by index, names are sim.maps keys; a workbench ?map= equal to a preset identifies its translated name)
 tests/                       categorized PDF-backed conformance and simulation contracts
 scripts/test-related.ts      targeted dependency-aware test runner (explicit task paths); engine tests via bun test, Convex/profile tests via vitest
 scripts/test-groups.ts       the explicit file → tests mapping (unknown files fail closed)

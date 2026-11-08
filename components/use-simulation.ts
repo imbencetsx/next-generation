@@ -3,10 +3,15 @@
 // A futás állapota a felületen: a térkép, a gép (Machine), a lejátszás időzítője és a legutóbbi mozgás.
 // A játékszabályok a motorban (lib/interpreter.ts) vannak; ez a hook csak lépteti a gépet és tárolja a
 // pillanatképet. Az animáció időzítése a robot-motion.ts-ben van.
+//
+// Időutazás: a futás minden feldolgozott sor utáni pillanatképét megőrizzük (history), így az idővonalon vissza
+// lehet nézni bármelyik korábbi állapotot (térkép, aktuális sor, konzol, változók). Visszanézés közben a gép nem
+// változik; a rögzített eredmény és a lépésszám mindig a valódi futásé.
 
 import { useEffect, useRef, useState } from "react";
 import { advance, type Motion } from "@/components/robot-motion";
 import { Machine, idleSnapshot, parseProgram, type Snapshot } from "@/lib/interpreter";
+import { createMap } from "@/lib/map-editor";
 import { MAP_PRESETS, parseMap, presetMap } from "@/lib/robot-map";
 
 /** Lejátszási sebességek: két feldolgozott sor között ennyi ms telik el. A feliratok: sim.speeds. */
@@ -43,16 +48,24 @@ function reportIfEnded(
 }
 
 function initialMap({ mapText = null, mapName = null, mapId = null }: SimulationOptions) {
-  // Beépített pálya linkből (kezdőlap, beépített pályák oldala): a választóban is az legyen kiválasztva.
+  // Beépített pálya linkből: a nevét lefordíthatjuk, de a munkafelületen nincs pályaválasztó.
   const presetIndex = mapId === null ? MAP_PRESETS.findIndex((preset) => preset.text === mapText) : -1;
   if (presetIndex >= 0) {
     const { name } = MAP_PRESETS[presetIndex];
-    return { map: presetMap(presetIndex), name, publishedId: null, presetName: name, defaultMapName: false };
+    return {
+      map: presetMap(presetIndex),
+      name,
+      publishedId: null,
+      presetName: name,
+      defaultMapName: false,
+      hasMap: true,
+    };
   }
   if (mapText !== null) {
     const result = parseMap(mapText);
     if (result.ok) {
       return {
+        hasMap: true,
         map: result.map,
         name: mapName?.trim() || SHARED_MAP_NAME,
         publishedId: mapId,
@@ -62,10 +75,12 @@ function initialMap({ mapText = null, mapName = null, mapId = null }: Simulation
     }
   }
   return {
-    map: presetMap(0),
-    name: MAP_PRESETS[0].name,
+    // Belső üres alapállapot; import vagy pályalink nélkül nem jelenítjük meg és nem futtatjuk.
+    hasMap: false,
+    map: createMap(1, 1),
+    name: "",
     publishedId: null,
-    presetName: MAP_PRESETS[0].name,
+    presetName: null,
     defaultMapName: false,
   };
 }
@@ -79,6 +94,7 @@ export function useSimulation(code: string, options: SimulationOptions = {}) {
   const onRunEnd = useRef(options.onRunEnd);
   const [initial] = useState(() => initialMap(options));
   const [map, setMap] = useState(initial.map);
+  const [hasMap, setHasMap] = useState(initial.hasMap);
   const [mapName, setMapName] = useState(initial.name);
   const [defaultMapName, setDefaultMapName] = useState(initial.defaultMapName);
   const [presetName, setPresetName] = useState<string | null>(initial.presetName);
@@ -93,6 +109,9 @@ export function useSimulation(code: string, options: SimulationOptions = {}) {
   const [blockedBy, setBlockedBy] = useState<number | null>(null);
   const [motion, setMotion] = useState<Motion | null>(null);
   const motionId = useRef(0);
+  // A futás pillanatképei: [0] az indulás, [n] az n-edik lépés után. null nézet: az élő (legutolsó) állapot.
+  const [history, setHistory] = useState<Snapshot[]>([]);
+  const [viewIndex, setViewIndex] = useState<number | null>(null);
 
   const delay = SPEEDS.find((option) => option.id === speed)!.delay;
 
@@ -108,6 +127,7 @@ export function useSimulation(code: string, options: SimulationOptions = {}) {
       const next = advance(machine.current, ++motionId.current, map.cols, delay);
       setMotion(next.motion);
       setSnapshot(next.snapshot);
+      setHistory((previous) => [...previous, next.snapshot]);
       if (next.snapshot.status !== "running") setPlaying(false);
       reportIfEnded(next.snapshot, onRunEnd.current, { code: runCode.current, mapId: publishedMapId });
     }, delay);
@@ -116,6 +136,7 @@ export function useSimulation(code: string, options: SimulationOptions = {}) {
 
   /** A futó gép (szünet után ezt folytatjuk), vagy egy új gép a jelenlegi programmal és térképpel. */
   function ensureMachine(): Machine | null {
+    if (!hasMap) return null;
     if (machine.current?.status === "running") return machine.current;
 
     const parsed = parseProgram(code);
@@ -127,7 +148,10 @@ export function useSimulation(code: string, options: SimulationOptions = {}) {
     setBlockedBy(null);
     runCode.current = code;
     machine.current = new Machine(parsed.program, map);
-    setSnapshot(machine.current.snapshot());
+    const start = machine.current.snapshot();
+    setSnapshot(start);
+    setHistory([start]);
+    setViewIndex(null);
     setMotion(null);
     // Az üres program lépés nélkül, azonnal véget ér; ez is befejezett futás.
     if (machine.current.status !== "running") onRunEnd.current?.({ code, mapId: publishedMapId });
@@ -135,6 +159,8 @@ export function useSimulation(code: string, options: SimulationOptions = {}) {
   }
 
   function run() {
+    // Visszanézés közben a futtatás az élő állapottól folytatódik.
+    setViewIndex(null);
     const current = ensureMachine();
     if (current?.status === "running") setPlaying(true);
   }
@@ -144,34 +170,38 @@ export function useSimulation(code: string, options: SimulationOptions = {}) {
   }
 
   function step() {
+    // Visszanézés közben a lépés csak az idővonalon halad előre, a gépet nem lépteti.
+    if (viewIndex !== null) return seek(viewIndex + 1);
     const current = ensureMachine();
     if (!current) return;
     const next = advance(current, ++motionId.current, map.cols, delay);
     setMotion(next.motion);
     setSnapshot(next.snapshot);
+    setHistory((previous) => [...previous, next.snapshot]);
     setPlaying(false);
     reportIfEnded(next.snapshot, onRunEnd.current, { code: runCode.current, mapId: publishedMapId });
   }
 
+  /** Az idővonal egy pontjára ugrik (0 = indulás); az utolsó pont az élő állapot. A lejátszás megáll. */
+  function seek(index: number) {
+    setPlaying(false);
+    const last = history.length - 1;
+    const target = Math.max(0, Math.min(index, last));
+    setViewIndex(target >= last ? null : target);
+  }
+
+  function stepBack() {
+    seek((viewIndex ?? history.length - 1) - 1);
+  }
+
   function reset() {
     machine.current = null;
+    setHistory([]);
+    setViewIndex(null);
     setSnapshot(null);
     setPlaying(false);
     setBlockedBy(null);
     setMotion(null);
-  }
-
-  function selectMap(name: string) {
-    const index = MAP_PRESETS.findIndex((preset) => preset.name === name);
-    if (index < 0) return;
-
-    reset();
-    setMap(presetMap(index));
-    setMapName(name);
-    setPresetName(name);
-    setDefaultMapName(false);
-    setPublishedMapId(null);
-    setMapError(null);
   }
 
   async function importMap(file: File | undefined) {
@@ -186,6 +216,7 @@ export function useSimulation(code: string, options: SimulationOptions = {}) {
 
     reset();
     setMap(result.map);
+    setHasMap(true);
     setMapName(file.name);
     setPresetName(null);
     setDefaultMapName(false);
@@ -195,6 +226,7 @@ export function useSimulation(code: string, options: SimulationOptions = {}) {
 
   return {
     map,
+    hasMap,
     mapName,
     presetName,
     defaultMapName,
@@ -204,8 +236,23 @@ export function useSimulation(code: string, options: SimulationOptions = {}) {
     playing,
     speed,
     setSpeed,
-    motion,
-    snapshot: snapshot ?? idleSnapshot(map),
+    // Visszanézéskor a megjelenített állapot a kiválasztott korábbi pillanatkép, mozgásanimáció nélkül.
+    motion: viewIndex === null ? motion : null,
+    snapshot: (viewIndex !== null ? history[viewIndex] : snapshot) ?? idleSnapshot(map),
+    timeline: {
+      /** A futás pillanatképei (üres, ha még nem indult futás). */
+      history,
+      /** A megjelenített pillanatkép indexe a history-ban. */
+      index: viewIndex ?? Math.max(0, history.length - 1),
+      /** Korábbi állapotot nézünk (nem az élőt). */
+      reviewing: viewIndex !== null,
+      seek,
+      stepBack,
+      /** Vissza az élő állapothoz. */
+      live: () => setViewIndex(null),
+    },
+    /** A valódi (élő) futás állapota, visszanézés közben is; a futtatás gombja ehhez igazodik. */
+    liveStatus: snapshot?.status ?? "idle",
     /** Volt-e már futás a legutóbbi visszaállítás óta. */
     started: snapshot !== null,
     /** Futás közben a program és a térkép nem módosítható. */
@@ -214,7 +261,6 @@ export function useSimulation(code: string, options: SimulationOptions = {}) {
     pause,
     step,
     reset,
-    selectMap,
     importMap,
   };
 }

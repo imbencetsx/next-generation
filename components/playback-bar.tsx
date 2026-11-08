@@ -3,17 +3,21 @@
 // A futás vezérlői a kódszerkesztő fejlécében, a fájlműveletek alatt: Futtatás/Szünet, Lépés, Visszaállítás,
 // Sebesség, alattuk külön sorban az állapot. Hibás programnál az indítás az első hibára ugrik.
 // Kis képernyőn (compact) ugyanez egy sorban, a fülsor fölött: a Lépés és a Visszaállítás csak ikon (a nevük a
-// címkéjükben), az állapot mellettük.
+// címkéjükben), az állapot mellettük. Futás után alattuk az idővonal (timeline.tsx): vele bármelyik korábbi sor
+// utáni állapot visszanézhető.
 
 import { Alert, Check, Idle, Pause, Play, Reset, Running, StepForward } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import Timeline from "@/components/timeline";
 import { SPEEDS, type Simulation, type SpeedId } from "@/components/use-simulation";
 import { useI18n } from "@/i18n/i18n-provider";
 import type { Messages } from "@/i18n/messages";
 
 /** Az állapotsor felirata; futó gépnél megkülönbözteti a lejátszást, a szünetet és a még el nem indultat. */
 function statusLabel(simulation: Simulation, labels: Messages["sim"]["status"]) {
+  if (!simulation.hasMap) return labels.needsMap;
+  if (simulation.timeline.reviewing) return labels.reviewing;
   const { status, steps } = simulation.snapshot;
   if (status === "running") {
     if (simulation.playing) return labels.running;
@@ -34,7 +38,8 @@ type Props = {
 export default function PlaybackBar({ simulation, showFirstIssue, onStart, compact = false }: Props) {
   const { t } = useI18n();
   const { snapshot } = simulation;
-  const finished = snapshot.status === "done" || snapshot.status === "error";
+  // A gomb a valódi futáshoz igazodik: egy befejezett futás visszanézése közben is újrakezdést ajánl.
+  const finished = simulation.liveStatus === "done" || simulation.liveStatus === "error";
   let runLabel = t.sim.run;
   if (finished) runLabel = t.sim.runAgain;
   else if (simulation.started) runLabel = t.sim.resume;
@@ -73,7 +78,7 @@ export default function PlaybackBar({ simulation, showFirstIssue, onStart, compa
               <Pause aria-hidden /> {t.sim.pause}
             </Button>
           ) : (
-            <Button onClick={() => start(simulation.run)}>
+            <Button onClick={() => start(simulation.run)} disabled={!simulation.hasMap}>
               <Play aria-hidden /> {runLabel}
             </Button>
           )}
@@ -83,7 +88,7 @@ export default function PlaybackBar({ simulation, showFirstIssue, onStart, compa
             aria-label={t.sim.step}
             title={t.sim.step}
             onClick={() => start(simulation.step)}
-            disabled={simulation.playing}
+            disabled={simulation.playing || !simulation.hasMap}
           >
             <StepForward aria-hidden />
           </Button>
@@ -113,6 +118,9 @@ export default function PlaybackBar({ simulation, showFirstIssue, onStart, compa
         </div>
         <div className="mt-1.5">{status}</div>
         {blocked}
+        <div className="mt-1.5 empty:hidden">
+          <Timeline simulation={simulation} />
+        </div>
       </div>
     );
   }
@@ -125,11 +133,15 @@ export default function PlaybackBar({ simulation, showFirstIssue, onStart, compa
             <Pause aria-hidden /> {t.sim.pause}
           </Button>
         ) : (
-          <Button onClick={() => start(simulation.run)}>
+          <Button onClick={() => start(simulation.run)} disabled={!simulation.hasMap}>
             <Play aria-hidden /> {runLabel}
           </Button>
         )}
-        <Button variant="outline" onClick={() => start(simulation.step)} disabled={simulation.playing}>
+        <Button
+          variant="outline"
+          onClick={() => start(simulation.step)}
+          disabled={simulation.playing || !simulation.hasMap}
+        >
           <StepForward aria-hidden /> {t.sim.step}
         </Button>
         <Button variant="outline" onClick={simulation.reset} disabled={!simulation.started}>
@@ -152,6 +164,9 @@ export default function PlaybackBar({ simulation, showFirstIssue, onStart, compa
       {/* Az állapot mindig külön sorban, középen: nem ugrál a gombok közé, ha a felirat épp elfér. */}
       {status}
       {blocked}
+      <div className="mx-auto mt-2 max-w-xl px-1 empty:hidden">
+        <Timeline simulation={simulation} />
+      </div>
     </div>
   );
 }

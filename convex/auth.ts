@@ -5,6 +5,7 @@ import { ConvexCredentials } from "@convex-dev/auth/providers/ConvexCredentials"
 import { convexAuth, createAccount, retrieveAccount } from "@convex-dev/auth/server";
 import { Scrypt } from "lucia";
 import { internal } from "./_generated/api";
+import { DEFAULT_ROBOT } from "../lib/robots";
 import {
   AUTH_PROVIDER,
   MAX_PASSWORD_LENGTH,
@@ -41,7 +42,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
             const { user } = await createAccount(ctx, {
               provider: AUTH_PROVIDER,
               account: { id: username, secret: password },
-              profile: { name: username },
+              profile: { name: username, robot: DEFAULT_ROBOT, robotSetupPending: true },
             });
             return { userId: user._id };
           } catch (error) {
