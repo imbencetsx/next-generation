@@ -24,7 +24,9 @@ async function setup() {
   });
   const miner = t.withIdentity({ subject: `${ids.minerId}|${ids.minerSession}` });
   const other = t.withIdentity({ subject: `${ids.otherId}|${ids.otherSession}` });
-  const mapId = await other.mutation(api.maps.publish, { name: "corridor", text: CORRIDOR });
+  const mapId = await t.run((ctx) =>
+    ctx.db.insert("maps", { ownerId: ids.otherId, name: "corridor", text: CORRIDOR, rows: 3, cols: 10, goldCount: 3 }),
+  );
   return { t, miner, other, mapId };
 }
 

@@ -302,6 +302,7 @@ export const hu: Messages = {
     publishName: "Térkép neve",
     publishNameHint: "1–60 karakter. Ezt a nevet látják a játékosok; a fájlneved nem változik.",
     publishPreview: "Kártya előnézete",
+    checkingName: "Név ellenőrzése…",
     publishing: "Közzététel…",
     published: (name: string) => `Közzétéve „${name}” néven. Mostantól mindenki megtalálja a kezdőlapon.`,
     publishHint:
@@ -385,6 +386,10 @@ export const hu: Messages = {
 
   maps: {
     errors: {
+      moderated: "Ez a térképnév nem megfelelő. Válassz másik nevet.",
+      moderationUnavailable: "Most nem sikerült ellenőrizni a nevet. A térképed nem lett közzétéve. Próbáld újra.",
+      rateLimited: "Túl sok közzétételi próbálkozás. Várj egy kicsit, és próbáld újra.",
+
       unauthenticated: "Lejárt a munkamenet. Jelentkezz be újra.",
       invalid: "A térkép nem érvényes, ezért nem tehető közzé.",
       name: "Adj a térképnek 1–60 karakteres nevet.",

@@ -9,9 +9,9 @@ import MapEditor from "./index";
 const navigation = vi.hoisted(() => ({ query: "" }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(navigation.query) }));
 vi.mock("@/components/auth/user-menu", () => ({ default: () => null }));
-// A közzététel a Convex mutációt hívja; a teszt a hívást és a válaszát figyeli.
+// A közzététel a Convex actiont hívja; a teszt a hívást és a válaszát figyeli.
 const convex = vi.hoisted(() => ({ publish: vi.fn() }));
-vi.mock("convex/react", () => ({ useMutation: () => convex.publish }));
+vi.mock("convex/react", () => ({ useMutation: () => convex.publish, useAction: () => convex.publish }));
 
 beforeEach(() => {
   localStorage.clear();
@@ -220,4 +220,42 @@ test("map source and filename survive remounting, including invalid drafts", () 
   expect(editor().state.doc.toString()).toBe("1 2\n@@");
   expect(screen.getAllByRole("gridcell")).toHaveLength(2);
   expect(screen.getByRole("button", { name: "Export" }).hasAttribute("disabled")).toBe(true);
+});
+
+test("a rejected name stays in the publish dialog and can be corrected without losing the map", async () => {
+  open("hu");
+  convex.publish.mockRejectedValueOnce(new Error('ConvexError: {"code":"MAP_moderated"}'));
+  fireEvent.click(screen.getByRole("button", { name: "Közzététel" }));
+  const dialog = await screen.findByRole("dialog", { name: "Térkép közzététele" });
+  fireEvent.change(within(dialog).getByLabelText("Térkép neve"), { target: { value: "Rejected title" } });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Közzététel" }));
+  expect(await within(dialog).findByRole("alert")).toHaveProperty(
+    "textContent",
+    "Ez a térképnév nem megfelelő. Válassz másik nevet.",
+  );
+  expect((within(dialog).getByLabelText("Térkép neve") as HTMLInputElement).value).toBe("Rejected title");
+  convex.publish.mockResolvedValueOnce("map-id");
+  fireEvent.change(within(dialog).getByLabelText("Térkép neve"), { target: { value: "Aranybarlang" } });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Közzététel" }));
+  await screen.findByText(/Közzétéve „Aranybarlang”/);
+  expect(convex.publish).toHaveBeenLastCalledWith({ name: "Aranybarlang", text: "1 2\n>." });
+});
+
+test("publishing shows the name-checking state and prevents duplicate submissions", async () => {
+  open();
+  let resolve!: (id: string) => void;
+  convex.publish.mockImplementationOnce(
+    () =>
+      new Promise<string>((done) => {
+        resolve = done;
+      }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Publish" }));
+  const dialog = await screen.findByRole("dialog");
+  fireEvent.click(within(dialog).getByRole("button", { name: "Publish" }));
+  expect(within(dialog).getByRole("button", { name: "Checking name…" }).hasAttribute("disabled")).toBe(true);
+  expect(within(dialog).getByRole("button", { name: "Cancel" }).hasAttribute("disabled")).toBe(true);
+  expect(convex.publish).toHaveBeenCalledTimes(1);
+  await act(async () => resolve("map-id"));
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 });

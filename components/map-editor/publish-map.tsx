@@ -3,7 +3,7 @@
 // A közzététel előtt külön nevet adhatunk a térképnek, és megnézhetjük a kezdőlapi kártyáját.
 import { Dialog } from "@base-ui/react/dialog";
 import Link from "next/link";
-import { useMutation } from "convex/react";
+import { useAction } from "convex/react";
 import { useState, type FormEvent } from "react";
 import MapCard from "@/components/map-card";
 import { Alert, Check, Share } from "@/components/icons";
@@ -20,7 +20,7 @@ type Props = { name: string; text: string | null };
 
 export default function PublishMap({ name, text }: Props) {
   const { t, locale } = useI18n();
-  const publish = useMutation(api.maps.publish);
+  const publish = useAction(api.maps.publish);
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [source, setSource] = useState("");
@@ -117,7 +117,7 @@ export default function PublishMap({ name, text }: Props) {
                 <Dialog.Close render={<Button variant="outline" disabled={pending} />}>{t.home.cancel}</Dialog.Close>
                 <Button type="submit" disabled={!publishedName || pending}>
                   <Share aria-hidden />
-                  {pending ? t.mapEditor.publishing : t.mapEditor.publish}
+                  {pending ? t.mapEditor.checkingName : t.mapEditor.publish}
                 </Button>
               </div>
             </form>
