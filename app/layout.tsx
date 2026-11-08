@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Google_Sans, Pixelify_Sans, Tiny5 } from "next/font/google";
 import "./globals.css";
 
@@ -33,6 +33,15 @@ const tiny = Tiny5({
 export const metadata: Metadata = {
   title: "MineScript",
   description: "Program a treasure-hunting robot in MineScript",
+};
+
+// Telefonon a böngészősáv a sötét háttérhez illik, és a lap a kijelző széléig ér: az iPhone otthon-sávja fölötti
+// helyet a munkafelületek alsó fülsora maga hagyja ki (env(safe-area-inset-bottom), app/globals.css).
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#141414",
 };
 
 // A gyökér statikus marad (a dokumentáció előrenderelt), ezért itt nem olvassuk a nyelvi sütit.

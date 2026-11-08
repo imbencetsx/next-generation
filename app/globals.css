@@ -133,7 +133,8 @@
     /* A Pixelify „fi” ligatúrája „A”-nak látszik. */
     font-variant-ligatures: none;
   }
-  .app-ui ::selection {
+  /* A kódszerkesztő kivétel: ott a CodeMirror rajzolja a kijelölést, a szöveg megtartja a kiemelés színét. */
+  .app-ui :not(.cm-editor, .cm-editor *)::selection {
     background: var(--primary);
     color: var(--primary-foreground);
   }
@@ -675,6 +676,8 @@
 .pixel-map {
   background: #241411;
   image-rendering: pixelated;
+  /* Saját rétegrend: a sötétség, az izzás és az effektek csak a térképpel keverednek. */
+  isolation: isolate;
 }
 .pixel-sprite {
   background-size: 100% 100%;
@@ -685,7 +688,7 @@
   position: absolute;
   left: 0;
   top: 0;
-  z-index: 2;
+  z-index: 5;
   transition-property: transform;
 }
 .pixel-robot-sprite {
@@ -779,5 +782,903 @@
   }
   .pixel-appear {
     animation: none;
+  }
+}
+
+/* ------------------------------------------------------------------ térkép: vonalzók, fények, effektek */
+/* --cell: egy mező, --ruler: a vonalzó vastagsága, --art: a 32 px-es sprite egy pixele (components/pixel-map). */
+.map-stage {
+  --art: calc(var(--cell) / 32);
+}
+
+/* Számozott gerenda (oszlopok) és dúc (sorok); a sarkon a kettő illesztése. */
+.map-ruler-corner {
+  background-image: url(/sprites/timber-corner.png);
+}
+.map-ruler {
+  display: flex;
+}
+.map-ruler[data-axis="rows"] {
+  flex-direction: column;
+}
+.map-ruler-plate {
+  position: relative;
+  display: flex;
+  width: var(--cell);
+  height: var(--ruler);
+  align-items: center;
+  justify-content: center;
+  background-image: url(/sprites/timber-beam.png);
+  color: color-mix(in srgb, var(--foreground) 72%, transparent);
+  font-family: var(--font-tiny), monospace;
+  /* Kis kijelzőn sem lesz olvashatatlanul apró. */
+  font-size: max(calc(var(--ruler) * 0.5), 7px);
+  line-height: 1;
+  text-shadow: var(--art) var(--art) 0 #170c07;
+}
+.map-ruler[data-axis="rows"] .map-ruler-plate {
+  width: var(--ruler);
+  height: var(--cell);
+  background-image: url(/sprites/timber-post.png);
+}
+/* A robot oszlopa és sora: aranyszám, izzó tábla, és egy pixelnyíl mutat a térképre. */
+.map-ruler-plate[data-active] {
+  z-index: 1;
+  color: var(--primary);
+  filter: brightness(1.3);
+  text-shadow:
+    0 0 calc(var(--art) * 5) rgb(240 167 0 / 0.85),
+    var(--art) var(--art) 0 #170c07;
+  animation: ruler-pop 300ms steps(3, end);
+}
+.map-ruler-plate[data-active]::after {
+  position: absolute;
+  background: var(--primary);
+  content: "";
+  filter: drop-shadow(0 0 calc(var(--art) * 2) rgb(240 167 0 / 0.9));
+}
+.map-ruler[data-axis="columns"] .map-ruler-plate[data-active]::after {
+  top: calc(100% + var(--art));
+  left: calc(50% - var(--art) * 3);
+  width: calc(var(--art) * 6);
+  height: calc(var(--art) * 3);
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 33.33%,
+    83.33% 33.33%,
+    83.33% 66.67%,
+    66.67% 66.67%,
+    66.67% 100%,
+    33.33% 100%,
+    33.33% 66.67%,
+    16.67% 66.67%,
+    16.67% 33.33%,
+    0 33.33%
+  );
+  animation: ruler-arrow-down 1s steps(1, end) infinite;
+}
+.map-ruler[data-axis="rows"] .map-ruler-plate[data-active]::after {
+  top: calc(50% - var(--art) * 3);
+  left: calc(100% + var(--art));
+  width: calc(var(--art) * 3);
+  height: calc(var(--art) * 6);
+  clip-path: polygon(
+    0 0,
+    33.33% 0,
+    33.33% 16.67%,
+    66.67% 16.67%,
+    66.67% 33.33%,
+    100% 33.33%,
+    100% 66.67%,
+    66.67% 66.67%,
+    66.67% 83.33%,
+    33.33% 83.33%,
+    33.33% 100%,
+    0 100%
+  );
+  animation: ruler-arrow-right 1s steps(1, end) infinite;
+}
+@keyframes ruler-pop {
+  0% {
+    scale: 1.35;
+  }
+  50% {
+    scale: 1.15;
+  }
+  100% {
+    scale: 1;
+  }
+}
+@keyframes ruler-arrow-down {
+  50% {
+    translate: 0 var(--art);
+  }
+}
+@keyframes ruler-arrow-right {
+  50% {
+    translate: var(--art) 0;
+  }
+}
+
+/* Sötétség a robot körül: pixeles, lépcsőzetes fény, előtte a nézési irányba mutató fénykúp. A legsötétebb rész is átlátszik. */
+.map-light,
+.map-glow {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.map-light {
+  z-index: 3;
+  transition: opacity 600ms steps(6, end);
+}
+/* Futás előtt és után a bánya ki van világítva; futás közben elsötétül, és csak a robot lámpája világít. */
+.pixel-map[data-lit] .map-light {
+  opacity: 0;
+}
+.map-darkness {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition-property: transform;
+}
+/* Pixeles lámpafény (components/scene/pixel-light.tsx): kis felbontású vászon, élesen felnagyítva, egyenletes fény. */
+.pixel-light {
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+
+/* Világosító réteg: az arany izzása és a por. */
+.map-glow {
+  z-index: 4;
+  mix-blend-mode: screen;
+}
+/* Az izzás sima (nem pixeles) és állandó: csak a robot lámpája pixeles. */
+.map-gold-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgb(255 205 80 / 0.34),
+    rgb(240 167 0 / 0.14) 32%,
+    rgb(240 167 0 / 0.04) 52%,
+    transparent 68%
+  );
+}
+.map-dust {
+  position: absolute;
+  width: calc(var(--art) * 2);
+  height: calc(var(--art) * 2);
+  background: #eae7dd;
+  opacity: 0;
+  animation: dust-drift 10s steps(40, end) infinite;
+}
+@keyframes dust-drift {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+  }
+  20% {
+    opacity: 0.35;
+  }
+  50% {
+    translate: calc(var(--cell) * 0.6) calc(var(--cell) * -0.9);
+  }
+  80% {
+    opacity: 0.25;
+  }
+  100% {
+    opacity: 0;
+    translate: calc(var(--cell) * -0.2) calc(var(--cell) * -1.8);
+  }
+}
+
+/* Robot: álló helyzetben pihegve billeg, a sikeres futás végén ugrál. */
+.pixel-robot:not([data-moving]) {
+  animation: robot-idle 1.2s steps(1, end) infinite;
+}
+.pixel-robot[data-cheer] {
+  animation: robot-cheer 0.9s steps(3, end) 2;
+}
+@keyframes robot-idle {
+  50% {
+    translate: 0 calc(var(--art) * -1);
+  }
+}
+@keyframes robot-cheer {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  35% {
+    translate: 0 calc(var(--art) * -7);
+  }
+  60% {
+    translate: 0 calc(var(--art) * -3);
+  }
+}
+
+/* Falba ütközés: a térkép megremeg (két azonos animáció, hogy minden ütközés újraindítsa). */
+.pixel-map[data-shake="0"] {
+  animation: map-shake-a 320ms steps(1, end);
+}
+.pixel-map[data-shake="1"] {
+  animation: map-shake-b 320ms steps(1, end);
+}
+@keyframes map-shake-a {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  15% {
+    translate: calc(var(--art) * -3) var(--art);
+  }
+  30% {
+    translate: calc(var(--art) * 3) calc(var(--art) * -1);
+  }
+  45% {
+    translate: calc(var(--art) * -2) 0;
+  }
+  60% {
+    translate: calc(var(--art) * 2) var(--art);
+  }
+  75% {
+    translate: calc(var(--art) * -1) 0;
+  }
+}
+@keyframes map-shake-b {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  15% {
+    translate: calc(var(--art) * -3) var(--art);
+  }
+  30% {
+    translate: calc(var(--art) * 3) calc(var(--art) * -1);
+  }
+  45% {
+    translate: calc(var(--art) * -2) 0;
+  }
+  60% {
+    translate: calc(var(--art) * 2) var(--art);
+  }
+  75% {
+    translate: calc(var(--art) * -1) 0;
+  }
+}
+
+/* Effektek: egy-egy mezőnyi doboz a mező helyén (--x, --y), a darabkák a közepéből indulnak. */
+.map-effects {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+.fx-cell {
+  position: absolute;
+  top: calc(var(--y) * var(--cell));
+  left: calc(var(--x) * var(--cell));
+  width: var(--cell);
+  height: var(--cell);
+}
+.fx-piece {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--art) * 3);
+  height: calc(var(--art) * 3);
+  --fall: 0.35;
+  animation: fx-fly 520ms steps(5, end) both;
+}
+.fx-piece[data-kind="dirt"] {
+  background: #53352f;
+}
+.fx-piece[data-kind="dirt"][data-tone="1"] {
+  background: #442620;
+}
+.fx-piece[data-kind="dirt"][data-tone="2"] {
+  background: #7a5243;
+}
+.fx-piece[data-kind="gold"],
+.fx-piece[data-kind="star"] {
+  background: var(--primary);
+}
+.fx-piece:is([data-kind="gold"], [data-kind="star"])[data-tone="1"] {
+  background: #ffd75e;
+}
+.fx-piece:is([data-kind="gold"], [data-kind="star"], [data-kind="spark"])[data-tone="2"] {
+  background: #fff6cf;
+}
+.fx-piece[data-kind="spark"] {
+  --fall: 0.15;
+  width: calc(var(--art) * 2);
+  height: calc(var(--art) * 2);
+  background: #ffd75e;
+  box-shadow: 0 0 calc(var(--art) * 3) rgb(255 215 94 / 0.9);
+  animation-duration: 360ms;
+}
+.fx-piece[data-kind="star"] {
+  --fall: 0;
+  box-shadow: 0 0 calc(var(--art) * 3) rgb(240 167 0 / 0.8);
+  animation-duration: 900ms;
+}
+@keyframes fx-fly {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%);
+  }
+  1% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+  55% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--dx) * var(--cell)), calc(-50% + var(--dy) * var(--cell)));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(
+      calc(-50% + var(--dx) * var(--cell) * 1.2),
+      calc(-50% + (var(--dy) + var(--fall)) * var(--cell))
+    );
+  }
+}
+/* Bányászás: a mező felvillan, és „+1” száll fel belőle. */
+.fx-flash {
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgb(255 230 140 / 0.8) 0 30%,
+    rgb(240 167 0 / 0.35) 0 55%,
+    transparent 0
+  );
+  animation: fx-flash 400ms steps(4, end) both;
+}
+@keyframes fx-flash {
+  0% {
+    opacity: 1;
+    scale: 0.6;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.6;
+  }
+}
+.fx-float {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  color: var(--primary);
+  font-family: var(--font-tiny), monospace;
+  font-size: calc(var(--cell) * 0.42);
+  font-weight: normal;
+  line-height: 1;
+  text-shadow:
+    var(--art) var(--art) 0 #170c07,
+    0 0 calc(var(--art) * 4) rgb(240 167 0 / 0.8);
+  animation: fx-float 900ms steps(9, end) both;
+}
+@keyframes fx-float {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, calc(var(--cell) * -0.9));
+  }
+}
+/* print: szövegbuborék a robot fölött (a legfelső sorban alatta), lépcsős pixelfarokkal. */
+.fx-bubble {
+  position: absolute;
+  bottom: calc(100% + var(--art) * 5);
+  left: 50%;
+  padding: calc(var(--art) * 3) calc(var(--art) * 5);
+  background: var(--foreground);
+  color: var(--background);
+  font-family: var(--font-pixel), monospace;
+  font-size: calc(var(--cell) * 0.36);
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 var(--art) 0 calc(var(--art) * 1) #170c07;
+  animation: fx-bubble 1.4s steps(1, end) both;
+}
+.fx-bubble::after {
+  position: absolute;
+  top: 100%;
+  left: calc(50% - var(--art) * 3);
+  width: calc(var(--art) * 6);
+  height: calc(var(--art) * 4);
+  background: var(--foreground);
+  clip-path: polygon(0 0, 100% 0, 100% 25%, 83% 25%, 83% 50%, 67% 50%, 67% 75%, 50% 75%, 50% 100%, 33% 100%, 33% 0);
+  content: "";
+}
+.fx-bubble[data-below] {
+  top: calc(100% + var(--art) * 5);
+  bottom: auto;
+}
+.fx-bubble[data-below]::after {
+  top: auto;
+  bottom: 100%;
+  scale: 1 -1;
+}
+@keyframes fx-bubble {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, calc(var(--art) * 3)) scale(0.7);
+  }
+  6% {
+    transform: translate(-50%, calc(var(--art) * -1)) scale(1.08);
+  }
+  12% {
+    transform: translate(-50%, 0) scale(1);
+  }
+  85% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, calc(var(--art) * -4));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-darkness {
+    transition: none !important;
+  }
+  .map-ruler-plate[data-active],
+  .map-ruler-plate[data-active]::after,
+  .pixel-robot,
+  .pixel-map[data-shake] {
+    animation: none !important;
+  }
+  .map-dust,
+  .map-effects {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------ jelenetek: kezdőlap és bejelentkezés */
+/* Pixeles csillagos ég (components/scene/star-field.tsx). */
+.star-field,
+.embers {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: #f0c56a;
+  animation: star-twinkle 4.4s steps(1, end) infinite;
+}
+.star[data-big] {
+  background: #fff3c4;
+  box-shadow:
+    3px 0 #f0a700,
+    -3px 0 #f0a700,
+    0 3px #f0a700,
+    0 -3px #f0a700;
+}
+@keyframes star-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  38% {
+    opacity: 0.3;
+  }
+  44% {
+    opacity: 1;
+  }
+  71% {
+    opacity: 0.55;
+  }
+  76% {
+    opacity: 1;
+  }
+}
+/* Hullócsillag: lépcsős színű csóva, ferdén húz át, aztán sokáig nincs. */
+.shooting-star {
+  position: absolute;
+  top: 8%;
+  left: 6%;
+  width: 42px;
+  height: 3px;
+  background: linear-gradient(
+    to left,
+    #fff3c4 0 6px,
+    #f0a700 6px 18px,
+    rgb(240 167 0 / 0.5) 18px 30px,
+    rgb(240 167 0 / 0.2) 30px
+  );
+  opacity: 0;
+  rotate: 18deg;
+  animation: shooting-star 12s linear 2.5s infinite;
+}
+@keyframes shooting-star {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+  }
+  1% {
+    opacity: 1;
+  }
+  7% {
+    opacity: 1;
+  }
+  9% {
+    opacity: 0;
+    translate: 640px 208px;
+  }
+  100% {
+    opacity: 0;
+    translate: 640px 208px;
+  }
+}
+
+/* Felszálló parázs (components/scene/embers.tsx); a szülő adja az emelkedés magasságát (--ember-rise). */
+.ember {
+  position: absolute;
+  bottom: -6px;
+  width: 3px;
+  height: 3px;
+  background: var(--primary);
+  box-shadow: 0 0 6px rgb(240 167 0 / 0.8);
+  opacity: 0;
+  animation-name: ember-rise, ember-flicker;
+  animation-timing-function: steps(80, end), steps(1, end);
+  animation-iteration-count: infinite;
+}
+.ember[data-tone="1"] {
+  background: #ff7a2e;
+  box-shadow: 0 0 6px rgb(255 122 46 / 0.8);
+}
+.ember[data-tone="2"] {
+  width: 2px;
+  height: 2px;
+  background: #ffd75e;
+}
+@keyframes ember-rise {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  50% {
+    translate: var(--drift) calc(var(--ember-rise, 300px) * -0.5);
+  }
+  80% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+    translate: calc(var(--drift) * -0.5) calc(var(--ember-rise, 300px) * -1);
+  }
+}
+@keyframes ember-flicker {
+  50% {
+    filter: brightness(1.7);
+  }
+}
+
+/* A kis bányajelenetek fényei (components/scene/mine-light.tsx): --tile a mezőméret. */
+.mine-light {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+}
+/* Szikrák a fúró hegyénél: apró pixelek pattannak szét, mind más ütemben. */
+.drill-sparks {
+  position: absolute;
+  top: 60%;
+  left: 92%;
+}
+.drill-sparks i {
+  position: absolute;
+  width: calc(var(--tile) / 16);
+  height: calc(var(--tile) / 16);
+  background: #ffd75e;
+  box-shadow: 0 0 calc(var(--tile) / 10) rgb(255 215 94 / 0.9);
+  opacity: 0;
+  animation: drill-spark 0.42s steps(3, end) infinite;
+}
+.drill-sparks i[data-spark="0"] {
+  --sx: 0.28;
+  --sy: -0.22;
+}
+.drill-sparks i[data-spark="1"] {
+  --sx: 0.34;
+  --sy: 0.06;
+  animation-delay: 0.11s;
+  background: #fff6cf;
+}
+.drill-sparks i[data-spark="2"] {
+  --sx: 0.2;
+  --sy: 0.24;
+  animation-delay: 0.23s;
+}
+.drill-sparks i[data-spark="3"] {
+  --sx: 0.12;
+  --sy: -0.3;
+  animation-delay: 0.31s;
+  background: #f0a700;
+}
+.drill-sparks i[data-spark="4"] {
+  --sx: 0.3;
+  --sy: 0.16;
+  animation-delay: 0.17s;
+  animation-duration: 0.56s;
+}
+@keyframes drill-spark {
+  0% {
+    opacity: 1;
+    translate: 0 0;
+  }
+  100% {
+    opacity: 0;
+    translate: calc(var(--sx) * var(--tile)) calc(var(--sy) * var(--tile));
+  }
+}
+
+/* A kezdőlap bányaszalaga (components/home/mine-strip.tsx): három elgördülő sor, középen a járat a robottal. */
+.mine-strip {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 2px solid var(--foreground);
+  box-shadow: 0 4px 0 var(--foreground);
+}
+.mine-track {
+  display: flex;
+  width: max-content;
+}
+@keyframes mine-scroll {
+  to {
+    translate: calc(var(--pattern) * var(--tile) * -1) 0;
+  }
+}
+/* A robot előtti, még tömör rész: a robot közepétől jobbra látszik. */
+.mine-ahead {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  clip-path: inset(0 0 0 calc((var(--robot) + 0.5) * var(--tile)));
+}
+.mine-robot {
+  position: absolute;
+  top: var(--tile);
+  left: calc(var(--robot) * var(--tile));
+  z-index: 3;
+  width: var(--tile);
+  height: var(--tile);
+}
+/* Arany felszedése: „+1” száll fel a robotból, épp amikor egy rög a robothoz ér. */
+.mine-pickup {
+  position: absolute;
+  top: -12%;
+  left: 50%;
+  color: var(--primary);
+  font-family: var(--font-tiny), monospace;
+  font-size: calc(var(--tile) * 0.42);
+  font-weight: normal;
+  line-height: 1;
+  text-shadow:
+    2px 2px 0 #170c07,
+    0 0 8px rgb(240 167 0 / 0.9);
+  opacity: 0;
+  animation: mine-pickup var(--period) steps(120, end) infinite;
+}
+@keyframes mine-pickup {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.3);
+  }
+  2% {
+    transform: translate(-50%, 0) scale(1);
+  }
+  9% {
+    opacity: 1;
+    transform: translate(-50%, calc(var(--tile) * -0.8));
+  }
+  12%,
+  100% {
+    opacity: 0;
+    transform: translate(-50%, calc(var(--tile) * -0.8));
+  }
+}
+
+/* A kezdőlap fejléce: a bejelentkezés bányaege, csillagokkal és parázzsal. */
+.home-hero {
+  --ember-rise: 360px;
+  position: relative;
+  overflow: hidden;
+  background: url("/artwork/pixel_ore_background.png") center 78% / cover no-repeat;
+  image-rendering: pixelated;
+}
+/* Üdvözlő buborék: felpattan, és a betűk egymás után jelennek meg. */
+.greeting-bubble {
+  transform-origin: 15% 100%;
+  animation: bubble-pop 420ms steps(4, end) both;
+}
+@keyframes bubble-pop {
+  0% {
+    opacity: 0;
+    scale: 0.6;
+  }
+  60% {
+    opacity: 1;
+    scale: 1.06;
+  }
+  100% {
+    scale: 1;
+  }
+}
+.typed-letter {
+  animation: typed-letter 1ms steps(1, end) both;
+}
+@keyframes typed-letter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* Beúszó sor (a kedvelők listája): egymás után érkeznek. */
+.map-entry-enter {
+  animation: map-entry-enter 420ms steps(4, end) both;
+}
+@keyframes map-entry-enter {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+/* A bejelentkezés hátterének csillagai és parazsa (components/auth/login-lights.tsx). */
+.login-lights {
+  --ember-rise: 85vh;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .star,
+  .mine-track,
+  .greeting-bubble,
+  .typed-letter,
+  .map-entry-enter {
+    animation: none !important;
+  }
+  .shooting-star,
+  .embers,
+  .drill-sparks,
+  .mine-pickup {
+    display: none;
+  }
+}
+
+/* Kedvelők (components/likes): profilképes sorok pixeles kerettel, fölé víve világos keret; a szív díszítés. */
+.liker-row {
+  transition: translate 120ms steps(2, end);
+}
+.liker-row:hover {
+  --pixel-frame: var(--pixel-frame-light);
+  translate: 2px 0;
+}
+.liker-heart {
+  color: var(--primary);
+  filter: drop-shadow(0 0 4px rgb(240 167 0 / 0.55));
+}
+.liker-placeholder {
+  animation: liker-placeholder 1.2s steps(2, end) infinite;
+}
+@keyframes liker-placeholder {
+  50% {
+    opacity: 0.45;
+  }
+}
+/* Üres lista: a robot egyedül áll, és lassan pihegve billeg. */
+.likers-empty-robot {
+  display: block;
+  animation: robot-idle 1.2s steps(1, end) infinite;
+  --art: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .liker-row,
+  .liker-placeholder,
+  .likers-empty-robot {
+    animation: none;
+    transition: none;
+  }
+  .liker-row:hover {
+    translate: none;
+  }
+}
+
+/* ------------------------------------------------------------------ kis képernyő: fülsor a munkafelületek alján */
+/* components/mobile-tabs.tsx: a dokk a futás vezérlőivel és a fülekkel; a biztonsági sáv (iPhone otthon-sáv) fölött. */
+.mobile-dock {
+  border-top: 1px solid var(--rule);
+  background: var(--background);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.mobile-tabs {
+  display: grid;
+  gap: 2px;
+  padding: 6px 6px 4px;
+}
+.mobile-tab {
+  position: relative;
+  display: flex;
+  min-height: 52px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--muted-foreground);
+  font-family: var(--font-pixel), monospace;
+  font-size: 12px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+/* A kiválasztott fül: arany ikon és felirat, fölötte egy pixeles arany csík (nem csak szín jelzi: a csík is). */
+.mobile-tab[aria-selected="true"] {
+  color: var(--primary);
+}
+.mobile-tab[aria-selected="true"]::before {
+  position: absolute;
+  top: -6px;
+  left: 22%;
+  right: 22%;
+  height: 3px;
+  background: var(--primary);
+  content: "";
+}
+.mobile-tab:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+.mobile-tab-count {
+  position: absolute;
+  top: -6px;
+  right: -12px;
+  min-width: 16px;
+  padding: 0 3px;
+  background: var(--foreground);
+  color: var(--background);
+  font-family: var(--font-tiny), monospace;
+  font-size: 10px;
+  line-height: 14px;
+  text-align: center;
+}
+.mobile-tab-count[data-alert] {
+  background: var(--brick);
+  color: var(--foreground);
+}
+
+/* iOS Safari 16 px alatti betűméretű mezőre koppintva ráközelít; kis képernyőn minden beviteli mező 16 px. */
+@media (max-width: 1023.98px) {
+  .app-ui :is(input, select, textarea),
+  .app-ui .cm-editor .cm-content {
+    font-size: 16px;
   }
 }

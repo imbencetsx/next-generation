@@ -47,7 +47,9 @@ describe("map page", () => {
     open();
     expect(screen.getByRole("heading", { level: 1, name: "Corridor run" })).toBeTruthy();
     const preview = screen.getByRole("img", { name: "Map “Corridor run”, 3 rows by 10 columns" });
-    expect(preview.querySelectorAll(".gold-sparkle")).toHaveLength(3);
+    // Az előnézet teljesen áll: három arany, csillogás nélkül.
+    expect(preview.querySelectorAll(".gold-sprite")).toHaveLength(3);
+    expect(preview.querySelectorAll(".gold-sparkle")).toHaveLength(0);
     expect(screen.getByText("3 × 10 cells, 3 gold")).toBeTruthy();
     const program = new URL(screen.getByRole("link", { name: "Write a program" }).getAttribute("href")!, "http://x");
     expect(program.pathname).toBe("/workbench");
@@ -99,7 +101,7 @@ describe("map page", () => {
     cleanup();
 
     convex.answers["maps:get"] = { ...MAP, isMine: true, likeCount: 1 };
-    convex.answers["likes:likers"] = [{ name: "digger", likedAt: Date.UTC(2026, 10, 8), isMe: false }];
+    convex.answers["likes:likers"] = [{ name: "digger", imageUrl: null, likedAt: Date.UTC(2026, 10, 8), isMe: false }];
     open();
     expect(screen.getByRole("heading", { level: 2, name: "Liked by" })).toBeTruthy();
     expect(screen.getByRole("list", { name: "Liked by" }).textContent).toContain("digger");

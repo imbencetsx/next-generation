@@ -2,6 +2,7 @@ import MapExample from "@/components/docs/map-example";
 import { Pre } from "@/components/docs/code-view";
 import { MiniMap } from "@/components/docs/mini-map";
 import { Note } from "@/components/docs/ui";
+import { MESSAGES } from "@/i18n/messages";
 import { MAP_PRESETS, presetMap } from "@/lib/robot-map";
 
 const SPEC_MAP = "3 15\n....@..........\n.#############.\n.......@...>...";
@@ -78,10 +79,18 @@ export default function Terkepek() {
       <MapExample title="Ismeretlen jel" text={"1 3\n>x@"} valid={false} />
 
       <h2 id="beepitett">Beépített pályák</h2>
-      <p>A szimulátor „Load map…” listájában érhetők el.</p>
+      <p>
+        A szimulátor térképválasztójában érhetők el; a kezdőlap a legkönnyebbeket mutatja, a <em>Beépített pályák</em>{" "}
+        oldal (<code>/maps/built-in</code>) mindet, nehézség szerint. Egy pálya kártyájáról programot lehet írni rá,
+        vagy a másolatát a térképszerkesztőben átalakítani.
+      </p>
       <div className="flex flex-wrap gap-6">
         {MAP_PRESETS.map((preset, index) => (
-          <MiniMap key={preset.name} map={presetMap(index)} caption={preset.name} />
+          <MiniMap
+            key={preset.name}
+            map={presetMap(index)}
+            caption={`${MESSAGES.hu.sim.maps[preset.name]} (${MESSAGES.hu.home.difficulty[preset.difficulty].toLowerCase()})`}
+          />
         ))}
       </div>
 

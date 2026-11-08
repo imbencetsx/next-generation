@@ -1,19 +1,23 @@
 "use client";
 
 // A fő munkafelület: bal oldalon a kódszerkesztő (fájlműveletek, futásvezérlés, hibák, konzol),
-// jobb oldalon a térkép. Az állapot két hookban él: a program (useProgramFile) és a futás (useSimulation).
+// jobb oldalon a térkép. Kis képernyőn (COMPACT_QUERY) ugyanezek fülekre bomlanak (Kód, Térkép, Konzol, Hibák), a
+// futás vezérlői a fülsor fölé kerülnek, és indításkor a térkép fülére váltunk. Az állapot két hookban él: a program
+// (useProgramFile) és a futás (useSimulation).
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import CodeEditor, { type ActiveLine, type EditorHandle } from "@/components/code-editor";
-import { Alert, Check, Lock } from "@/components/icons";
+import { Alert, Check, Code, Lock, MapIcon, Terminal } from "@/components/icons";
 import Logo from "@/components/logo";
+import MobileTabs, { TabPanel, type MobileTab } from "@/components/mobile-tabs";
 import PlaybackBar from "@/components/playback-bar";
 import RunConsole from "@/components/run-console";
 import Simulator from "@/components/simulator";
 import TopBar, { AccountActions } from "@/components/top-bar";
 import { Card } from "@/components/ui/card";
+import { COMPACT_QUERY, useMediaQuery } from "@/components/use-media-query";
 import { useSimulation } from "@/components/use-simulation";
 import { useI18n } from "@/i18n/i18n-provider";
 import type { Snapshot } from "@/lib/interpreter";
@@ -24,6 +28,9 @@ import PublishedMapResult from "./published-map-result";
 import { useResultRecorder } from "./use-result-recorder";
 import { useProgramFile } from "./use-program-file";
 import { ROUTES } from "@/lib/routes";
+
+type Tab = "code" | "map" | "console" | "problems";
+const TABS_ID = "workbench";
 
 /** A szerkesztőben kiemelendő sor: futás közben az aktuális sor, hibánál a hibás rész. */
 function activeLineFor(snapshot: Snapshot): ActiveLine {
@@ -58,15 +65,27 @@ export default function Workbench() {
   const { snapshot, locked } = simulation;
 
   const [cursor, setCursor] = useState({ line: 1, column: 1 });
+  const compact = useMediaQuery(COMPACT_QUERY);
+  const [tab, setTab] = useState<Tab>("code");
   const editor = useRef<EditorHandle | null>(null);
   const issues = useMemo(() => validateMineScript(file.code), [file.code]);
   const lineCount = useMemo(() => file.code.split("\n").length, [file.code]);
 
-  const jumpTo = (line: number, column?: number) => editor.current?.focusLine(line, column);
+  // Kis képernyőn a szerkesztő fülére váltunk, és csak utána ugrunk (a rejtett szerkesztő nem tud görgetni).
+  function jumpTo(line: number, column?: number) {
+    if (!compact) return editor.current?.focusLine(line, column);
+    setTab("code");
+    requestAnimationFrame(() => editor.current?.focusLine(line, column));
+  }
 
   // Hibás programnál a futtatás nem indul el; ilyenkor az első hibára ugrunk, hogy látszódjon, mit kell javítani.
   function showFirstIssue() {
     if (issues[0]) jumpTo(issues[0].line, issues[0].column);
+  }
+
+  // Kis képernyőn indításkor a térképre váltunk, hogy látsszon a robot (hibás programnál a kód marad elöl).
+  function onStart() {
+    if (compact && issues.length === 0) setTab("map");
   }
 
   function changeCode(next: string) {
@@ -78,6 +97,66 @@ export default function Workbench() {
   function newFile() {
     file.newFile(simulation.reset);
   }
+
+  const playback = (
+    <PlaybackBar simulation={simulation} showFirstIssue={showFirstIssue} onStart={onStart} compact={compact} />
+  );
+
+  const editorCard = (
+    <Card role="region" aria-label={t.editor.region} className="min-h-[320px] min-w-0 flex-1 gap-0 py-0">
+      {/* A program és a futtatása egy helyen: fent a fájl, alatta a futás vezérlői (kis képernyőn a fülsor fölött). */}
+      <div className="flex flex-col gap-2 border-b border-border px-2 py-2">
+        <FileToolbar
+          name={file.name}
+          onRename={file.rename}
+          locked={locked}
+          onNew={newFile}
+          onImport={(nextFile) => file.importFile(nextFile, simulation.reset)}
+          onExport={file.exportFile}
+          onLoadExample={(filename) => file.loadExample(filename, simulation.reset)}
+        />
+        {!compact && playback}
+      </div>
+
+      <div className="min-h-0 flex-1">
+        <CodeEditor
+          wrap={false}
+          value={file.code}
+          onChange={changeCode}
+          onCursor={(line, column) => setCursor({ line, column })}
+          editorRef={editor}
+          readOnly={locked}
+          activeLine={activeLineFor(snapshot)}
+          label={t.editor.sourceLabel}
+        />
+      </div>
+
+      <EditorStatusBar cursor={cursor} lineCount={lineCount} locked={locked} issues={issues} />
+    </Card>
+  );
+  const problems = <ProblemsPanel issues={issues} runtimeError={snapshot.error} onJump={jumpTo} />;
+  const runConsole = <RunConsole snapshot={snapshot} />;
+  const simulator = (
+    <Simulator
+      simulation={simulation}
+      footer={
+        simulation.publishedMapId && <PublishedMapResult mapId={simulation.publishedMapId} record={recorder.state} />
+      }
+    />
+  );
+
+  const tabs: MobileTab<Tab>[] = [
+    { id: "code", label: t.mobile.code, icon: Code },
+    { id: "map", label: t.mobile.map, icon: MapIcon },
+    { id: "console", label: t.mobile.console, icon: Terminal, count: snapshot.output.length },
+    {
+      id: "problems",
+      label: t.mobile.problems,
+      icon: Alert,
+      count: issues.length + (snapshot.error ? 1 : 0),
+      alert: true,
+    },
+  ];
 
   return (
     <div className="app-ui flex h-dvh flex-col">
@@ -94,56 +173,42 @@ export default function Workbench() {
       </TopBar>
 
       {file.confirmation}
-      <main className="grid min-h-0 flex-1 gap-3 overflow-y-auto p-3 lg:grid-cols-2 lg:overflow-hidden">
-        <div className="flex min-w-0 flex-col gap-3 lg:min-h-0">
-          <Card role="region" aria-label={t.editor.region} className="min-h-[320px] min-w-0 flex-1 gap-0 py-0">
-            {/* A program és a futtatása egy helyen: fent a fájl, alatta a futás vezérlői. */}
-            <div className="flex flex-col gap-2 border-b border-border px-2 py-2">
-              <FileToolbar
-                name={file.name}
-                onRename={file.rename}
-                locked={locked}
-                onNew={newFile}
-                onImport={(nextFile) => file.importFile(nextFile, simulation.reset)}
-                onExport={file.exportFile}
-                onLoadExample={(filename) => file.loadExample(filename, simulation.reset)}
-              />
-              <PlaybackBar simulation={simulation} showFirstIssue={showFirstIssue} />
+      {compact ? (
+        <>
+          <main className="flex min-h-0 flex-1 flex-col p-2">
+            <TabPanel idPrefix={TABS_ID} id="code" active={tab === "code"}>
+              {editorCard}
+            </TabPanel>
+            <TabPanel idPrefix={TABS_ID} id="map" active={tab === "map"}>
+              <div className="min-h-0 flex-1">{simulator}</div>
+            </TabPanel>
+            <TabPanel idPrefix={TABS_ID} id="console" active={tab === "console"} className="[&>*]:flex-1">
+              {runConsole}
+            </TabPanel>
+            <TabPanel idPrefix={TABS_ID} id="problems" active={tab === "problems"} className="overflow-y-auto">
+              {problems}
+            </TabPanel>
+          </main>
+          <nav className="mobile-dock" aria-label={t.mobile.workbenchViews}>
+            {playback}
+            <MobileTabs tabs={tabs} active={tab} onChange={setTab} label={t.mobile.workbenchViews} idPrefix={TABS_ID} />
+          </nav>
+        </>
+      ) : (
+        <main className="grid min-h-0 flex-1 grid-cols-2 gap-3 overflow-hidden p-3">
+          <div className="flex min-h-0 min-w-0 flex-col gap-3">
+            {editorCard}
+            <div className="grid h-56 shrink-0 grid-cols-2 gap-3">
+              {problems}
+              {runConsole}
             </div>
-
-            <div className="min-h-0 flex-1">
-              <CodeEditor
-                wrap={false}
-                value={file.code}
-                onChange={changeCode}
-                onCursor={(line, column) => setCursor({ line, column })}
-                editorRef={editor}
-                readOnly={locked}
-                activeLine={activeLineFor(snapshot)}
-                label={t.editor.sourceLabel}
-              />
-            </div>
-
-            <EditorStatusBar cursor={cursor} lineCount={lineCount} locked={locked} issues={issues} />
-          </Card>
-
-          <div className="grid shrink-0 gap-3 md:h-56 md:grid-cols-2">
-            <ProblemsPanel issues={issues} runtimeError={snapshot.error} onJump={jumpTo} />
-            <RunConsole snapshot={snapshot} />
           </div>
-        </div>
 
-        <aside className="min-w-0 lg:min-h-0" aria-label={t.sim.region}>
-          <Simulator
-            simulation={simulation}
-            footer={
-              simulation.publishedMapId && (
-                <PublishedMapResult mapId={simulation.publishedMapId} record={recorder.state} />
-              )
-            }
-          />
-        </aside>
-      </main>
+          <aside className="min-h-0 min-w-0" aria-label={t.sim.region}>
+            {simulator}
+          </aside>
+        </main>
+      )}
     </div>
   );
 }

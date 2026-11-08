@@ -9,8 +9,10 @@ export const ROUTES = {
   login: "/login",
   profile: "/profile",
   mapEditor: "/map-editor",
-  /** Egy közzétett térkép oldala a ranglistával: /maps/<azonosító> (mapPath). */
+  /** Az összes közzétett térkép; egy térkép oldala a ranglistával: /maps/<azonosító> (mapPath). */
   maps: "/maps",
+  /** Az összes beépített pálya. Statikus szakasz, ezért elsőbbséget kap a /maps/<azonosító> előtt. */
+  builtInMaps: "/maps/built-in",
   docs: "/docs",
 } as const;
 

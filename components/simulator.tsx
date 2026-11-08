@@ -40,7 +40,7 @@ export default function Simulator({ simulation, footer }: Props) {
   const mapLabel = (name: string) => t.sim.maps[name] ?? name;
 
   return (
-    <div className="flex h-full min-h-[70vh] flex-col gap-3 lg:min-h-0">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       {simulation.mapError && (
         <p role="alert" className="flex items-center gap-2 font-read text-sm text-brick-text">
           <Alert size={14} aria-hidden /> {localizedMapError(simulation.mapError, locale)}
@@ -97,6 +97,7 @@ export default function Simulator({ simulation, footer }: Props) {
             gold={snapshot.gold}
             fog={fog}
             motion={simulation.motion}
+            lit={snapshot.status !== "running"}
             label={t.sim.mapLabel(map.rows, map.cols, snapshot.robot.y + 1, snapshot.robot.x + 1, direction)}
           />
         </div>

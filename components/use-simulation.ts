@@ -43,6 +43,12 @@ function reportIfEnded(
 }
 
 function initialMap({ mapText = null, mapName = null, mapId = null }: SimulationOptions) {
+  // Beépített pálya linkből (kezdőlap, beépített pályák oldala): a választóban is az legyen kiválasztva.
+  const presetIndex = mapId === null ? MAP_PRESETS.findIndex((preset) => preset.text === mapText) : -1;
+  if (presetIndex >= 0) {
+    const { name } = MAP_PRESETS[presetIndex];
+    return { map: presetMap(presetIndex), name, publishedId: null, presetName: name, defaultMapName: false };
+  }
   if (mapText !== null) {
     const result = parseMap(mapText);
     if (result.ok) {

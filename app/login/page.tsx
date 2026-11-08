@@ -3,6 +3,7 @@ import { randomInt } from "node:crypto";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import LoginForm from "@/components/auth/login-form";
+import LoginLights from "@/components/auth/login-lights";
 import LanguageSwitch from "@/components/language-switch";
 import LoadingStatus from "@/components/loading-status";
 import Logo from "@/components/logo";
@@ -21,6 +22,7 @@ export default function LoginPage() {
   return (
     <div className="app-ui relative isolate flex min-h-dvh flex-col">
       <div className="login-background" aria-hidden />
+      <LoginLights />
       <TopBar brand={<Logo />}>
         <LanguageSwitch />
       </TopBar>

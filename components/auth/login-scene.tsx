@@ -1,5 +1,7 @@
 // A bejelentkezés jelenete: bánya-folyosó a játék sprite-jaiból, a robot helyben sétál és buborékban szól a játékoshoz.
+// A folyosó sötét, a robot lámpája világítja be előre, a fúrója szikrázik (components/scene/mine-light.tsx).
 
+import { DrillSparks, MineLight } from "@/components/scene/mine-light";
 import { robotSpriteStyle, tileBackground, TILES } from "@/components/sprites";
 
 /** A folyosó mezői balról jobbra: fal, három kiásott mező, két tömör föld, fal. */
@@ -26,23 +28,30 @@ export default function LoginScene({ message }: { message: string }) {
           <span className="h-1 w-1 bg-foreground" />
         </span>
       </div>
-      <div aria-hidden className="flex border-2 border-foreground shadow-[0_4px_0_var(--foreground)]">
+      <div
+        aria-hidden
+        className="relative isolate flex overflow-hidden border-2 border-foreground shadow-[0_4px_0_var(--foreground)] [--tile:3rem] sm:[--tile:3.5rem]"
+      >
         {CORRIDOR.map((tile, index) => (
           // A folyosó rögzített, sosem változik, ezért az index stabil kulcs.
-          <div key={index} className="pixel-sprite relative size-12 sm:size-14" style={tileBackground(tile)}>
+          <div key={index} className="pixel-sprite relative size-(--tile)" style={tileBackground(tile)}>
             {index === GOLD_AT && (
               <span className="gold-shine">
                 <i className="gold-sprite gold-sparkle absolute inset-0" />
               </span>
             )}
             {index === ROBOT_AT && (
-              <div
-                className="pixel-robot-sprite absolute inset-0"
-                style={{ ...robotSpriteStyle(FACING_EAST), animation: WALK_IN_PLACE }}
-              />
+              <div className="absolute inset-0 z-[3]">
+                <div
+                  className="pixel-robot-sprite absolute inset-0"
+                  style={{ ...robotSpriteStyle(FACING_EAST), animation: WALK_IN_PLACE }}
+                />
+                <DrillSparks />
+              </div>
             )}
           </div>
         ))}
+        <MineLight cols={CORRIDOR.length} rows={1} robot={{ x: ROBOT_AT, y: 0 }} />
       </div>
     </div>
   );
